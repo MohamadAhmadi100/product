@@ -171,9 +171,9 @@ class KowsarGetter:
     @staticmethod
     def main_category_items_getter(system_code):
         with MongoConnection() as client:
-            re = '^' + system_code[:2]
+            re = '^' + system_code[:2] + ".{2}$"
             data = client.kowsar_name_collection.find({'system_code': {'$regex': re}}, {"_id": 0})
-            products = [product for product in data if len(product['system_code']) == 4]
+            products = [product for product in data]
             return products
 
     @staticmethod
@@ -187,17 +187,17 @@ class KowsarGetter:
     @staticmethod
     def brand_category_items_getter(system_code):
         with MongoConnection() as client:
-            re = '^' + system_code[:6]
+            re = '^' + system_code[:6] + ".{3}$"
             data = client.kowsar_name_collection.find({'system_code': {'$regex': re}}, {"_id": 0})
-            products = [product for product in data if len(product['system_code']) == 9]
+            products = [product for product in data]
             return products
 
     @staticmethod
     def model_items_getter(system_code):
         with MongoConnection() as client:
-            re = '^' + system_code[:9]
+            re = '^' + system_code[:9] + ".{3}$"
             data = client.kowsar_name_collection.find({'system_code': {'$regex': re}}, {"_id": 0})
-            products = [product for product in data if len(product['system_code']) == 12]
+            products = [product for product in data]
             return products
 
     def update_kowsar_name_collection(self):
