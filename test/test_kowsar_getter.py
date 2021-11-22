@@ -1,0 +1,328 @@
+import sys
+
+sys.path.append("..")
+
+from source.kowsar_getter import KowsarGetter
+
+
+def test_read_excel():
+    kowsar_getter = KowsarGetter()
+    sheet = kowsar_getter.read_excel(file_name='گروه کالا.xls')
+    assert sheet is not None
+
+
+def test_product_group_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    assert kowsar_getter.main_category_dict is not None
+    assert kowsar_getter.main_category_dict['10'] == 'Device'
+    assert kowsar_getter.sub_category_dict is not None
+    assert kowsar_getter.sub_category_dict['1001'] == 'Mobile'
+    assert kowsar_getter.brand_category_dict is not None
+    assert kowsar_getter.brand_category_dict['100105'] == 'Mobile Huawei '
+    assert kowsar_getter.model_dict is not None
+    assert kowsar_getter.model_dict['100105005'] == 'P30 Lite '
+
+
+def test_product_config_getter():
+    kowsar_getter = KowsarGetter()
+    name_config_code_with_bracket, name_config_code_without_bracket = kowsar_getter.product_config_getter()
+    assert name_config_code_with_bracket is not None
+    assert type(name_config_code_with_bracket) == list
+    assert type(name_config_code_with_bracket[0]) == list
+    assert name_config_code_with_bracket[0] == ['100104021006', 'Mobile Xiaomi Redmi 9C [64-Orange-SHERKATI]']
+    assert name_config_code_without_bracket is not None
+    assert type(name_config_code_with_bracket) == list
+    assert type(name_config_code_with_bracket[0]) == list
+    assert name_config_code_without_bracket[0] == ['100104012010', 'Mobile Xiaomi Note 9s 64-Gray-AWAT]']
+
+
+def test_name_config_separator():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    name_configs_codes_with_brackets, name_configs_codes_without_brackets = kowsar_getter.product_config_getter()
+    config_list = kowsar_getter.name_config_separator(name_configs_codes_with_brackets,
+                                                      name_configs_codes_without_brackets)
+    assert config_list is not None
+    assert type(config_list) == list
+    assert config_list[0] == ['100104021006', 'Xiaomi Redmi 9c', '64-orange-sherkati']
+    configs = kowsar_getter.configs
+    assert configs is not None
+    assert type(configs) == list
+    assert configs[0] == '64-orange-sherkati'
+
+
+def test_bag_of_words():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    name_configs_codes_with_brackets, name_configs_codes_without_brackets = kowsar_getter.product_config_getter()
+    kowsar_getter.name_config_separator(name_configs_codes_with_brackets, name_configs_codes_without_brackets)
+    words_dict = kowsar_getter.bag_of_words()
+    assert words_dict is not None
+    assert type(words_dict) == dict
+    assert next(iter(words_dict)) == '64'
+    assert words_dict.get('64') == ''
+
+
+def test_bag_of_words_organizer(words_dict):
+    kowsar_getter = KowsarGetter()
+    new_dict = kowsar_getter.bag_of_words_organizer(words_dict)
+    assert new_dict is not None
+    assert type(new_dict) is dict
+    assert new_dict.get('storage')[0] == '64'
+
+
+def test_config_matcher(conf_dict_sample):
+    kowsar_getter = KowsarGetter()
+    config = '6-color-life time'
+    new_conf = {}
+    config, new_conf = kowsar_getter.config_matcher(config, new_conf, conf_dict_sample, 'guarantee')
+    assert new_conf == {'guarantee': 'life time'}
+    assert config == '6-color-'
+
+
+def test_check_conf_is_empty():
+    kowsar_getter = KowsarGetter()
+    assert kowsar_getter.check_conf_is_empty('- ') is True
+    assert kowsar_getter.check_conf_is_empty('-f') is False
+
+
+def test_configs_list_maker():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_getter()
+    assert kowsar_getter.config_dict is not None
+    assert type(kowsar_getter.config_dict) is dict
+    assert kowsar_getter.config_dict.get('100104021006') == {'storage': '64', 'color': 'orange',
+                                                             'guarantee': 'sherkati'}
+
+
+def test_config_code_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_getter()
+    config = kowsar_getter.config_code_getter('100101030001')
+    assert config is not None
+    assert config == {
+        'system_code': '100101030001',
+        'config':
+            {
+                'storage': '64gb',
+                'color': 'black',
+                'guarantee': 'sherkati',
+                'ram': '3gb'
+            },
+        'brand': 'Mobile Sumsung',
+        'sub_category': 'Mobile',
+        'main_category': 'Device',
+        'model': 'A022 '
+    }
+
+
+def test_model_code_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    assert kowsar_getter.model_code_getter('100104021') == {
+        'brand': 'Mobile Xiaomi ',
+        'main_category': 'Device',
+        'model': 'Xiaomi Redmi 9c',
+        'sub_category': 'Mobile',
+        'system_code': '100104021'
+    }
+
+
+def test_brand_code_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    assert kowsar_getter.brand_category_code_getter('100104') == {
+        'brand': 'Mobile Xiaomi ',
+        'main_category': 'Device',
+        'sub_category': 'Mobile',
+        'system_code': '100104'
+    }
+
+
+def test_sub_category_code_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    assert kowsar_getter.sub_category_code_getter('1001') == {
+        'main_category': 'Device',
+        'sub_category': 'Mobile',
+        'system_code': '1001'
+    }
+
+
+def test_main_category_code_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    assert kowsar_getter.main_category_code_getter('10') == {
+        'main_category': 'Device',
+        'system_code': '10'
+    }
+
+
+def test_main_category_items_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    main_category_items = kowsar_getter.main_category_items_getter('10')
+    assert main_category_items is not None
+    assert type(main_category_items) == list
+    assert main_category_items[0] == {
+        'main_category': 'Device',
+        'sub_category': 'Mobile',
+        'system_code': '1001'
+    }
+
+
+def test_sub_category_items_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    sub_category_items = kowsar_getter.sub_category_items_getter('1001')
+    assert sub_category_items is not None
+    assert type(sub_category_items) == list
+    assert sub_category_items[0] == {
+        'brand': 'Mobile Sumsung',
+        'main_category': 'Device',
+        'sub_category': 'Mobile',
+        'system_code': '100101'
+    }
+
+
+def test_brand_category_items_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_group_getter()
+    brand_category_items = kowsar_getter.brand_category_items_getter('100101')
+    assert brand_category_items is not None
+    assert type(brand_category_items) == list
+    assert brand_category_items[0] == {
+        'brand': 'Mobile Sumsung',
+        'main_category': 'Device',
+        'model': 'A260 ',
+        'sub_category': 'Mobile',
+        'system_code': '100101001'
+    }
+
+
+def test_model_items_getter():
+    kowsar_getter = KowsarGetter()
+    kowsar_getter.product_getter()
+    model_items = kowsar_getter.model_items_getter('100101001')
+    assert model_items is not None
+    assert type(model_items) == list
+    assert model_items == [
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'blue',
+                    'guarantee': 'awat',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001002'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'gray',
+                    'guarantee': 'sherkati',
+                    'ram': '8gb',
+                    'storage': '1gb'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001009'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'black',
+                    'guarantee': 'awat',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001001'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'black',
+                    'guarantee': 'sherkati',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001005'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'gold',
+                    'guarantee': 'awat',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001004'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'gray',
+                    'guarantee': 'sherkati',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001008'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'red',
+                    'guarantee': 'sherkati',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001007'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {
+                    'color': 'red',
+                    'guarantee': 'awat',
+                    'storage': '16'
+                },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001003'
+        },
+        {
+            'brand': 'Mobile Sumsung',
+            'config':
+                {'color': 'blue',
+                 'guarantee': 'sherkati',
+                 'storage': '16'
+                 },
+            'main_category': 'Device',
+            'model': 'A260 ',
+            'sub_category': 'Mobile',
+            'system_code': '100101001006'
+        }
+    ]
