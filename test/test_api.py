@@ -2,8 +2,6 @@ import sys
 
 sys.path.append("..")
 
-import pytest
-
 from test.helpers import Helpers
 from source.models import Product
 
@@ -23,7 +21,7 @@ def test_get_product_api(create_and_delete_product_fixture):
         'brand': 'Mobile Sumsung',
         'sub_category': 'Mobile',
         'main_category': 'Device',
-        'model': 'A022 '
+        'model': 'A022'
     }
 
 
@@ -35,15 +33,15 @@ def test_get_all_products_api(create_and_delete_products_fixture):
     assert type(data[0]) == dict
     sample_data = [
         {'system_code': '100101030001',
-         'config': {'storage': '64gb', 'color': 'black', 'guarantee': 'sherkati', 'ram': '3gb'}, 'model': 'A022 ',
+         'config': {'storage': '64gb', 'color': 'black', 'guarantee': 'sherkati', 'ram': '3gb'}, 'model': 'A022',
          'brand': 'Mobile Sumsung', 'sub_category': 'Mobile',
          'main_category': 'Device'},
         {'system_code': '100101030002',
-         'config': {'storage': '64gb', 'color': 'blue', 'guarantee': 'sherkati', 'ram': '3gb'}, 'model': 'A022 ',
+         'config': {'storage': '64gb', 'color': 'blue', 'guarantee': 'sherkati', 'ram': '3gb'}, 'model': 'A022',
          'brand': 'Mobile Sumsung', 'sub_category': 'Mobile',
          'main_category': 'Device'},
         {'system_code': '100101030003',
-         'config': {'storage': '64gb', 'color': 'white', 'guarantee': 'sherkati', 'ram': '3gb'}, 'model': 'A022 ',
+         'config': {'storage': '64gb', 'color': 'white', 'guarantee': 'sherkati', 'ram': '3gb'}, 'model': 'A022',
          'brand': 'Mobile Sumsung', 'sub_category': 'Mobile',
          'main_category': 'Device'}
     ]
@@ -61,6 +59,7 @@ def test_create_product_api():
     postfix = "/item/" + "?system_code=100101030001"
     data = ""
     response = Helpers.post_method_json(postfix=postfix, data=data).json()
-    assert response['system_code'] is not None
+    system_code = response.get("system_code")
+    assert system_code is not None
     product = Product()
-    product.delete_product(system_code=response['system_code'])
+    product.delete_product(system_code=system_code)

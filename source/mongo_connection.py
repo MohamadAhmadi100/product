@@ -19,7 +19,7 @@ class MongoConnection(metaclass=Singleton):
         self.client = pymongo.MongoClient(os.getenv("MONGO_HOST"), os.getenv("MONGO_PORT"))
         self.db = self.client['db-product']
         self.collection = self.db['products']
-        self.kowsar_name_collection = self.db['kowsar-name']
+        self.kowsar_collection = self.db['kowsar']
 
     def __enter__(self):
         return self

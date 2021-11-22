@@ -19,9 +19,9 @@ def test_product_group_getter():
     assert kowsar_getter.sub_category_dict is not None
     assert kowsar_getter.sub_category_dict['1001'] == 'Mobile'
     assert kowsar_getter.brand_category_dict is not None
-    assert kowsar_getter.brand_category_dict['100105'] == 'Mobile Huawei '
+    assert kowsar_getter.brand_category_dict['100105'] == 'Mobile Huawei'
     assert kowsar_getter.model_dict is not None
-    assert kowsar_getter.model_dict['100105005'] == 'P30 Lite '
+    assert kowsar_getter.model_dict['100105005'] == 'P30 Lite'
 
 
 def test_product_config_getter():
@@ -96,12 +96,10 @@ def test_configs_list_maker():
                                                              'guarantee': 'sherkati'}
 
 
-def test_config_code_getter():
+def test_system_code_name_getter():
     kowsar_getter = KowsarGetter()
     kowsar_getter.product_getter()
-    config = kowsar_getter.config_code_getter('100101030001')
-    assert config is not None
-    assert config == {
+    assert kowsar_getter.system_code_name_getter('100101030001') == {
         'system_code': '100101030001',
         'config':
             {
@@ -113,101 +111,54 @@ def test_config_code_getter():
         'brand': 'Mobile Sumsung',
         'sub_category': 'Mobile',
         'main_category': 'Device',
-        'model': 'A022 '
+        'model': 'A022'
     }
-
-
-def test_model_code_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_group_getter()
-    assert kowsar_getter.model_code_getter('100104021') == {
-        'brand': 'Mobile Xiaomi ',
+    assert kowsar_getter.system_code_name_getter('100104021') == {
+        'brand': 'Mobile Xiaomi',
         'main_category': 'Device',
         'model': 'Xiaomi Redmi 9c',
         'sub_category': 'Mobile',
         'system_code': '100104021'
     }
-
-
-def test_brand_code_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_group_getter()
-    assert kowsar_getter.brand_category_code_getter('100104') == {
-        'brand': 'Mobile Xiaomi ',
+    assert kowsar_getter.system_code_name_getter('100104') == {
+        'brand': 'Mobile Xiaomi',
         'main_category': 'Device',
         'sub_category': 'Mobile',
         'system_code': '100104'
     }
-
-
-def test_sub_category_code_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_group_getter()
-    assert kowsar_getter.sub_category_code_getter('1001') == {
+    assert kowsar_getter.system_code_name_getter('1001') == {
         'main_category': 'Device',
         'sub_category': 'Mobile',
         'system_code': '1001'
     }
-
-
-def test_main_category_code_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_group_getter()
-    assert kowsar_getter.main_category_code_getter('10') == {
+    assert kowsar_getter.system_code_name_getter('10') == {
         'main_category': 'Device',
         'system_code': '10'
     }
 
 
-def test_main_category_items_getter():
+def test_system_code_items_getter():
     kowsar_getter = KowsarGetter()
     kowsar_getter.product_group_getter()
-    main_category_items = kowsar_getter.main_category_items_getter('10')
-    assert main_category_items is not None
-    assert type(main_category_items) == list
-    assert main_category_items[0] == {
+    assert kowsar_getter.system_code_items_getter('10')[0] == {
         'main_category': 'Device',
         'sub_category': 'Mobile',
         'system_code': '1001'
     }
-
-
-def test_sub_category_items_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_group_getter()
-    sub_category_items = kowsar_getter.sub_category_items_getter('1001')
-    assert sub_category_items is not None
-    assert type(sub_category_items) == list
-    assert sub_category_items[0] == {
+    assert kowsar_getter.system_code_items_getter('1001')[0] == {
         'brand': 'Mobile Sumsung',
         'main_category': 'Device',
         'sub_category': 'Mobile',
         'system_code': '100101'
     }
-
-
-def test_brand_category_items_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_group_getter()
-    brand_category_items = kowsar_getter.brand_category_items_getter('100101')
-    assert brand_category_items is not None
-    assert type(brand_category_items) == list
-    assert brand_category_items[0] == {
+    assert kowsar_getter.system_code_items_getter('100101')[0] == {
         'brand': 'Mobile Sumsung',
         'main_category': 'Device',
-        'model': 'A260 ',
+        'model': 'A260',
         'sub_category': 'Mobile',
         'system_code': '100101001'
     }
-
-
-def test_model_items_getter():
-    kowsar_getter = KowsarGetter()
-    kowsar_getter.product_getter()
-    model_items = kowsar_getter.model_items_getter('100101001')
-    assert model_items is not None
-    assert type(model_items) == list
-    assert model_items == [
+    assert kowsar_getter.system_code_items_getter('100101001') == [
         {
             'brand': 'Mobile Sumsung',
             'config':
@@ -217,7 +168,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001002'
         },
@@ -231,7 +182,7 @@ def test_model_items_getter():
                     'storage': '1gb'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001009'
         },
@@ -244,7 +195,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001001'
         },
@@ -257,7 +208,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001005'
         },
@@ -270,7 +221,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001004'
         },
@@ -283,7 +234,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001008'
         },
@@ -296,7 +247,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001007'
         },
@@ -309,7 +260,7 @@ def test_model_items_getter():
                     'storage': '16'
                 },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001003'
         },
@@ -321,9 +272,8 @@ def test_model_items_getter():
                  'storage': '16'
                  },
             'main_category': 'Device',
-            'model': 'A260 ',
+            'model': 'A260',
             'sub_category': 'Mobile',
             'system_code': '100101001006'
         }
     ]
-
