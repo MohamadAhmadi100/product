@@ -58,3 +58,4 @@ class Product:
         }
         with MongoConnection() as client:
             client.collection.delete_one(pip_line)
+
