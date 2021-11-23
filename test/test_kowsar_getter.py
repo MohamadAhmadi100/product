@@ -60,8 +60,7 @@ def test_bag_of_words():
     words_dict = kowsar_getter.bag_of_words()
     assert words_dict is not None
     assert type(words_dict) == dict
-    assert next(iter(words_dict)) == '64'
-    assert words_dict.get('64') == ''
+    assert words_dict.get('bedone') == ''
 
 
 def test_bag_of_words_organizer(words_dict):

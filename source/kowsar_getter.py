@@ -100,13 +100,12 @@ class KowsarGetter:
     We should set values to 'color', 'guarantee', ... and use the dictionary for finding configs
     '''
     def bag_of_words(self) -> dict:
-        words_list = list()
+        words_set = set()
         for x in self.configs:
-            words_list.extend(x.replace("-", " ").split())
+            words_set.update(x.replace("-", " ").split())
         words_dict = {}
-        for x in words_list:
-            if not words_dict.get(x):
-                words_dict[x] = ''
+        for x in words_set:
+            words_dict[x] = ''
         return words_dict
 
     '''

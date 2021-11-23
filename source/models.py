@@ -4,6 +4,7 @@ sys.path.append("..")
 
 from source.mongo_connection import MongoConnection
 from source.kowsar_getter import KowsarGetter
+from source.attributes import Attributes
 
 
 class Product:
@@ -11,20 +12,24 @@ class Product:
         pass
 
     @staticmethod
-    def create_product(system_code: str):
+    def create_product(system_code: str, specification: dict):
         system_code_generator = KowsarGetter()
         system_code_generator.product_getter()
         data = system_code_generator.system_code_name_getter(system_code)  # get data from system code
-        data = {
-            "system_code": system_code,
-            "config": data.get("config", None),
-            "model": data.get("model", None),
-            "brand": data.get("brand", None),
-            "sub_category": data.get("sub_category", None),
-            "main_category": data.get("main_category", None)
-        }
+        req = dict()
+        req['system_code'] = system_code
+        req['config'] = data.get('config')
+        req['model'] = data.get('model')
+        req['brand'] = data.get('brand')
+        req['sub_category'] = data.get('sub_category')
+        req['main_category'] = data.get('main_category')
+        attributes = Attributes()
+        attrs = attributes.get_attributes(system_code)
+        for x in attrs:
+            if x.get('category') == 'model':
+                req[x.get('name')] = specification.get(x.get('name'))
         with MongoConnection() as client:
-            client.collection.insert_one(data)
+            client.collection.insert_one(req)
         return system_code
 
     @staticmethod

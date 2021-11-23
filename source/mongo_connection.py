@@ -20,6 +20,7 @@ class MongoConnection(metaclass=Singleton):
         self.db = self.client['db-product']
         self.collection = self.db['products']
         self.kowsar_collection = self.db['kowsar']
+        self.attribute_collection = self.db['attribute']
 
     def __enter__(self):
         return self
