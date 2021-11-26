@@ -1,8 +1,3 @@
-import sys
-
-sys.path.append("..")
-
-
 def test_create_product(create_and_delete_product_fixture):
     assert create_and_delete_product_fixture.get_product(system_code='100101030001') is not None
     assert type(create_and_delete_product_fixture.get_product(system_code='100101030001')) == dict

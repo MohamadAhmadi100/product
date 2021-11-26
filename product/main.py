@@ -1,13 +1,9 @@
-import sys
-
-sys.path.append("..")
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from source.models import Product
-from source.kowsar_getter import KowsarGetter
-from source.attributes import Attributes
+from database.models import Product
+from module.kowsar_getter import KowsarGetter
+from module.attributes import Attributes
 
 app = FastAPI()
 

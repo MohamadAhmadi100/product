@@ -1,4 +1,4 @@
-from source.mongo_connection import MongoConnection
+from product.database.mongo_connection import MongoConnection
 
 
 class Attributes:

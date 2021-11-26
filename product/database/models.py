@@ -1,10 +1,6 @@
-import sys
-
-sys.path.append("..")
-
-from source.mongo_connection import MongoConnection
-from source.kowsar_getter import KowsarGetter
-from source.attributes import Attributes
+from .mongo_connection import MongoConnection
+from product.module.kowsar_getter import KowsarGetter
+from product.module.attributes import Attributes
 
 
 class Product:

@@ -1,8 +1,4 @@
-import sys
-
-sys.path.append("..")
-
-from source.kowsar_getter import KowsarGetter
+from product.module.kowsar_getter import KowsarGetter
 
 
 def test_read_excel():

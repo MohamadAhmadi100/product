@@ -1,6 +1,6 @@
 import pytest
 
-from source.models import Product
+from product.database.models import Product
 
 
 @pytest.fixture

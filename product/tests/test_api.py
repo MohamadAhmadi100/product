@@ -1,9 +1,5 @@
-import sys
-
-sys.path.append("..")
-
-from test.helpers import Helpers
-from source.models import Product
+from .helpers import Helpers
+from product.database.models import Product
 
 
 def test_get_product_api(create_and_delete_product_fixture):

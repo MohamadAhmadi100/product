@@ -1,11 +1,8 @@
 import os
-import sys
-
-sys.path.append("..")
 
 import xlrd
 
-from source.mongo_connection import MongoConnection
+from product.database.mongo_connection import MongoConnection
 
 
 class KowsarGetter:
