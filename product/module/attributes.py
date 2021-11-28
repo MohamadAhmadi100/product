@@ -11,18 +11,18 @@ class Attributes:
     @staticmethod
     def set_attributes(category, name, d_type, is_required, default_value, values, set_to_nodes):
         with MongoConnection() as client:
-            # check name for unique one
+            # TODO: Serializers
             if set_to_nodes:
                 re = '^' + category
                 client.kowsar_collection.update_many({'system_code': {'$regex': re}}, {
-                    '$push': {'attributes': {'name': name, 'd_type': d_type, 'is_required': is_required,
-                                             'default_value': default_value,
-                                             'values': values}}})
+                    '$set': {'attributes.' + name: {'name': name, 'd_type': d_type, 'is_required': is_required,
+                                                    'default_value': default_value,
+                                                    'values': values}}})
             else:
                 client.kowsar_collection.update_one({'system_code': category}, {
-                    '$push': {'attributes': {'name': name, 'd_type': d_type, 'is_required': is_required,
-                                             'default_value': default_value,
-                                             'values': values}}})
+                    '$set': {'attributes.' + name: {name: {'name': name, 'd_type': d_type, 'is_required': is_required,
+                                                           'default_value': default_value,
+                                                           'values': values}}}})
 
     @staticmethod
     def delete_attributes(category, name, delete_from_nodes):
@@ -30,15 +30,16 @@ class Attributes:
             if delete_from_nodes:
                 re = '^' + category
                 client.kowsar_collection.update_many({'system_code': {'$regex': re}},
-                                                     {'$pull': {'attributes.name': name}})
+                                                     {'$unset': {'attributes.' + name: 1}})
             else:
                 client.kowsar_collection.update_one({'system_code': category},
-                                                    {'$pull': {'attributes.name': name}})
+                                                    {'$unset ': {'attributes.' + name: 1}})
 
     @staticmethod
     def update_attributes(category, old_name, new_name):
         with MongoConnection() as client:
-            # check if it nodes has the same name
-            re = '^' + category + '$'
-            client.kowsar_collection.update_one({'system_code': {'$regex': re}},
-                                                {'$rename': {'attributes.0.name': 'attributes.0.main'}})
+            client.kowsar_collection.update_one({'system_code': category},
+                                                {'$set': {
+                                                    'attributes.' + old_name + '.name': new_name}})
+            client.kowsar_collection.update_one({'system_code': category},
+                                                {'$rename': {'attributes.' + old_name: 'attributes.' + new_name}})
