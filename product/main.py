@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from database.models import Product
 from module.kowsar_getter import KowsarGetter
@@ -18,6 +18,64 @@ class Attribute(BaseModel):
     default_value: str
     values: list
     set_to_nodes: bool
+
+    @validator('category')
+    def category_validator(cls, value):
+        if type(value) is not str:
+            raise ValueError('category must be a string')
+        elif not Attributes.get_attributes(value):
+            raise ValueError(f'{value} is not a valid category')
+        return value
+
+    @validator('name')
+    def name_validator(cls, value):
+        if type(value) is not str:
+            raise ValueError('name must be a string')
+        # TODO: check if attribute exists in category
+        return value
+
+    @validator('type')
+    def type_validator(cls, value):
+        if type(value) is not str:
+            raise ValueError('type must be a string')
+        elif value not in ['str', 'int', 'float', 'list', 'tuple', 'dict', 'set', 'frozenset', 'bool']: # should we add date time?!
+            raise ValueError('type must be one of str, int, float, list, tuple, dict, set, frozenset, bool')
+        return value
+
+    @validator('is_required')
+    def is_required_validator(cls, value):
+        if type(value) is not str:
+            raise ValueError('is_required must be a string')
+        elif value not in ['True', 'False']:
+            raise ValueError('is_required must be True or False')
+        return value
+
+    @validator('default_value')
+    def default_value_validator(cls, value):
+        if type(value) is not str:
+            raise ValueError('default_value must be a string')
+        elif len(value)>255:
+            raise ValueError('default_value must be between 0 and 255 characters')
+        return value
+
+    @validator('values')
+    def values_validator(cls, value):
+        if type(value) is not list:
+            raise ValueError('values must be a list')
+        elif len(value) > 31:
+            raise ValueError('values must be between 0 and 31 items')
+        for item in value:
+            if type(item) is not str:
+                raise ValueError('values must be a list of strings')
+            elif len(item) > 255:
+                raise ValueError('values must be between 0 and 255 characters')
+        return value
+
+    @validator('set_to_nodes')
+    def set_to_nodes_validator(cls, value):
+        if type(value) is not bool:
+            raise ValueError('set_to_nodes must be a bool')
+        return value
 
 
 class UpdateAttribute(BaseModel):
