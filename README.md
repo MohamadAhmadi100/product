@@ -29,6 +29,11 @@ UVICORN_HOST = "http://localhost"
 UVICORN_PORT = "8000"
 ```
 This is the place where you can also set database and uvicorn's host and port.
+## Install the package
+To install the package, run the following command in the product directory:
+```shell
+pip install -e .
+```
 ## Run the project
 Then you can start the projects using uvicorn:
 ```shell

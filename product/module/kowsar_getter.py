@@ -202,7 +202,8 @@ class KowsarGetter:
                          'model': self.model_dict.get(system_code[:9]),
                          'brand': self.brand_category_dict.get(system_code[:6]),
                          'sub_category': self.sub_category_dict.get(system_code[:4]),
-                         'main_category': self.main_category_dict.get(system_code[:2])}
+                         'main_category': self.main_category_dict.get(system_code[:2]),
+                         'attributes': []}
                     )
 
         with MongoConnection() as client:
@@ -212,14 +213,16 @@ class KowsarGetter:
                         {'system_code': system_code, 'model': self.model_dict.get(system_code),
                          'brand': self.brand_category_dict.get(system_code[:6]),
                          'sub_category': self.sub_category_dict.get(system_code[:4]),
-                         'main_category': self.main_category_dict.get(system_code[:2])}
+                         'main_category': self.main_category_dict.get(system_code[:2]),
+                         'attributes': []}
                     )
             for system_code in self.brand_category_dict.keys():
                 if client.kowsar_collection.count_documents({'system_code': system_code}) == 0:
                     client.kowsar_collection.insert_one(
                         {'system_code': system_code, 'brand': self.brand_category_dict.get(system_code),
                          'sub_category': self.sub_category_dict.get(system_code[:4]),
-                         'main_category': self.main_category_dict.get(system_code[:2])}
+                         'main_category': self.main_category_dict.get(system_code[:2]),
+                         'attributes': []}
                     )
             for system_code in self.sub_category_dict.keys():
                 if client.kowsar_collection.count_documents({'system_code': system_code}) == 0:
@@ -231,7 +234,8 @@ class KowsarGetter:
                 if client.kowsar_collection.count_documents({'system_code': system_code}) == 0:
                     client.kowsar_collection.insert_one(
                         {'system_code': system_code,
-                         'main_category': self.main_category_dict.get(system_code)}
+                         'main_category': self.main_category_dict.get(system_code),
+                         'attributes': []}
                     )
 
     '''

@@ -6,7 +6,7 @@ from product.database.models import Product
 @pytest.fixture
 def create_and_delete_product_fixture():
     product = Product()
-    system_code = product.create_product(system_code='100101030001')
+    system_code = product.create_product(system_code='100101030001', specification={'image': 'src/default.png'})
     yield product
     product.delete_product(system_code=system_code)
 
@@ -14,7 +14,7 @@ def create_and_delete_product_fixture():
 @pytest.fixture
 def create_product_fixture():
     product = Product()
-    system_code = product.create_product(system_code='100101030001')
+    system_code = product.create_product(system_code='100101030001', specification={'image': 'src/default.png'})
     yield product
 
 
@@ -23,7 +23,8 @@ def create_and_delete_products_fixture():
     product = Product()
     system_codes = []
     for i in range(1, 4):
-        system_codes.append((product.create_product(system_code='10010103000' + str(i))))
+        system_codes.append(
+            (product.create_product(system_code='10010103000' + str(i), specification={'image': 'src/default.png'})))
     yield product
     for system_code in system_codes:
         product.delete_product(system_code=system_code)

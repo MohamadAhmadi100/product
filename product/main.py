@@ -10,43 +10,63 @@ app = FastAPI()
 product = Product()
 
 
-# def create_product():
-#     attr = [{'category': 'model', 'name': 'image', 'type': 'str', 'is_required': 'True', 'default_value': '/src/default.png', 'values': []},
-#             {'category': 'model', 'name': 'price', 'type': 'int', 'is_required': 'True', 'default_value': '0', 'values': []}]
-#     command = '@app.post("/item/", status_code=200)\nasync def create_product(system_code: str'
-#     for x in attr:
-#         if x.get('category') == 'model':
-#             command += ',' + x.get('name') + ':' + x.get('type')
-#     command += '):\n\tsystem_code = product.create_product(system_code=system_code'
-#     for x in attr:
-#         command += ',' + x.get('name') + '=' + x.get('name')
-#     command += ')\n\treturn {"system_code": system_code}\n'
-#     exec(command)
-#
-#
-# create_product()
+class Attribute(BaseModel):
+    category: str
+    name: str
+    type: str
+    is_required: str
+    default_value: str
+    values: list
+    set_to_nodes: bool
 
 
-# @app.post("/item/", status_code=200)
-# async def create_product(system_code: str):
-#     system_code = product.create_product(system_code=system_code)
-#     return {"system_code": system_code}
+class UpdateAttribute(BaseModel):
+    name: str
+
+
+class DeleteAttribute(BaseModel):
+    name: str
+    delete_from_nodes: bool
+
+
 class Product(BaseModel):
     system_code: str
     specification: dict
 
 
-@app.post("/item/")
-def create_product(item: Product):
-    system_code = product.create_product(system_code=item.system_code, specification=item.specification)
-    return {"system_code": system_code}
+@app.post("/kowsar/item")
+def set_attr(item: Attribute):
+    attributes = Attributes()
+    attributes.set_attributes(category=item.category, name=item.name, d_type=item.type, is_required=item.is_required,
+                              default_value=item.default_value, values=item.values, set_to_nodes=item.set_to_nodes)
+    return {"status": "success"}
 
 
-@app.get("/item/get_attr/{system_code}", status_code=200)
-def get_attr(system_code: str):
+@app.put("/kowsar/{system_code}/attr/{attribute_name}", status_code=200)
+def update_attr(system_code: str, attribute_name: str, item: UpdateAttribute):
+    attributes = Attributes()
+    attributes.update_attributes(category=system_code, old_name=attribute_name, new_name=item.name)
+    return {"status": "success"}
+
+
+@app.get("/kowsar/{system_code}/attr", status_code=200)
+def get_attrs(system_code: str):
     attributes = Attributes()
     attrs = attributes.get_attributes(system_code)
     return attrs
+
+
+@app.delete("/kowsar/{system_code}/attr")
+def delete_attribute(system_code: str, item: DeleteAttribute):
+    attributes = Attributes()
+    attributes.delete_attributes(category=system_code, name=item.name, delete_from_nodes=item.delete_from_nodes)
+    return {"status": "success"}
+
+
+@app.post("/item")
+def create_product(item: Product):
+    system_code = product.create_product(system_code=item.system_code, specification=item.specification)
+    return {"system_code": system_code}
 
 
 @app.get("/kowsar/{system_code}", status_code=200)
