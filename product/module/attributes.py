@@ -1,5 +1,27 @@
 from product.database.mongo_connection import MongoConnection
 
+'''
+{
+  "name": "image-product",
+  "label": "image",
+  "input_type": 0,
+  "required": false,
+  "use_in_filter": false,
+  "use_for_sort": false,
+  "parent": "1001",
+  "default_value": [
+    "/src/default.png"
+  ],
+  "values": [
+    "string"
+  ],
+  "set_to_nodes": true,
+  "assignee": [
+    "product"
+  ]
+}
+'''
+
 
 class Attributes:
     @staticmethod
@@ -16,13 +38,11 @@ class Attributes:
                 re = '^' + category
                 client.kowsar_collection.update_many({'system_code': {'$regex': re}}, {
                     '$set': {'attributes.' + name: {'name': name, 'd_type': d_type, 'is_required': is_required,
-                                                    'default_value': default_value,
-                                                    'values': values}}})
+                                                    'default_value': default_value, 'values': values}}})
             else:
                 client.kowsar_collection.update_one({'system_code': category}, {
                     '$set': {'attributes.' + name: {name: {'name': name, 'd_type': d_type, 'is_required': is_required,
-                                                           'default_value': default_value,
-                                                           'values': values}}}})
+                                                           'default_value': default_value, 'values': values}}}})
 
     @staticmethod
     def delete_attributes(category, name, delete_from_nodes):

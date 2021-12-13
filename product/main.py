@@ -1,3 +1,5 @@
+from typing import Optional, Any
+
 from fastapi import FastAPI
 from pydantic import BaseModel, validator
 
@@ -5,70 +7,118 @@ from database.models import Product
 from module.kowsar_getter import KowsarGetter
 from module.attributes import Attributes
 
-app = FastAPI()
+tags_metadata = [
+    {
+        "name": "Product",
+        "description": "Product related endpoints",
+    },
+    {
+        "name": "Kowsar",
+        "description": "Kowsar related endpoints",
+    }
+]
+app = FastAPI(
+    title="Product API",
+    description="This is a simple microservice for product...",
+    version="0.1.0",
+    openapi_tags=tags_metadata,
+)
 
 product = Product()
 
 
 class Attribute(BaseModel):
-    category: str
     name: str
-    type: str
-    is_required: str
-    default_value: str
-    values: list
-    set_to_nodes: bool
+    label: str
+    input_type: int
+    required: bool = False
+    use_in_filter: bool = False
+    use_for_sort: bool = False
+    parent: str
+    default_value: Optional[Any] = None
+    values: Optional[list] = None
+    set_to_nodes: bool = False
+    assignee: list
 
-    @validator('category')
-    def category_validator(cls, value):
-        if type(value) is not str:
-            raise ValueError('category must be a string')
-        elif not Attributes.get_attributes(value):
-            raise ValueError(f'{value} is not a valid category')
-        return value
+    @validator('default_value')
+    def default_value_validator(cls, value):
+        if not value:
+            if isinstance(value, int) or isinstance(value, float):
+                if len(str(value)) > 20:
+                    raise ValueError('number values must be under 20 character')
+            elif isinstance(value, bool):
+                return value
+            elif 3 >= len(value) >= 256:
+                raise ValueError('default value must be between 3 and 256 characters')
 
     @validator('name')
     def name_validator(cls, value):
         if type(value) is not str:
             raise ValueError('name must be a string')
-        # TODO: check if attribute exists in category
+        elif 3 >= len(value) >= 255:
+            raise ValueError('name must be between 3 and 255 characters')
         return value
 
-    @validator('type')
-    def type_validator(cls, value):
+    @validator('label')
+    def label_validator(cls, value):
         if type(value) is not str:
-            raise ValueError('type must be a string')
-        elif value not in ['str', 'int', 'float', 'list', 'tuple', 'dict', 'set', 'frozenset', 'bool']: # should we add date time?!
-            raise ValueError('type must be one of str, int, float, list, tuple, dict, set, frozenset, bool')
+            raise ValueError('label must be a string')
+        elif 3 >= len(value) >= 255:
+            raise ValueError('label must be between 3 and 255 characters')
         return value
 
-    @validator('is_required')
-    def is_required_validator(cls, value):
-        if type(value) is not str:
-            raise ValueError('is_required must be a string')
-        elif value not in ['True', 'False']:
-            raise ValueError('is_required must be True or False')
+    @validator('input_type')
+    def input_type_validator(cls, value):
+        valid_input_types = ['Text Field', 'Text Area', 'Text Editor', 'Date', 'Date and Time', 'Yes or No',
+                             'Multiple Select', 'Dropdown', 'Price', 'Media Image', 'Color', 'Number']
+        if -1 >= value >= len(valid_input_types):
+            raise ValueError(f'input_type should be between 0 and {len(valid_input_types) - 1}')
+        elif type(value) is not int:
+            raise ValueError('input_type must be an integer')
         return value
 
-    @validator('default_value')
-    def default_value_validator(cls, value):
+    @validator('required')
+    def required_validator(cls, value):
+        if type(value) is not bool:
+            raise ValueError('required must be a bool')
+        return value
+
+    @validator('use_in_filter')
+    def use_in_filter_validator(cls, value):
+        if type(value) is not bool:
+            raise ValueError('use_in_filter must be a bool')
+        return value
+
+    @validator('use_for_sort')
+    def use_for_sort_validator(cls, value):
+        if type(value) is not bool:
+            raise ValueError('use_for_sort must be a bool')
+        return value
+
+    @validator('parent')
+    def parent_validator(cls, value):
         if type(value) is not str:
-            raise ValueError('default_value must be a string')
-        elif len(value)>255:
-            raise ValueError('default_value must be between 0 and 255 characters')
+            raise ValueError('parent must be a string')
+        elif 3 >= len(value) >= 256:
+            raise ValueError('parent must be between 3 and 255 characters')
         return value
 
     @validator('values')
     def values_validator(cls, value):
+        if value is None:
+            return value
         if type(value) is not list:
             raise ValueError('values must be a list')
-        elif len(value) > 31:
-            raise ValueError('values must be between 0 and 31 items')
+        elif len(value) > 127:
+            raise ValueError('values must be between 0 and 128 items')
         for item in value:
-            if type(item) is not str:
-                raise ValueError('values must be a list of strings')
-            elif len(item) > 255:
-                raise ValueError('values must be between 0 and 255 characters')
+            if isinstance(item, int) or isinstance(item, float):
+                if len(str(item)) > 20:
+                    raise ValueError('number values must be under 20 character')
+            elif isinstance(item, bool):
+                return value
+            elif 3 >= len(item) >= 256:
+                raise ValueError('values must be between 3 and 256 characters')
         return value
 
     @validator('set_to_nodes')
@@ -76,6 +126,22 @@ class Attribute(BaseModel):
         if type(value) is not bool:
             raise ValueError('set_to_nodes must be a bool')
         return value
+
+    @validator('assignee')
+    def assignee_validator(cls, value):
+        if value is None:
+            return value
+        if type(value) is not list:
+            raise ValueError('assignee must be a list')
+        elif len(value) > 127:
+            raise ValueError('assignee must be between 0 and 128 items')
+        for item in value:
+            if type(item) is not str:
+                raise ValueError('assignee must be a list of strings')
+            elif len(item) > 255:
+                raise ValueError('assignee must be between 0 and 255 characters')
+        return value
+
 
 
 class UpdateAttribute(BaseModel):
@@ -121,36 +187,36 @@ def delete_attribute(system_code: str, item: DeleteAttribute):
     return {"status": "success"}
 
 
-@app.post("/item")
+@app.post("/item", tags=["Product"])
 def create_product(item: Product):
     system_code = product.create_product(system_code=item.system_code, specification=item.specification)
     return {"system_code": system_code}
 
 
-@app.get("/kowsar/{system_code}", status_code=200)
+@app.get("/kowsar/{system_code}", tags=["Kowsar"], status_code=200)
 def get_kowsar(system_code: str):
     data = KowsarGetter.system_code_name_getter(system_code)
     return data
 
 
-@app.get("/kowsar/items/{system_code}", status_code=200)
+@app.get("/kowsar/items/{system_code}", tags=["Kowsar"], status_code=200)
 def get_kowsar_items(system_code: str):
     data = KowsarGetter.system_code_items_getter(system_code)
     return data
 
 
-@app.get("/{page_num}", status_code=200)
+@app.get("/{page_num}", tags=["Product"], status_code=200)
 def read_products(page_num: int):
     products = product.get_all_products(page=page_num, product_count=3)
     return products
 
 
-@app.get("/item/{item_id}", status_code=200)
+@app.get("/item/{item_id}", tags=["Product"], status_code=200)
 def read_product(item_id: str):
     result = product.get_product(system_code=item_id)
     return result
 
 
-@app.delete("/item/{item_id}", status_code=204)
+@app.delete("/item/{item_id}", tags=["Product"], status_code=204)
 def delete_product(item_id: str) -> None:
     product.delete_product(system_code=item_id)
