@@ -96,179 +96,94 @@ def test_system_code_name_getter():
     kowsar_getter.product_getter()
     assert kowsar_getter.system_code_name_getter('100101030001') == {
         'system_code': '100101030001',
-        'config':
-            {
-                'storage': '64gb',
-                'color': 'black',
-                'guarantee': 'sherkati',
-                'ram': '3gb'
-            },
+        'config': {'storage': '64gb', 'color': 'black', 'guarantee': 'sherkati', 'ram': '3gb'},
+        'model': 'A022',
         'brand': 'Mobile Sumsung',
         'sub_category': 'Mobile',
         'main_category': 'Device',
-        'model': 'A022'
-    }
+        'attributes': {}}
+
     assert kowsar_getter.system_code_name_getter('100104021') == {
-        'brand': 'Mobile Xiaomi',
-        'main_category': 'Device',
+        'system_code': '100104021',
         'model': 'Xiaomi Redmi 9c',
-        'sub_category': 'Mobile',
-        'system_code': '100104021'
-    }
-    assert kowsar_getter.system_code_name_getter('100104') == {
         'brand': 'Mobile Xiaomi',
-        'main_category': 'Device',
         'sub_category': 'Mobile',
-        'system_code': '100104'
-    }
+        'main_category': 'Device',
+        'attributes': {}}
+
+    assert kowsar_getter.system_code_name_getter('100104') == {
+        'system_code': '100104',
+        'brand': 'Mobile Xiaomi',
+        'sub_category': 'Mobile',
+        'main_category': 'Device',
+        'attributes': {}}
+
     assert kowsar_getter.system_code_name_getter('1001') == {
-        'main_category': 'Device',
+        'system_code': '1001',
         'sub_category': 'Mobile',
-        'system_code': '1001'
-    }
+        'main_category': 'Device'}
+
     assert kowsar_getter.system_code_name_getter('10') == {
+        'system_code': '10',
         'main_category': 'Device',
-        'system_code': '10'
-    }
+        'attributes': {}}
 
 
 def test_system_code_items_getter():
     kowsar_getter = KowsarGetter()
     kowsar_getter.product_group_getter()
     assert kowsar_getter.system_code_items_getter('10')[0] == {
-        'main_category': 'Device',
+        'system_code': '1001',
         'sub_category': 'Mobile',
-        'system_code': '1001'
-    }
+        'main_category': 'Device'}
     assert kowsar_getter.system_code_items_getter('1001')[0] == {
+        'system_code': '100101',
         'brand': 'Mobile Sumsung',
-        'main_category': 'Device',
         'sub_category': 'Mobile',
-        'system_code': '100101'
-    }
+        'main_category': 'Device',
+        'attributes': {}}
     assert kowsar_getter.system_code_items_getter('100101')[0] == {
-        'brand': 'Mobile Sumsung',
-        'main_category': 'Device',
+        'system_code': '100101001',
         'model': 'A260',
+        'brand': 'Mobile Sumsung',
         'sub_category': 'Mobile',
-        'system_code': '100101001'
-    }
+        'main_category': 'Device',
+        'attributes': {}}
     assert kowsar_getter.system_code_items_getter('100101001') == [
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'blue',
+        {'system_code': '100101001002',
+         'config': {'color': 'blue',
                     'guarantee': 'awat',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001002'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
+                    'storage': '16'},
+         'model': 'A260',
+         'brand': 'Mobile Sumsung',
+         'sub_category': 'Mobile',
+         'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001009',
+         'config': {'storage': '1gb',
                     'color': 'gray',
                     'guarantee': 'sherkati',
-                    'ram': '8gb',
-                    'storage': '1gb'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001009'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'black',
-                    'guarantee': 'awat',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001001'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'black',
-                    'guarantee': 'sherkati',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001005'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'gold',
-                    'guarantee': 'awat',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001004'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'gray',
-                    'guarantee': 'sherkati',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001008'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'red',
-                    'guarantee': 'sherkati',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001007'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {
-                    'color': 'red',
-                    'guarantee': 'awat',
-                    'storage': '16'
-                },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001003'
-        },
-        {
-            'brand': 'Mobile Sumsung',
-            'config':
-                {'color': 'blue',
-                 'guarantee': 'sherkati',
-                 'storage': '16'
-                 },
-            'main_category': 'Device',
-            'model': 'A260',
-            'sub_category': 'Mobile',
-            'system_code': '100101001006'
-        }
-    ]
+                    'ram': '8gb'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001001', 'config': {'color': 'black', 'guarantee': 'awat', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001005', 'config': {'color': 'black', 'guarantee': 'sherkati', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001004', 'config': {'color': 'gold', 'guarantee': 'awat', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001008', 'config': {'color': 'gray', 'guarantee': 'sherkati', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001007', 'config': {'color': 'red', 'guarantee': 'sherkati', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001003', 'config': {'color': 'red', 'guarantee': 'awat', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}},
+        {'system_code': '100101001006', 'config': {'color': 'blue', 'guarantee': 'sherkati', 'storage': '16'},
+         'model': 'A260', 'brand': 'Mobile Sumsung', 'sub_category': 'Mobile', 'main_category': 'Device',
+         'attributes': {}}]

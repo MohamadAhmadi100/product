@@ -14,19 +14,28 @@ class Product:
         data = system_code_generator.system_code_name_getter(system_code)  # get data from system code
         req = dict()
         req['system_code'] = system_code
-        req['config'] = data.get('config')
-        req['model'] = data.get('model')
-        req['brand'] = data.get('brand')
-        req['sub_category'] = data.get('sub_category')
-        req['main_category'] = data.get('main_category')
-        attributes = Attributes()
-        attrs = attributes.get_attributes(system_code)
-        for x in attrs:
-            if x.get('category') == 'model':
-                req[x.get('name')] = specification.get(x.get('name'))
+        req_list = ['config', 'model', 'brand', 'sub_category', 'main_category']
+        for i in req_list:
+            req[i] = data.get(i)
         with MongoConnection() as client:
+            attrs = client.attribute_kowsar_collection.find({}, {'_id': 0})
+            for attr in attrs:
+                if attr.get('system_code') == system_code:
+                    if attr.get('attributes'):
+                        for i in attr.get('attributes'):
+                            for k, v in specification.items():
+                                if i.get('name') == k:
+                                    req[i.get('name')] = v
+            if client.collection.find_one({'system_code': system_code}):
+                return {'error': 'system_code already exists'}
             client.collection.insert_one(req)
-        return system_code
+            return system_code
+
+    @staticmethod
+    def get_all_attribute_by_system_code(system_code: str):
+        with MongoConnection() as client:
+            attrs = client.attribute_kowsar_collection.find_one({'system_code': system_code}, {'_id': 0})
+            return [i.get('name') for i in attrs.get('attributes')]
 
     @staticmethod
     def get_product(system_code: str):
@@ -54,3 +63,13 @@ class Product:
         }
         with MongoConnection() as client:
             client.collection.delete_one(pip_line)
+
+
+class Assignees:
+    @staticmethod
+    def get_all_attributes_from_attribute_api():
+        return Attributes.get_attributes()
+
+    @staticmethod
+    def set_all_attributes_by_set_to_nodes():
+        return Attributes.set_attribute_by_set_to_nodes()
