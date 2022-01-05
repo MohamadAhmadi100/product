@@ -32,6 +32,14 @@ class Product:
             return system_code
 
     @staticmethod
+    def update_product(system_code: str, specification: dict):
+        with MongoConnection() as client:
+            if client.collection.find_one({'system_code': system_code}):
+                client.collection.update_one({'system_code': system_code}, {'$set': specification})
+                return {'messages': 'product updated'}
+            return {'error': 'system_code does not exist'}
+
+    @staticmethod
     def get_all_attribute_by_system_code(system_code: str):
         with MongoConnection() as client:
             attrs = client.attribute_kowsar_collection.find_one({'system_code': system_code}, {'_id': 0})

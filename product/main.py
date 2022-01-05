@@ -45,11 +45,17 @@ class Products(BaseModel):
         return value
 
 
-@app.post("/item", tags=["Product"])
+@app.post("/item", tags=["Product"], status_code=201)
 def create_product(item: Products):
     spec = Validates.attribute_validation(system_code=item.system_code, attr_names=item.specification)
     system_code = product.create_product(system_code=item.system_code, specification=spec)
     return {"system_code": system_code}
+
+
+@app.put("/item/{system_code}", tags=["Product"], status_code=202)
+def update_product(system_code, item: Products):
+    spec = Validates.attribute_validation(system_code=system_code, attr_names=item.specification)
+    return product.update_product(system_code=system_code, specification=spec)
 
 
 @app.get("/kowsar/{system_code}", tags=["Kowsar"], status_code=200)
@@ -89,15 +95,10 @@ def update_product_by_set_to_nodes():
     return {'error': 'update attribute failed'}
 
 
-@app.get("/attribute/", tags=["attribute"], status_code=200)
-def get_all_attribute():
+@app.get("/attributes/", tags=["attribute"], status_code=200)
+def get_all_attributes():
     result = Assignees.get_all_attributes_from_attribute_api()
     return {'result': result}
-
-
-@app.post("/validate/{system_code}/{specification}", status_code=200)
-def attribute_validators(item: Products):
-    return Validates.attribute_validation(system_code=item.system_code, attr_names=item.specification)
 
 
 @app.get("/attributes/{system_code}", status_code=200)

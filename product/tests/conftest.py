@@ -1,6 +1,6 @@
 import pytest
 
-from product.database.models import Product
+from product.database.models import Product, Assignees
 
 
 @pytest.fixture
@@ -9,6 +9,14 @@ def create_and_delete_product_fixture():
     system_code = product.create_product(system_code='100101030001', specification={'image': 'src/default.png'})
     yield product
     product.delete_product(system_code=system_code)
+
+
+@pytest.fixture
+def delete_product():
+    yield
+    product = Product()
+    product.get_product("100104021006")
+    product.delete_product('100104021006')
 
 
 @pytest.fixture
@@ -28,6 +36,13 @@ def create_and_delete_products_fixture():
     yield product
     for system_code in system_codes:
         product.delete_product(system_code=system_code)
+
+
+@pytest.fixture
+def get_all_attribute():
+    assignee = Assignees()
+    attributes = assignee.get_all_attributes_from_attribute_api()
+    yield attributes
 
 
 @pytest.fixture
