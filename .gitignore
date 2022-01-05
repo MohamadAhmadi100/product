@@ -18,6 +18,12 @@
 # AWS User-specific
 .idea/**/aws.xml
 
+
+# logs dir
+./logs/*
+product/logs/*
+logs/
+
 # Generated files
 .idea/**/contentModel.xml
 
