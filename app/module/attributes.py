@@ -1,5 +1,5 @@
-from product.database.mongo_connection import MongoConnection
-from product.module.attribute_api import Attribute
+from app.helpers.mongo_connection import MongoConnection
+from app.module.attribute_api import Attribute
 
 '''
 {
@@ -34,6 +34,7 @@ class Attributes:
             attrs = Attribute.get_all_attributes_by_assignee()
             kowsar = client.kowsar_collection.find({}, {'_id': 0, 'system_code': 1})
             kowsar_list = list(kowsar)
+            print(kowsar_list)
             client.attribute_kowsar_collection.insert_many(kowsar_list)
             for attr in attrs:
                 if attr.get('set_to_nodes'):

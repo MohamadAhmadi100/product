@@ -10,11 +10,11 @@ from module.validation_of_attributes import Validates
 
 tags_metadata = [
     {
-        "name": "Product",
+        "name": "product API",
         "description": "Product related endpoints",
     },
     {
-        "name": "Kowsar",
+        "name": "kowsar",
         "description": "Kowsar related endpoints",
     },
     {

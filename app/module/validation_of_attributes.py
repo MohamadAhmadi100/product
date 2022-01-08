@@ -1,4 +1,4 @@
-from database.mongo_connection import MongoConnection
+from app.helpers.mongo_connection import MongoConnection
 import datetime
 
 
