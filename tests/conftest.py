@@ -1,101 +1,61 @@
 import pytest
 
-from app.models.attribute import Attribute
-from app.models.assignee import Assignee
+from app.models.product import Product
 
 
 @pytest.fixture
-def create_and_delete_attribute():
+def create_and_delete_product():
     sample_data = {
-        "name": "price",
-        "label": "قیمت",
-        "input_type": 8,
-        "required": False,
-        "use_in_filter": True,
-        "use_for_sort": True,
-        "parent": "1001",
-        "default_value": 0,
-        "values": None,
-        "set_to_nodes": True,
+        "system_code": "120301001001",
+        "specification": {
+            "country": "iran"
+        }
     }
-    attribute = Attribute(**sample_data)
-    attribute.create()
-    yield attribute
-    attribute.delete()
+    product = Product(**sample_data)
+    product.create()
+    yield product
+    product.delete()
 
 
 @pytest.fixture
-def create_attribute():
+def create_product():
     sample_data = {
-        "name": "price",
-        "label": "قیمت",
-        "input_type": 8,
-        "required": False,
-        "use_in_filter": True,
-        "use_for_sort": True,
-        "parent": "1001",
-        "default_value": 0,
-        "values": None,
-        "set_to_nodes": True,
+        "system_code": "120301001001",
+        "specification": {
+            "country": "iran"
+        }
     }
-    attribute = Attribute(**sample_data)
-    attribute.create()
-    yield attribute
+    product = Product(**sample_data)
+    product.create()
+    yield product
 
 
-@pytest.fixture
-def delete_attribute():
-    yield
-    attribute = Attribute.construct()
-    attribute.get("price")
-    attribute.delete()
-
-
-@pytest.fixture
-def create_and_delete_multiple_attributes():
-    attribute_list = ["test_1", "test_2", "test_3"]
-    for item in attribute_list:
-        attribute = Attribute(**{
-            "name": item,
-            "label": "قیمت",
-            "input_type": 8,
-            "required": False,
-            "use_in_filter": True,
-            "use_for_sort": True,
-            "parent": "1001",
-            "default_value": 0,
-            "values": None,
-            "set_to_nodes": True,
+@pytest.fixture()
+def create_and_delete_multiple_products():
+    system_code_list = ['100201002002', '100101047003', '100101047003']
+    for item in system_code_list:
+        product = Product(**{
+            "system_code": item,
+            "specification": {
+                "color": "green",
+                "price": 200,
+                "year": 2000,
+                "size": 200,
+                "image": "png",
+                "full-HD": "full"
+            }
         })
-        attribute.create()
-    yield
-    for item in attribute_list:
-        attr = Attribute.construct()
-        attr.get(item)
-        attr.delete()
+        product.create()
+        yield
+        for system_code in system_code_list:
+            new_product = Product.construct()
+            new_product.get(system_code)
+            new_product.delete()
 
 
 @pytest.fixture
-def create_and_delete_assignee():
-    sample_data = {
-        "name": "price",
-        "label": "قیمت",
-        "input_type": 8,
-        "required": False,
-        "use_in_filter": True,
-        "use_for_sort": True,
-        "parent": "1001",
-        "default_value": 0,
-        "values": None,
-        "set_to_nodes": True,
-    }
-    attribute = Attribute(**sample_data)
-    attribute.create()
-    sample_assignee = {
-        "name": "product"
-    }
-    assignee = Assignee(sample_assignee.get("name"))
-    assignee.add_attribute(attribute)
+def delete_product():
     yield
-    attribute.delete()
-
+    product = Product.construct()
+    product.get("system_code")
+    product.delete()

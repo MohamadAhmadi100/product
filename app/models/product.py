@@ -30,6 +30,7 @@ class Product(BaseModel):
     def specification_validator(cls, value):
         if type(value) is not dict:
             raise ValueError('specification must be a dictionary')
+        return value
 
     def save_as_object(self, result) -> None:
         self.system_code = result.get('system_code')
@@ -58,28 +59,28 @@ class Product(BaseModel):
                             for k, v in spec.items():
                                 if i.get('name') == k:
                                     req[i.get('name')] = v
-            mongo.collection.insert_one(req)
-            result = mongo.collection.insert_one(self.dict())
+            result = mongo.collection.insert_one(req)
             if result.inserted_id:
                 return {"message": "product created successfully"}, True
             return {"error": "product creation failed"}, False
 
-    def get(self, attribute_name: str = None, page: int = 1, per_page: int = 10):
+    def get(self, system_code: str = None, page: int = 1, per_page: int = 10):
         with MongoConnection() as mongo:
-            if not attribute_name:
+            if not system_code:
                 skips = per_page * (page - 1)
                 data = mongo.collection.find({}, {'_id': 0}).skip(skips).limit(per_page)
                 return list(data)
-            result = mongo.collection.find_one({'system_code': self.system_code}, {'_id': 0})
+            result = mongo.collection.find_one({'system_code': system_code}, {'_id': 0})
             if result:
                 self.save_as_object(result)
                 return self
             return None
 
-    def update(self, data) -> tuple:
+    def update(self, data: dict) -> tuple:
         with MongoConnection() as mongo:
-            spec = Validates.attribute_validation(system_code=self.system_code, attr_names=data)
-            result = mongo.collection.update_one({"name": self.system_code}, {"$set": spec})
+            spec = Validates.attribute_validation(system_code=self.system_code, attr_names=data.get('specification'))
+            print(spec)
+            result = mongo.collection.update_one({"system_code": self.system_code}, {"$set": spec})
             if result.modified_count:
                 return {"message": "product updated successfully"}, True
             return {"error": "product update failed"}, False

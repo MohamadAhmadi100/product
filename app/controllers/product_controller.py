@@ -9,21 +9,6 @@ router = APIRouter()
 def add_product(
         item: Product
 ) -> dict:
-    """
-    Add an attribute to main collection in database with this information:
-    - **name**: name of the attribute(for searching)
-    - **label**: label of the attribute(for display)
-    - **input_type**: type of input for the attribute
-        - It will be index number of these things: ['Text Field', 'Text Area', 'Text Editor', 'Date', 'Date and Time',
-        'Yes or No', 'Multiple Select', 'Dropdown', 'Price', 'Media Image', 'Color', 'Number']
-    - **required**: if the attribute is required or not(Boolean type)
-    - **use_in_filter**: if the attribute is used in filter or not(Boolean type)
-    - **use_for_sort**: if the attribute is used for sorting or not(Boolean type)
-    - **parent**: declare parent attribute to set attribute to it's children
-    - **default_value**: default value of the attribute
-    - **values**: list of values for the attribute
-    - **set_to_nodes**: if the attribute is set to nodes or not(Boolean type)
-    """
     if item.system_code_is_unique():
         message, success = item.create()
         if success:
@@ -54,6 +39,7 @@ def get_product_by_system_code(
     """
     product = Product.construct()
     stored_data = product.get(system_code)
+    print('stored_data', stored_data)
     if stored_data:
         return stored_data
     raise HTTPException(status_code=404, detail="product not found")
@@ -67,8 +53,8 @@ def update_product(
     """
     Update a product by system_code in main collection in database.
     """
-    attribute = Product.construct()
-    stored_data = attribute.get(system_code)
+    product = Product.construct()
+    stored_data = product.get(system_code)
     update_data = item.dict(exclude_unset=True)
     updated_item = stored_data.copy(update=update_data)
     message, success = item.update(updated_item.dict())
