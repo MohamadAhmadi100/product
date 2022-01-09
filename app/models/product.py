@@ -76,11 +76,10 @@ class Product(BaseModel):
                 return self
             return None
 
-    def update(self, data: dict) -> tuple:
+    def update(self, system_code: str, data: dict) -> tuple:
         with MongoConnection() as mongo:
-            spec = Validates.attribute_validation(system_code=self.system_code, attr_names=data.get('specification'))
-            print(spec)
-            result = mongo.collection.update_one({"system_code": self.system_code}, {"$set": spec})
+            spec = Validates.attribute_validation(system_code=system_code, attr_names=data)
+            result = mongo.collection.update_one({"system_code": system_code}, {"$set": spec})
             if result.modified_count:
                 return {"message": "product updated successfully"}, True
             return {"error": "product update failed"}, False

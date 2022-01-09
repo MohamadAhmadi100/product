@@ -39,7 +39,6 @@ def get_product_by_system_code(
     """
     product = Product.construct()
     stored_data = product.get(system_code)
-    print('stored_data', stored_data)
     if stored_data:
         return stored_data
     raise HTTPException(status_code=404, detail="product not found")
@@ -47,17 +46,16 @@ def get_product_by_system_code(
 
 @router.put("/api/v1/product/{system_code}", tags=["product API"], status_code=202)
 def update_product(
-        item: Product,
-        system_code: str = Path(..., min_length=3, max_length=255)
+        item: Product
 ) -> dict:
     """
     Update a product by system_code in main collection in database.
     """
-    product = Product.construct()
-    stored_data = product.get(system_code)
-    update_data = item.dict(exclude_unset=True)
-    updated_item = stored_data.copy(update=update_data)
-    message, success = item.update(updated_item.dict())
+    # product = Product.construct()
+    # stored_data = product.get(system_code)
+    # update_data = item.dict(exclude_unset=True)
+    # updated_item = stored_data.copy(update=update_data)
+    message, success = item.update(item.system_code, item.specification)
     if success:
         return message
     raise HTTPException(status_code=417, detail=message)
