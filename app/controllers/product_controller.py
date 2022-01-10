@@ -1,23 +1,28 @@
-from fastapi import Query, Path, HTTPException, APIRouter, Body
-
-from app.models.product import Product, Assignees
+from app.models.product import Product
+from fastapi import Query, Path, HTTPException, APIRouter
 
 router = APIRouter()
 
 
-@router.post("/api/v1/product/", tags=["product API"], status_code=201)
+@router.post("/api/v1/product/", tags=["product"], status_code=201)
 def add_product(
         item: Product
 ) -> dict:
+    """
+    Create a product for sale in main collection in database.
+    attributes will be validated before insert.
+    """
     if item.system_code_is_unique():
-        message, success = item.create()
-        if success:
-            return message
-        raise HTTPException(status_code=417, detail=message)
+        if item.validate_attributes():
+            message, success = item.create()
+            if success:
+                return message
+            raise HTTPException(status_code=417, detail=message)
+        raise HTTPException(status_code=417, detail='attributes are not valid')
     raise HTTPException(status_code=409, detail="product already exists")
 
 
-@router.get("/api/v1/product/{page}", tags=["product API"], status_code=200)
+@router.get("/api/v1/products/{page}", tags=["product"], status_code=200)
 def get_products(
         page: int = Path(1, ge=1, le=1000),
         per_page: int = Query(10, ge=1, le=1000)
@@ -30,7 +35,7 @@ def get_products(
     return product.get(page=page, per_page=per_page)
 
 
-@router.get("/api/v1/product/{system_code}", tags=["product API"], status_code=200)
+@router.get("/api/v1/product/{system_code}", tags=["product"], status_code=200)
 def get_product_by_system_code(
         system_code: str = Path(..., min_length=3, max_length=255)
 ) -> dict:
@@ -44,24 +49,27 @@ def get_product_by_system_code(
     raise HTTPException(status_code=404, detail="product not found")
 
 
-@router.put("/api/v1/product/{system_code}", tags=["product API"], status_code=202)
+@router.put("/api/v1/product/{system_code}", tags=["product"], status_code=202)
 def update_product(
-        item: Product
+        item: Product,
+        system_code: str = Path(..., min_length=3, max_length=255)
 ) -> dict:
     """
     Update a product by system_code in main collection in database.
     """
-    # product = Product.construct()
-    # stored_data = product.get(system_code)
-    # update_data = item.dict(exclude_unset=True)
-    # updated_item = stored_data.copy(update=update_data)
-    message, success = item.update(item.system_code, item.specification)
-    if success:
-        return message
-    raise HTTPException(status_code=417, detail=message)
+    product = Product.construct()
+    stored_data = product.get(system_code=system_code)
+    update_data = item.dict(exclude_unset=True)
+    updated_item = stored_data.copy(update=update_data)
+    if item.validate_attributes():
+        message, success = item.update(updated_item.dict())
+        if success:
+            return message
+        raise HTTPException(status_code=417, detail=message)
+    raise HTTPException(status_code=417, detail='attributes are not valid')
 
 
-@router.delete("/api/v1/product/{system_code}", tags=["product API"], status_code=200)
+@router.delete("/api/v1/product/{system_code}", tags=["product"], status_code=200)
 def delete_product(
         system_code: str = Path(..., min_length=3, max_length=255)
 ) -> dict:
@@ -76,22 +84,3 @@ def delete_product(
             return message
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=404, detail="product not found")
-
-
-@router.get("/api/v1/attribute_by_kowsar/", tags=["attribute"], status_code=200)
-def update_product_by_set_to_nodes():
-    result = Assignees.set_all_attributes_by_set_to_nodes()
-    if result:
-        return {'status': 'success'}
-    return {'error': 'update attribute failed'}
-
-
-@router.get("/api/v1/attributes/", tags=["attribute"], status_code=200)
-def get_all_attributes():
-    result = Assignees.get_all_attributes_from_attribute_api()
-    return {'result': result}
-
-
-@router.get("/api/v1/attributes/{system_code}", tags=["attribute"], status_code=200)
-def get_all_attribute_by_system_code(system_code: str):
-    return Assignees.get_all_attribute_by_system_code(system_code=system_code)

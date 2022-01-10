@@ -1,14 +1,19 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+import os
 
-with open('requirements.txt') as f:
-    required = f.read().splitlines()
+requirements_dir = os.getcwd() + "/requirements.txt"
+with open(requirements_dir, "r") as f:
+    file = f.readlines()
+    requirements = [line.rstrip() for line in file]
 
 setup(
-    version='1.0.0',
     name='product',
-    license='none',
-    long_description=open('README.md').read(),
-    packages=find_packages(exclude=['product/product*', 'tests*']),
-    install_requires=required,
-    author='aasood',
+    version='0.1.0',
+    description='attribute crud',
+    author='Aasood',
+    author_email='meisam2236@gmail.com',
+    packages=['app'],
+    include_package_data=True,
+    install_requires=requirements,
+    zip_safe=False
 )

@@ -1,15 +1,13 @@
 import logging
 from typing import Optional
 
-from fastapi import FastAPI
-
+import uvicorn
+from app.controllers.kowsar_controller import router as kowsar_router
+from app.controllers.product_controller import router as product_router
 from app.models.product import Product
 from config import settings
-import uvicorn
+from fastapi import FastAPI
 from fastapi import Query
-
-from app.controllers.product_controller import router as product_router
-from app.controllers.kowsar_controller import router as kowsar_router
 
 TAGS_META = [
     {

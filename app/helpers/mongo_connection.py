@@ -1,5 +1,4 @@
 import pymongo
-from dotenv import load_dotenv
 from config import settings
 
 
@@ -14,7 +13,6 @@ class Singleton(type):
 
 class MongoConnection(metaclass=Singleton):
     def __init__(self):
-        load_dotenv()
         self.client = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT,
                                           username=settings.MONGO_USER, password=settings.MONGO_PASS)
         self.db = self.client['db-product']
