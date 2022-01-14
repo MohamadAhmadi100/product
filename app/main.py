@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 import uvicorn
+from app.controllers.custom_category_controller import router as custom_category_router
 from app.controllers.kowsar_controller import router as kowsar_router
 from app.controllers.product_controller import router as product_router
 from app.models.product import Product
@@ -11,7 +12,7 @@ from fastapi import Query
 
 TAGS_META = [
     {
-        "name": "product API",
+        "name": "product",
         "description": "Create, Read, Update and Delete products in main collection.",
     },
     {
@@ -19,7 +20,7 @@ TAGS_META = [
         "description": "Add or remove attribute to a certain collection called kowsar."
     },
     {
-        "name": "attribute",
+        "name": "custom category",
         "description": "Add or remove attribute to a certain collection called attr_kowsar."
     }
 ]
@@ -30,8 +31,9 @@ app = FastAPI(title="Product",
               openapi_tags=TAGS_META,
               docs_url="/api/v1/docs")
 
-app.include_router(product_router)
-app.include_router(kowsar_router)
+app.include_router(router=kowsar_router, prefix="/api/v1/kowsar", tags=["kowsar"])
+app.include_router(router=product_router, prefix="/api/v1", tags=["product"])
+app.include_router(router=custom_category_router, prefix="/api/v1", tags=["custom category"])
 
 
 @app.get("/", status_code=200)

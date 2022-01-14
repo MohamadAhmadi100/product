@@ -1,10 +1,11 @@
 from app.models.product import Product
+from app.modules.attribute_setter import attribute_setter
 from fastapi import Query, Path, HTTPException, APIRouter
 
 router = APIRouter()
 
 
-@router.post("/api/v1/product/", tags=["product"], status_code=201)
+@router.post("/product/", status_code=201)
 def add_product(
         item: Product
 ) -> dict:
@@ -12,17 +13,47 @@ def add_product(
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
+    products = [
+        {
+            "system_code": "100104021006",
+            "main_category": "Device",
+            "sub_category": "Mobile",
+            "brand": "Mobile Xiaomi",
+            "model": "Xiaomi Redmi 9c",
+            "config": {
+                "color": "orange",
+                "guarantee": "sherkati",
+                "storage": "64"
+            },
+            "attributes": {
+                "image": "/src/default.jpg",
+                "year": "2021"
+            }
+        },
+        {
+            "system_code": "100105015003",
+            "main_category": "Device",
+            "sub_category": "Mobile",
+            "brand": "Mobile Huawei",
+            "model": "Y8p",
+            "config": {
+                "color": "breathing crystal",
+                "guarantee": "sherkati",
+                "storage": "128gb"
+            },
+            "attributes": {}
+        }
+    ]
     if item.system_code_is_unique():
-        if item.validate_attributes():
-            message, success = item.create()
-            if success:
-                return message
-            raise HTTPException(status_code=417, detail=message)
-        raise HTTPException(status_code=417, detail='attributes are not valid')
+        item.validate_attributes()
+        message, success = item.create()
+        if success:
+            return message
+        raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409, detail="product already exists")
 
 
-@router.get("/api/v1/products/{page}", tags=["product"], status_code=200)
+@router.get("/products/{page}", status_code=200)
 def get_products(
         page: int = Path(1, ge=1, le=1000),
         per_page: int = Query(10, ge=1, le=1000)
@@ -35,7 +66,7 @@ def get_products(
     return product.get(page=page, per_page=per_page)
 
 
-@router.get("/api/v1/product/{system_code}", tags=["product"], status_code=200)
+@router.get("/product/{system_code}", status_code=200)
 def get_product_by_system_code(
         system_code: str = Path(..., min_length=3, max_length=255)
 ) -> dict:
@@ -49,7 +80,7 @@ def get_product_by_system_code(
     raise HTTPException(status_code=404, detail="product not found")
 
 
-@router.put("/api/v1/product/{system_code}", tags=["product"], status_code=202)
+@router.put("/product/{system_code}", status_code=202)
 def update_product(
         item: Product,
         system_code: str = Path(..., min_length=3, max_length=255)
@@ -61,15 +92,14 @@ def update_product(
     stored_data = product.get(system_code=system_code)
     update_data = item.dict(exclude_unset=True)
     updated_item = stored_data.copy(update=update_data)
-    if item.validate_attributes():
-        message, success = item.update(updated_item.dict())
-        if success:
-            return message
-        raise HTTPException(status_code=417, detail=message)
-    raise HTTPException(status_code=417, detail='attributes are not valid')
+    item.validate_attributes()
+    message, success = item.update(updated_item.dict())
+    if success:
+        return message
+    raise HTTPException(status_code=417, detail=message)
 
 
-@router.delete("/api/v1/product/{system_code}", tags=["product"], status_code=200)
+@router.delete("/product/{system_code}", status_code=200)
 def delete_product(
         system_code: str = Path(..., min_length=3, max_length=255)
 ) -> dict:
@@ -84,3 +114,39 @@ def delete_product(
             return message
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=404, detail="product not found")
+
+
+@router.get("/product/update_attribute_collection/", status_code=200)
+def update_attribute_collection():
+    """
+    Update the attribute collection in database.
+    """
+    # TODO: Later, the attributes below should come from API GW
+    attributes = [
+        {
+            "required": True,
+            "use_in_filter": False,
+            "use_for_sort": False,
+            "default_value": None,
+            "values": None,
+            "set_to_nodes": False,
+            "name": "year",
+            "label": "رنگ",
+            "input_type": "Number",
+            "parent": "100104021006"
+        },
+        {
+            "required": False,
+            "use_in_filter": False,
+            "use_for_sort": False,
+            "default_value": "/src/default.png",
+            "values": None,
+            "set_to_nodes": True,
+            "name": "image",
+            "label": "عکس",
+            "input_type": "Media Image",
+            "parent": "1001"
+        }
+    ]
+    attribute_setter(attributes)
+    return {"message": "success"}

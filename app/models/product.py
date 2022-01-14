@@ -102,6 +102,7 @@ class Product(BaseModel):
     def validate_attributes(self):
         with MongoConnection() as mongo:
             result = mongo.kowsar_collection.find_one({'system_code': self.system_code})
-            if result.get("attributes"):
-                item = attribute_validator(list(result), self)
-                self.save_as_object(item)
+            attributes_from_collection = result.get("attributes")
+            if attributes_from_collection:
+                item = attribute_validator(attributes_from_collection, self)
+                self = item

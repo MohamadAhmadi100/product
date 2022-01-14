@@ -1,45 +1,48 @@
-def attribute_validator(kowsar_attribute_collection: list, item: dict):
+from fastapi import HTTPException
+
+
+def attribute_validator(kowsar_attribute_collection: list, item):
     new_attributes = dict()
     for attribute in kowsar_attribute_collection:
-        if attribute.get("label") in item.get("attributes").keys():
-            if attribute.get("label") == "Yes or No":
-                if not isinstance(item.get("attributes", {}).get(attribute.get("label")), bool):
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} must be boolean')
-                new_attributes[attribute.get("label")] = item.get("attributes", {}).get(attribute.get("label"))
-            elif attribute.get("label") == "Multiple Select":
-                if not isinstance(item.get("attributes", {}).get(attribute.get("label")), list):
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} must be list')
-                elif [value for value in item.get("attributes", {}).get(attribute.get("label")) if
+        if attribute.get("name") in item.attributes.keys():
+            if attribute.get("input_type") == "Yes or No":
+                if not isinstance(item.attributes.get(attribute.get("name")), bool):
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} must be boolean')
+                new_attributes[attribute.get("name")] = item.attributes.get(attribute.get("name"))
+            elif attribute.get("input_type") == "Multiple Select":
+                if not isinstance(item.attributes.get(attribute.get("name")), list):
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} must be list')
+                elif [value for value in item.attributes.get(attribute.get("name")) if
                       value not in attribute.get("values")]:
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} is not in values')
-                new_attributes[attribute.get("label")] = item.get("attributes", {}).get(attribute.get("label"))
-            elif attribute.get("label") == "Price":
-                if not isinstance(item.get("attributes", {}).get(attribute.get("label")), int):
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} must be integer')
-                elif item.get("attributes", {}).get(attribute.get("label")) < 0 or item.get("attributes", {}).get(
-                        attribute.get("label")) > 1000000000000:
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} is not in values')
+                new_attributes[attribute.get("name")] = item.attributes.get(attribute.get("name"))
+            elif attribute.get("input_type") == "Price":
+                if not isinstance(item.attributes.get(attribute.get("name")), int):
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} must be integer')
+                elif item.attributes.get(attribute.get("name")) < 0 or item.attributes.get(
+                        attribute.get("name")) > 1000000000000:
                     raise HTTPException(status_code=417,
-                                        detail=f'attribute {attribute.get("label")} must be between 0 and 1000000000000')
-                new_attributes[attribute.get("label")] = item.get("attributes", {}).get(attribute.get("label"))
-            elif attribute.get("label") == "Number":
-                if not isinstance(item.get("attributes", {}).get(attribute.get("label")), float):
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} must be float')
-                elif item.get("attributes", {}).get(attribute.get("label")) < 0 or item.get("attributes", {}).get(
-                        attribute.get("label")) > 1000000000000:
+                                        detail=f'attribute {attribute.get("name")} must be between 0 and 1000000000000')
+                new_attributes[attribute.get("name")] = item.attributes.get(attribute.get("name"))
+            elif attribute.get("input_type") == "Number":
+                if not isinstance(item.attributes.get(attribute.get("name")), float) and not isinstance(item.attributes.get(attribute.get("name")), int):
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} must be float')
+                elif item.attributes.get(attribute.get("name")) < 0 or item.attributes.get(
+                        attribute.get("name")) > 1000000000000:
                     raise HTTPException(status_code=417,
-                                        detail=f'attribute {attribute.get("label")} must be between 0 and 1000000000000')
-                new_attributes[attribute.get("label")] = item.get("attributes", {}).get(attribute.get("label"))
-            elif attribute.get("label") == "Dropdown":
-                if item.get("attributes", {}).get(attribute.get("label")) not in attribute.get("values"):
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} is not in values')
-                new_attributes[attribute.get("label")] = item.get("attributes", {}).get(attribute.get("label"))
+                                        detail=f'attribute {attribute.get("name")} must be between 0 and 1000000000000')
+                new_attributes[attribute.get("name")] = item.attributes.get(attribute.get("name"))
+            elif attribute.get("input_type") == "Dropdown":
+                if item.attributes.get(attribute.get("name")) not in attribute.get("values"):
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} is not in values')
+                new_attributes[attribute.get("name")] = item.attributes.get(attribute.get("name"))
             else:
-                if not isinstance(item.get("attributes", {}).get(attribute.get("label")), str):
-                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} must be string')
-                new_attributes[attribute.get("label")] = item.get("attributes", {}).get(attribute.get("label"))
+                if not isinstance(item.attributes.get(attribute.get("name")), str):
+                    raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} must be string')
+                new_attributes[attribute.get("name")] = item.attributes.get(attribute.get("name"))
         elif attribute.get("required"):
-            raise HTTPException(status_code=417, detail=f'attribute {attribute.get("label")} is required')
+            raise HTTPException(status_code=417, detail=f'attribute {attribute.get("name")} is required')
         else:
-            new_attributes[attribute.get("label")] = attribute.get("default_value")
-    item["attributes"] = new_attributes
+            new_attributes[attribute.get("name")] = attribute.get("default_value")
+    item.attributes = new_attributes
     return item

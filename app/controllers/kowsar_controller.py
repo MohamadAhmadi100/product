@@ -4,7 +4,7 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/api/v1/kowsar/{system_code}/", tags=["kowsar"], status_code=200)
+@router.get("/{system_code}/", status_code=200)
 def get_kowsar(system_code: str):
     """
     Get kowsar data by full system_code(12 digits)
@@ -13,7 +13,7 @@ def get_kowsar(system_code: str):
     return data
 
 
-@router.get("/api/v1/kowsar/{system_code}/items/", tags=["kowsar"], status_code=200)
+@router.get("/{system_code}/items/", status_code=200)
 def get_kowsar_items(system_code: str):
     """
     Get sub categories of kowsar tree(2 to 9 digits)
@@ -23,7 +23,7 @@ def get_kowsar_items(system_code: str):
     return data
 
 
-@router.get("/api/v1/kowsar/update_collection", tags=["kowsar"], status_code=200)
+@router.get("/update_collection", status_code=200)
 def update_kowsar_collection():
     """
     update kowsar collection from kala file(.xls)
