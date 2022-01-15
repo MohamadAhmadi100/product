@@ -24,7 +24,7 @@ class CustomCategory(BaseModel):
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one({"name": self.name}, {"$addToSet": {"products": product}},
                                                       upsert=True)
-            if result.upserted_id:
+            if result.upserted_id or result.modified_count:
                 return {f'message': f'product assigned to {self.name} successfully'}, True
             return {'error': 'product assignment failed'}, False
 
