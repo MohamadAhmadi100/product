@@ -1,31 +1,24 @@
 from typing import Optional
 
-from app.helpers.mongo_connection import MongoConnection
 from pydantic import BaseModel, validator
+
+from app.helpers.mongo_connection import MongoConnection
 from app.validators.attribute_validator import attribute_validator
+
 
 class Product(BaseModel):
     system_code: str
-    main_category: str
-    sub_category: str
-    brand: str
-    model: str
-    config: dict
-    attributes: Optional[dict]
+    main_category: Optional[str]
+    sub_category: Optional[str]
+    brand: Optional[str]
+    model: Optional[str]
+    config: Optional[dict]
+    attributes: Optional[dict] = {}
 
     class Config:
         schema_extra = {
             "example": {
                 "system_code": "100104021006",
-                "main_category": "Device",
-                "sub_category": "Mobile",
-                "brand": "Mobile Xiaomi",
-                "model": "Xiaomi Redmi 9c",
-                "config": {
-                    "color": "orange",
-                    "guarantee": "sherkati",
-                    "storage": "64"
-                },
                 "attributes": {
                     "image": "/src/default.jpg",
                     "year": "2020"
@@ -57,12 +50,23 @@ class Product(BaseModel):
         self.config = result.get('config')
         self.attributes = result.get('attributes')
 
+    def set_kowsar_data(self, data: dict) -> None:
+        self.main_category = data.get('main_category')
+        self.sub_category = data.get('sub_category')
+        self.brand = data.get('brand')
+        self.model = data.get('model')
+        self.config = data.get('config')
+
     def create(self) -> tuple:
         """
         Adds a product to main collection in database.
         The system_code of the product should be unique!
         """
         with MongoConnection() as mongo:
+            kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
+            if not kowsar_data:
+                return {"error": "product not found in kowsar"}, False
+            self.set_kowsar_data(kowsar_data)
             result = mongo.collection.insert_one(self.dict())
         if result.inserted_id:
             return {"message": "product created successfully"}, True
@@ -82,6 +86,10 @@ class Product(BaseModel):
 
     def update(self, data: dict) -> tuple:
         with MongoConnection() as mongo:
+            kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
+            if not kowsar_data:
+                return {"error": "product not found in kowsar"}, False
+            self.set_kowsar_data(kowsar_data)
             result = mongo.collection.update_one({"system_code": self.system_code}, {"$set": data})
             if result.modified_count:
                 return {"message": "product updated successfully"}, True

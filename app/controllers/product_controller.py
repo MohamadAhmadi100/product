@@ -1,6 +1,7 @@
+from fastapi import Query, Path, HTTPException, APIRouter
+
 from app.models.product import Product
 from app.modules.attribute_setter import attribute_setter
-from fastapi import Query, Path, HTTPException, APIRouter
 
 router = APIRouter()
 
@@ -13,37 +14,6 @@ def add_product(
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    products = [
-        {
-            "system_code": "100104021006",
-            "main_category": "Device",
-            "sub_category": "Mobile",
-            "brand": "Mobile Xiaomi",
-            "model": "Xiaomi Redmi 9c",
-            "config": {
-                "color": "orange",
-                "guarantee": "sherkati",
-                "storage": "64"
-            },
-            "attributes": {
-                "image": "/src/default.jpg",
-                "year": "2021"
-            }
-        },
-        {
-            "system_code": "100105015003",
-            "main_category": "Device",
-            "sub_category": "Mobile",
-            "brand": "Mobile Huawei",
-            "model": "Y8p",
-            "config": {
-                "color": "breathing crystal",
-                "guarantee": "sherkati",
-                "storage": "128gb"
-            },
-            "attributes": {}
-        }
-    ]
     if item.system_code_is_unique():
         item.validate_attributes()
         message, success = item.create()
@@ -88,6 +58,8 @@ def update_product(
     """
     Update a product by system_code in main collection in database.
     """
+    if item.system_code != system_code:
+        raise HTTPException(status_code=400, detail="system_code is not valid")
     product = Product.construct()
     stored_data = product.get(system_code=system_code)
     update_data = item.dict(exclude_unset=True)
