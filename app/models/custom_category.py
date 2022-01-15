@@ -20,7 +20,7 @@ class CustomCategory(BaseModel):
             raise ValueError('system_code must be between 3 and 128 characters')
         return value
 
-    def add_product(self, product: dict):
+    def add_product_to_custom_category(self, product: dict):
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one({"name": self.name}, {"$addToSet": {"products": product}},
                                                       upsert=True)
@@ -28,14 +28,14 @@ class CustomCategory(BaseModel):
                 return {f'message': f'product assigned to {self.name} successfully'}, True
             return {'error': 'product assignment failed'}, False
 
-    def remove_product(self, product):
+    def remove_product_from_custom_category(self, product):
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one({"name": self.name}, {"$pull": {"products": product}})
             if result.modified_count:
                 return {f'message': f'product removed from {self.name} successfully'}, True
             return {'error': 'product removal failed'}, False
 
-    def get_products(self):
+    def get_products_from_custom_category(self):
         with MongoConnection() as mongo:
             result = mongo.custom_category.find_one({"name": self.name}, {"_id": 0})
             if result:
@@ -48,7 +48,7 @@ class CustomCategory(BaseModel):
             result = mongo.custom_category.find({}, {"_id": 0, "products": 0})
             return [category.get("name") for category in list(result)]
 
-    def update_product(self, product) -> tuple:
+    def update_product_from_custom_category(self, product) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one(
                 {"name": self.name, 'products.system_code': product.get("system_code")},

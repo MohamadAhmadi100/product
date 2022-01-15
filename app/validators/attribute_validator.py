@@ -3,7 +3,9 @@ from fastapi import HTTPException
 
 def attribute_validator(kowsar_attribute_collection: list, item):
     new_attributes = dict()
+    print(kowsar_attribute_collection)
     for attribute in kowsar_attribute_collection:
+        print(attribute)
         if attribute.get("name") in item.attributes.keys():
             if attribute.get("input_type") == "Yes or No":
                 if not isinstance(item.attributes.get(attribute.get("name")), bool):

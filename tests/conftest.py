@@ -1,6 +1,7 @@
 import pytest
 
 from app.models.product import Product
+from app.models.custom_category import CustomCategory
 
 
 @pytest.fixture
@@ -59,3 +60,48 @@ def delete_product():
     product = Product.construct()
     product.get("system_code")
     product.delete()
+
+
+@pytest.fixture
+def add_product_to_custom_category():
+    data = {
+        "name": "atish bazi"
+    }
+    category = CustomCategory(**data)
+    category.add_product_to_custom_category({
+        "system_code": "100101017002",
+        "attributes": {
+            "image": "/src/default.jpg",
+            "year": "2020"
+        }
+    })
+    yield category
+
+
+@pytest.fixture
+def add_and_remove_product_from_category():
+    data = {
+        "name": "atish bazi"
+    }
+    category = CustomCategory(**data)
+    category.add_product_to_custom_category({
+        "system_code": "100101017002",
+        "attributes": {
+            "image": "/src/default.jpg",
+            "year": "2020"
+        }
+    })
+    yield category
+    category.remove_product_from_custom_category({
+        "system_code": "100101017002",
+        "attributes": {
+            "image": "/src/default.jpg",
+            "year": "2020"
+        }
+    })
+
+@pytest.fixture
+def delete_product_from_custom_category():
+    yield
+    category = CustomCategory.construct()
+    category.
