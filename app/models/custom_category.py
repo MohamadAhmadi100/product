@@ -20,22 +20,22 @@ class CustomCategory(BaseModel):
             raise ValueError('system_code must be between 3 and 128 characters')
         return value
 
-    def add_product_to_custom_category(self, product: dict):
+    def add_product(self, product: dict):
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one({"name": self.name}, {"$addToSet": {"products": product}},
                                                       upsert=True)
-            if result.upserted_id:
+            if result.upserted_id or result.modified_count:
                 return {f'message': f'product assigned to {self.name} successfully'}, True
             return {'error': 'product assignment failed'}, False
 
-    def remove_product_from_custom_category(self, product):
+    def remove_product(self, product):
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one({"name": self.name}, {"$pull": {"products": product}})
             if result.modified_count:
                 return {f'message': f'product removed from {self.name} successfully'}, True
             return {'error': 'product removal failed'}, False
 
-    def get_products_from_custom_category(self):
+    def get_products(self):
         with MongoConnection() as mongo:
             result = mongo.custom_category.find_one({"name": self.name}, {"_id": 0})
             if result:

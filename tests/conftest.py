@@ -1,7 +1,7 @@
 import pytest
 
-from app.models.product import Product
 from app.models.custom_category import CustomCategory
+from app.models.product import Product
 
 
 @pytest.fixture
@@ -64,44 +64,56 @@ def delete_product():
 
 @pytest.fixture
 def add_product_to_custom_category():
-    data = {
-        "name": "atish bazi"
-    }
-    category = CustomCategory(**data)
-    category.add_product_to_custom_category({
-        "system_code": "100101017002",
+    product = Product(**{
+        "system_code": "100111001002",
+        "main_category": "Device",
+        "sub_category": "Mobile",
+        "brand": "Mobile G Plus",
+        "model": "Q10",
+        "config": {
+            "storage": "32gb",
+            "color": "blue",
+            "guarantee": "sherkati",
+            "ram": "3gb"
+        },
         "attributes": {
-            "image": "/src/default.jpg",
-            "year": "2020"
         }
     })
-    yield category
+    custom_category = CustomCategory(**{"name": "atish bazi"})
+    custom_category.add_product(product.dict())
+    yield custom_category
+    product.delete()
 
 
 @pytest.fixture
 def add_and_remove_product_from_category():
-    data = {
-        "name": "atish bazi"
-    }
-    category = CustomCategory(**data)
-    category.add_product_to_custom_category({
-        "system_code": "100101017002",
+    product = Product(**{
+        "system_code": "100111001002",
+        "main_category": "Device",
+        "sub_category": "Mobile",
+        "brand": "Mobile G Plus",
+        "model": "Q10",
+        "config": {
+            "storage": "32gb",
+            "color": "blue",
+            "guarantee": "sherkati",
+            "ram": "3gb"
+        },
         "attributes": {
-            "image": "/src/default.jpg",
-            "year": "2020"
         }
     })
-    yield category
-    category.remove_product_from_custom_category({
-        "system_code": "100101017002",
-        "attributes": {
-            "image": "/src/default.jpg",
-            "year": "2020"
-        }
-    })
+    custom_category = CustomCategory(**{"name": "atish bazi"})
+    custom_category.add_product(product.dict())
+    yield custom_category
+    custom_category.remove_product(product.dict())
+    product.delete()
+
 
 @pytest.fixture
 def delete_product_from_custom_category():
     yield
-    category = CustomCategory.construct()
-    category.
+    product = Product.construct()
+    product = product.get(system_code="100111001002")
+    custom_category = CustomCategory(**{"name": "atish bazi"})
+    custom_category.remove_product(product.dict())
+    product.delete()

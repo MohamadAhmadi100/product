@@ -21,7 +21,7 @@ class Product(BaseModel):
                 "system_code": "100104021006",
                 "attributes": {
                     "image": "/src/default.jpg",
-                    "year": "2020"
+                    "year": 2020
                 }
             }
         }

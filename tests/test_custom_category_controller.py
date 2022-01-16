@@ -5,34 +5,49 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_add_product_to_custom_category():
-    response = client.post("/custom_category/product/" + '100104021006', json={
-                "name": "atish bazi"
-            })
+def test_add_product_to_custom_category(delete_product_from_custom_category):
+    response = client.post("/api/v1/custom_category/product/" + '100111001002', json={
+        "name": "atish bazi"
+    })
+    print(response.json())
     assert response.status_code == 201
-    assert response.json() == {'message': 'product created successfully'}
+    assert response.json() == {'message': 'product assigned to atish bazi successfully'}
 
 
-def test_remove_product_from_custom_category():
-    response = client.delete('/custom_category/' + 'atish bazi' + '/product/' + '120501002003')
+def test_remove_product_from_custom_category(add_product_to_custom_category):
+    response = client.delete('/api/v1/custom_category/' + 'atish bazi' + '/product/' + '100111001002')
     assert response.status_code == 200
     assert response.json() == {f'message': f'product removed from atish bazi successfully'}
 
 
-def test_get_products_of_custom_category():
-    response = client.get('/custom_category/' + 'atish bazi' + '/products/')
+def test_get_products_of_custom_category(add_and_remove_product_from_category):
+    response = client.get('/api/v1/custom_category/' + 'atish bazi' + '/products/')
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == [{'attributes': {},
+                                'brand': None,
+                                'config': None,
+                                'main_category': None,
+                                'model': None,
+                                'sub_category': None},
+                               {'attributes': {},
+                                'brand': 'Mobile G Plus',
+                                'config': {'color': 'blue',
+                                           'guarantee': 'sherkati',
+                                           'ram': '3gb',
+                                           'storage': '32gb'},
+                                'main_category': 'Device',
+                                'model': 'Q10',
+                                'sub_category': 'Mobile',
+                                'system_code': '100111001002'}]
 
 
 def test_get_custom_categories():
-    response = client.get('/custom_categories/')
+    response = client.get('/api/v1/custom_categories/')
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == ['atish bazi']
 
 
-def test_update_product_from_custom_category():
-    response = client.get('/custom_category/product/' + '120501002003' + '/update/')
+def test_update_product_from_custom_category(add_and_remove_product_from_category):
+    response = client.get('/api/v1/custom_category/product/' + '100111001002' + '/update/')
     assert response.status_code == 201
-    assert client.get('/custom_category/' + 'atish bazi' + '/product/' + '120501002003') == []
-
+    assert client.get('/api/v1/custom_category/' + 'atish bazi' + '/product/' + '100111001002') == []

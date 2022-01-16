@@ -16,7 +16,7 @@ def add_product_to_custom_category(
     product = Product.construct()
     product.get(system_code)
     if product:
-        message, success = item.add_product_to_custom_category(product.dict())
+        message, success = item.add_product(product.dict())
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
@@ -35,7 +35,7 @@ def remove_product_from_custom_category(
     stored_data = product.get(system_code)
     if stored_data:
         c_cat = CustomCategory(name=custom_category)
-        message, success = c_cat.remove_product_from_custom_category(stored_data.dict())
+        message, success = c_cat.remove_product(stored_data.dict())
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
@@ -50,7 +50,7 @@ def get_products_of_custom_category(
     Get all products of a custom category.
     """
     c_cat = CustomCategory(name=custom_category)
-    products = c_cat.get_products_from_custom_category()
+    products = c_cat.get_products()
     if products:
         return products
     raise HTTPException(status_code=404, detail={"error": "products not found"})

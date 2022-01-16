@@ -8,7 +8,13 @@ client = TestClient(app)
 def test_main_page(create_and_delete_multiple_products):
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == [{'attributes': {},
+                                'brand': 'Tablet Lenovo',
+                                'config': {'color': 'black', 'guarantee': 'sherkati', 'storage': '16'},
+                                'main_category': 'Device',
+                                'model': 'M7',
+                                'sub_category': 'Tablet',
+                                'system_code': '100201002002'}]
 
 
 def test_add_product(delete_product):
