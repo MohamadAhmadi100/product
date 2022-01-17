@@ -98,13 +98,12 @@ class Product(BaseModel):
         with MongoConnection() as mongo:
             if not system_code:
                 skips = per_page * (page - 1)
-                data = mongo.collection.find({}, {'_id': 0}).skip(skips).limit(per_page)
+                re = '^[0-9]{9}$'
+                data = mongo.collection.find({'system_code': {'$regex': re}}, {'_id': 0}).skip(skips).limit(per_page)
                 return list(data)
-            result = mongo.collection.find_one({'system_code': system_code}, {'_id': 0})
-            if result:
-                self.save_as_object(result)
-                return self
-            return None
+            re = '^' + system_code
+            result = mongo.collection.find({'system_code': {'$regex': re}}, {"_id": 0})
+            return list(result)
 
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
@@ -125,6 +124,8 @@ class Product(BaseModel):
             if attributes_from_collection:
                 item = attribute_validator(attributes_from_collection, self)
                 self = item
+            else:
+                delattr(self, "attributes")
 
     @staticmethod
     def suggester(data):
@@ -143,4 +144,3 @@ class Product(BaseModel):
         for attribute in product_object.keys():
             if not product_object[attribute]:
                 delattr(self, attribute)
-

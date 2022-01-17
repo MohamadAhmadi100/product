@@ -77,7 +77,7 @@ def get_all_products(
 
 @router.get("/product/{system_code}", status_code=200)
 def get_product_by_system_code(
-        system_code: str = Path(..., min_length=3, max_length=255)
+        system_code: str = Path(..., min_length=9, max_length=9)
 ) -> dict:
     """
     Get a product by system_code in main collection in database.
@@ -121,7 +121,7 @@ def update_attribute_collection():
             "values": None,
             "set_to_nodes": False,
             "name": "year",
-            "label": "رنگ",
+            "label": "سال",
             "input_type": "Number",
             "parent": "100104021006"
         },
