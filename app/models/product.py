@@ -18,16 +18,16 @@ class Product(BaseModel):
     config: Optional[dict]
     attributes: Optional[dict] = {}
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "system_code": "100104021006",
-                "attributes": {
-                    "image": "/src/default.jpg",
-                    "year": 2020
-                }
-            }
-        }
+    # class Config:
+    #     schema_extra = {
+    #         "example": {
+    #             "system_code": "100104021006",
+    #             "attributes": {
+    #                 "image": "/src/default.jpg",
+    #                 "year": 2020
+    #             }
+    #         }
+    #     }
 
     @validator('system_code')
     def system_code_validator(cls, value):

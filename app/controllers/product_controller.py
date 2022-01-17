@@ -1,4 +1,4 @@
-from fastapi import Query, Path, HTTPException, APIRouter
+from fastapi import Query, Path, HTTPException, APIRouter, Body
 
 from app.models.product import Product
 from app.modules.attribute_setter import attribute_setter
@@ -9,7 +9,10 @@ router = APIRouter()
 
 @router.post("/product/parent/", status_code=201)
 def create_parent(
-        item: Product
+        item: Product = Body(..., example={
+            "system_code": "100104021",
+            "name": "ردمی 9c"
+        })
 ) -> dict:
     """
     Create a product for sale in main collection in database.
@@ -26,7 +29,9 @@ def create_parent(
 
 @router.post("/product/child/", status_code=201)
 def create_child(
-        item: Product
+        item: Product = Body(..., example={
+            "system_code": "100104021006"
+        })
 ) -> dict:
     """
     Create a product for sale in main collection in database.
@@ -46,7 +51,13 @@ def create_child(
 
 @router.post("/product/attributes/", status_code=201)
 def add_attributes(
-        item: Product
+        item: Product = Body(..., example={
+            "system_code": "100104021006",
+            "attributes": {
+                "image": "/src/default.jpg",
+                "year": 2020
+            }
+        })
 ) -> dict:
     """
     Create a product for sale in main collection in database.
