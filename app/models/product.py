@@ -8,37 +8,56 @@ from app.validators.attribute_validator import attribute_validator
 
 
 class Product(BaseModel):
-    system_code: str = Field(..., maxLength=12, minLength=9, example="100104021006", isRequired=True)
-    name: Optional[str] = Field("", minLength=3, maxLength=256, example="ردمی ۹ سی", isRequired=False)
+    system_code: str = Field(
+        ..., title="کد سیستمی", maxLength=12, minLength=9, placeholder="100104021006", isRequired=True
+    )
+    name: Optional[str] = Field(
+        "", title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
+    )
     _step: int
     _main_category: Optional[str]
     _sub_category: Optional[str]
     _brand: Optional[str]
     _model: Optional[str]
     _config: Optional[dict]
-    attributes: Optional[dict] = Field({}, maxLength=256, isRequired=False)
+    attributes: Optional[dict] = Field({}, title="صفت ها", maxLength=256, isRequired=False)
 
     @validator('system_code')
     def system_code_validator(cls, value):
         if not isinstance(value, str):
-            raise HTTPException(status_code=417, detail={"error": "system code must be a string", "label": "کد سیستمی باید از نوع رشته باشد"})
+            raise HTTPException(status_code=417, detail={
+                "error": "system code must be a string",
+                "label": "کد سیستمی باید از نوع رشته باشد"
+            })
         elif 2 > len(value) or len(value) > 12:
-            raise HTTPException(status_code=417, detail={"error": "system_code must be between 2 and 12 characters", "label": "طول کد سیستمی باید میان ۲ تا ۱۲ کاراکتر باشد"})
+            raise HTTPException(status_code=417, detail={
+                "error": "system_code must be between 2 and 12 characters",
+                "label": "طول کد سیستمی باید میان ۲ تا ۱۲ کاراکتر باشد"
+            })
         return value
 
     @validator('attributes')
     def attributes_validator(cls, value):
         # TODO: needs attention!
         if not isinstance(value, dict):
-            raise HTTPException(status_code=417, detail={"error": "attributes must be a dictionary", "label": "صفت ها باید از نوع دیکشنری باشند"})
+            raise HTTPException(status_code=417, detail={
+                "error": "attributes must be a dictionary",
+                "label": "صفت ها باید از نوع دیکشنری باشند"
+            })
         return value
 
     @validator('name')
     def name_validator(cls, value):
         if not isinstance(value, str):
-            raise HTTPException(status_code=417, detail={"error": 'name must be a string', "label": "اسم باید از نوع رشته باشد"})
+            raise HTTPException(status_code=417, detail={
+                "error": 'name must be a string',
+                "label": "اسم باید از نوع رشته باشد"
+            })
         elif len(value) < 3 or len(value) > 256:
-            raise HTTPException(status_code=417, detail={"error": "name must be between 3 and 256 characters", "label": "طول اسم باید میان ۳ تا ۲۵۶ کاراکتر باشد"})
+            raise HTTPException(status_code=417, detail={
+                "error": "name must be between 3 and 256 characters",
+                "label": "طول اسم باید میان ۳ تا ۲۵۶ کاراکتر باشد"
+            })
         return value
 
     @classmethod
