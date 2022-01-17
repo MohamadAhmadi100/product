@@ -73,6 +73,7 @@ class Product(BaseModel):
                 return {"error": "product not found in kowsar"}, False
             self.set_kowsar_data(kowsar_data)
             self.attributes = {}
+            self.del_null()
             result = mongo.collection.insert_one(self.dict())
         if result.inserted_id:
             return {"message": "product created successfully"}, True
@@ -105,13 +106,6 @@ class Product(BaseModel):
                 return self
             return None
 
-    # def update(self, data: dict) -> tuple:
-    #     with MongoConnection() as mongo:
-    #         result = mongo.collection.update_one({"system_code": data.get("system_code")}, {"$set": data})
-    #         if result.modified_count:
-    #             return {"message": "product updated successfully"}, True
-    #         return {"error": "product update failed"}, False
-
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.collection.delete_one({"system_code": self.system_code})
@@ -143,3 +137,10 @@ class Product(BaseModel):
                 if item.get('system_code') in stored_system_codes:
                     item['created'] = True
             return data
+
+    def del_null(self):
+        product_object = self.dict()
+        for attribute in product_object.keys():
+            if not product_object[attribute]:
+                delattr(self, attribute)
+
