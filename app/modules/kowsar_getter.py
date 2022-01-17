@@ -187,9 +187,8 @@ class KowsarGetter:
                 re = '^' + system_code + ".{3}$"
             else:
                 re = '^' + system_code + ".{2}$"
-            data = client.kowsar_collection.find({'system_code': {'$regex': re}}, {"_id": 0})
-            products = [product for product in data]
-            return products
+            products = client.kowsar_collection.find({'system_code': {'$regex': re}}, {"_id": 0})
+            return list(products)
 
     @staticmethod
     def system_code_name_getter(system_code):

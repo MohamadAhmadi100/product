@@ -1,23 +1,23 @@
-from app.helpers.mongo_connection import MongoConnection
+from fastapi import HTTPException
 from pydantic import BaseModel, validator
+
+from app.helpers.mongo_connection import MongoConnection
 
 
 class CustomCategory(BaseModel):
     name: str
 
     class Config:
-        schema_extra = {
-            "example": {
-                "name": "atish bazi"
-            }
-        }
+        schema_extra = dict(example={
+            "name": "atish bazi"
+        })
 
     @validator("name")
     def name_validator(cls, value):
         if not isinstance(value, str):
-            raise ValueError('name must be a string')
+            raise HTTPException(status_code=409, detail={"error": "name must be a string"})
         elif 3 > len(value) or len(value) > 128:
-            raise ValueError('system_code must be between 3 and 128 characters')
+            raise HTTPException(status_code=409, detail={"error": "system_code must be between 3 and 128 characters"})
         return value
 
     def add_product(self, product: dict):

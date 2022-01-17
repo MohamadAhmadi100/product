@@ -2,13 +2,14 @@ import logging
 from typing import Optional
 
 import uvicorn
+from fastapi import FastAPI, Query, responses
+from starlette.exceptions import HTTPException as starletteHTTPException
+
 from app.controllers.custom_category_controller import router as custom_category_router
 from app.controllers.kowsar_controller import router as kowsar_router
 from app.controllers.product_controller import router as product_router
 from app.models.product import Product
 from config import settings
-from fastapi import FastAPI
-from fastapi import Query
 
 TAGS_META = [
     {
@@ -34,6 +35,11 @@ app = FastAPI(title="Product",
 app.include_router(router=kowsar_router, prefix="/api/v1/kowsar", tags=["kowsar"])
 app.include_router(router=product_router, prefix="/api/v1", tags=["product"])
 app.include_router(router=custom_category_router, prefix="/api/v1", tags=["custom category"])
+
+
+@app.exception_handler(starletteHTTPException)
+def validation_exception_handler(request, exc):
+    return responses.JSONResponse(exc.detail, status_code=exc.status_code)
 
 
 @app.get("/", status_code=200)
