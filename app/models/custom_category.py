@@ -20,17 +20,26 @@ class CustomCategory(BaseModel):
             raise HTTPException(status_code=409, detail={"error": "system_code must be between 3 and 128 characters"})
         return value
 
-    def add_product(self, product: dict):
+    def add(self, product: dict):
         with MongoConnection() as mongo:
+            parent = mongo.kowsar_collection.find_one({"system_code": product.get("system_code")[:9]}, {"_id": 0})
+            mongo.custom_category.update_one({"name": self.name}, {"$addToSet": {"products": parent}},
+                                             upsert=True)
             result = mongo.custom_category.update_one({"name": self.name}, {"$addToSet": {"products": product}},
                                                       upsert=True)
             if result.upserted_id or result.modified_count:
                 return {f'message': f'product assigned to {self.name} successfully'}, True
             return {'error': 'product assignment failed'}, False
 
-    def remove_product(self, product):
+    def remove(self, product):
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one({"name": self.name}, {"$pull": {"products": product}})
+            is_empty = mongo.custom_category.find_one(
+                {"name": self.name, "name.$.system_code": {"$regex": "^" + product.get("system_code")[:9]}},
+                {"_id": 0, "name": 0})
+            if is_empty.get("products") == 1:
+                mongo.custom_category.update_one({"name": self.name},
+                                                 {"$pull": {"products.$.system_code": product.get("system_code")[:9]}})
             if result.modified_count:
                 return {f'message': f'product removed from {self.name} successfully'}, True
             return {'error': 'product removal failed'}, False

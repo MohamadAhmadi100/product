@@ -13,7 +13,7 @@ def test_add_product(delete_product_from_custom_category):
     product = Product(**data)
     product.create()
     category = CustomCategory(**{"name": "atish bazi"})
-    category.add_product(product.dict())
+    category.add(product.dict())
     assert category.get_products() == [{'attributes': {'image': '/src/default.jpg', 'year': 2020},
                                         'brand': 'Mobile Xiaomi',
                                         'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
@@ -32,7 +32,7 @@ def test_remove_product(add_product_to_custom_category):
                          'model': 'Xiaomi Redmi 9c',
                          'sub_category': 'Mobile',
                          'system_code': '100104021006'})
-    category.remove_product(product.dict())
+    category.remove(product.dict())
     assert category.get_products() == []
 
 
