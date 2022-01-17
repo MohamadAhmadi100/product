@@ -19,11 +19,13 @@ def create_parent(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        item.step = 1
-        message, success = item.create()
-        if success:
-            return message
-        raise HTTPException(status_code=417, detail=message)
+        if len(item.system_code) == 9:
+            item.step_setter(1)
+            message, success = item.create()
+            if success:
+                return message
+            raise HTTPException(status_code=417, detail=message)
+        raise HTTPException(status_code=409, detail="system code must be 9 digit")
     raise HTTPException(status_code=409, detail="product already exists")
 
 
@@ -38,8 +40,7 @@ def create_child(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        item.step = 2
-        delattr(item, "name")
+        item.step_setter(2)
         if not item.check_parent():
             raise HTTPException(status_code=409, detail="product parent doesn't exist")
         message, success = item.create()
@@ -63,7 +64,7 @@ def add_attributes(
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    item.step = 3
+    item.step_setter(3)
     if not item.check_parent():
         raise HTTPException(status_code=409, detail="product parent doesn't exist")
     item.validate_attributes()
