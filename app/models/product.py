@@ -68,33 +68,30 @@ class Product(BaseModel):
         The system_code of the product should be unique!
         """
         with MongoConnection() as mongo:
-            product_data = mongo.collection.find_one({'system_code': self.system_code[:9]}, {'_id'})
             kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
             if not kowsar_data:
                 return {"error": "product not found in kowsar"}, False
             self.set_kowsar_data(kowsar_data)
-            self.step = 2 if product_data else 1
-            self.name = product_data.get("name")
             self.attributes = {}
             result = mongo.collection.insert_one(self.dict())
         if result.inserted_id:
             return {"message": "product created successfully"}, True
         return {"error": "product creation failed"}, False
 
-    # def create(self) -> tuple:
-    #     """
-    #     Adds a product to main collection in database.
-    #     The system_code of the product should be unique!
-    #     """
-    #     with MongoConnection() as mongo:
-    #         kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
-    #         if not kowsar_data:
-    #             return {"error": "product not found in kowsar"}, False
-    #         self.set_kowsar_data(kowsar_data)
-    #         result = mongo.collection.insert_one(self.dict())
-    #     if result.inserted_id:
-    #         return {"message": "product created successfully"}, True
-    #     return {"error": "product creation failed"}, False
+    def check_parent(self):
+        with MongoConnection() as mongo:
+            sys_code = self.system_code if self.step == 3 else self.system_code[:9]
+            data = mongo.collection.find_one({'system_code': sys_code})
+            return True if data else False
+
+    def add_attributes(self):
+        with MongoConnection() as mongo:
+            result = mongo.collection.update_one({"system_code": self.system_code},
+                                                 {"$set": {"step": self.step,
+                                                           "attributes": self.attributes}})
+            if result.modified_count:
+                return {"message": "attribute added successfully"}, True
+            return {"error": "attribute add failed"}, False
 
     def get(self, system_code: str = None, page: int = 1, per_page: int = 10):
         with MongoConnection() as mongo:
@@ -108,12 +105,12 @@ class Product(BaseModel):
                 return self
             return None
 
-    def update(self, data: dict) -> tuple:
-        with MongoConnection() as mongo:
-            result = mongo.collection.update_one({"system_code": data.get("system_code")}, {"$set": data})
-            if result.modified_count:
-                return {"message": "product updated successfully"}, True
-            return {"error": "product update failed"}, False
+    # def update(self, data: dict) -> tuple:
+    #     with MongoConnection() as mongo:
+    #         result = mongo.collection.update_one({"system_code": data.get("system_code")}, {"$set": data})
+    #         if result.modified_count:
+    #             return {"message": "product updated successfully"}, True
+    #         return {"error": "product update failed"}, False
 
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
@@ -125,11 +122,7 @@ class Product(BaseModel):
     def system_code_is_unique(self) -> bool:
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'system_code': self.system_code})
-            condition = False if result else True
-            if len(self.system_code) == 12:
-                parent_result = mongo.collection.find_one({'system_code': self.system_code[:9]})
-                condition = True if parent_result else False
-            return condition
+            return False if result else True
 
     def validate_attributes(self):
         with MongoConnection() as mongo:
