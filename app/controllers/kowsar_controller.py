@@ -31,4 +31,4 @@ def update_kowsar_collection():
     kowsar = KowsarGetter()
     kowsar.product_getter()
     kowsar.update_kowsar_collection()
-    return {"message": "success"}
+    return {"message": "kowsar collection updated", "label": "جدول کالاهای کوثر بروز شد"}

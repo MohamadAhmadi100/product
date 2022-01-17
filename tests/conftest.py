@@ -73,7 +73,7 @@ def add_product_to_custom_category():
     product = Product(**sample_data)
     product.create()
     custom_category = CustomCategory(**{"name": "atish bazi"})
-    custom_category.add_product(product.dict())
+    custom_category.add(product.dict())
     yield custom_category
     product = Product.construct()
     product.get("100104021006")
@@ -92,9 +92,9 @@ def add_and_remove_product_from_category():
     product = Product(**sample_data)
     product.create()
     custom_category = CustomCategory(**{"name": "atish bazi"})
-    custom_category.add_product(product.dict())
+    custom_category.add(product.dict())
     yield
-    custom_category.remove_product(product.dict())
+    custom_category.remove(product.dict())
     product.delete()
 
 
@@ -112,7 +112,7 @@ def delete_product_from_custom_category():
     product.create()
     product = product.get("100104021006")
     custom_category = CustomCategory(**{"name": "atish bazi"})
-    custom_category.remove_product(product.dict())
+    custom_category.remove(product.dict())
     product = Product.construct()
     product.get("100104021006")
     product.delete()

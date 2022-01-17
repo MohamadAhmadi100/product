@@ -100,7 +100,8 @@ class Product(BaseModel):
                 return {"message": "attribute added successfully"}, True
             return {"error": "attribute add failed"}, False
 
-    def get(self, system_code: str = None, page: int = 1, per_page: int = 10):
+    @staticmethod
+    def get(system_code: str = None, page: int = 1, per_page: int = 10):
         with MongoConnection() as mongo:
             if not system_code:
                 skips = per_page * (page - 1)
@@ -110,6 +111,14 @@ class Product(BaseModel):
             re = '^' + system_code
             result = mongo.collection.find({'system_code': {'$regex': re}}, {"_id": 0})
             return list(result)
+
+    def get_object(self, system_code):
+        with MongoConnection() as mongo:
+            result = mongo.collection.find_one({"system_code": system_code}, {"_id": 0})
+            if result:
+                self.save_as_object(result)
+                return self
+            return None
 
     def delete(self) -> tuple:
         with MongoConnection() as mongo:

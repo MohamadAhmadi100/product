@@ -19,14 +19,13 @@ def create_parent(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        if len(item.system_code) == 9:
-            item.step_setter(1)
-            message, success = item.create()
-            if success:
-                return message
-            raise HTTPException(status_code=417, detail=message)
-        raise HTTPException(status_code=409, detail="system code must be 9 digit")
-    raise HTTPException(status_code=409, detail="product already exists")
+        item.step = 1
+        message, success = item.create()
+        if success:
+            return message
+        raise HTTPException(status_code=417, detail=message)
+    raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
+                                                 "redirect": "/product/{system_code}"})
 
 
 @router.post("/product/child/", status_code=201)
@@ -42,12 +41,15 @@ def create_child(
     if item.system_code_is_unique():
         item.step_setter(2)
         if not item.check_parent():
-            raise HTTPException(status_code=409, detail="product parent doesn't exist")
+            raise HTTPException(status_code=409,
+                                detail={"message": "product parent doesn't exist", "label": "محصول والد موجود نیست",
+                                        "redirect": "/product/parent/"})
         message, success = item.create()
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
-    raise HTTPException(status_code=409, detail="product already exists")
+    raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
+                                                 "redirect": "/product/{system_code}"})
 
 
 @router.post("/product/attributes/", status_code=201)
@@ -66,7 +68,9 @@ def add_attributes(
     """
     item.step_setter(3)
     if not item.check_parent():
-        raise HTTPException(status_code=409, detail="product parent doesn't exist")
+        raise HTTPException(status_code=409,
+                            detail={"message": "product parent doesn't exist", "label": "محصول والد موجود نیست",
+                                    "redirect": "/product/child/"})
     item.validate_attributes()
     message, success = item.add_attributes()
     if success:
@@ -98,7 +102,7 @@ def get_product_by_system_code(
     stored_data = product.get(system_code)
     if stored_data:
         return stored_data
-    raise HTTPException(status_code=404, detail="product not found")
+    raise HTTPException(status_code=404, detail={"message": "product not found", "label": "محصول یافت نشد"})
 
 
 @router.delete("/product/{system_code}", status_code=200)
@@ -109,13 +113,13 @@ def delete_product(
     Delete a product by name in main collection in database.
     """
     product = Product.construct()
-    stored_data = product.get(system_code)
+    stored_data = product.get_object(system_code)
     if stored_data:
         message, success = product.delete()
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
-    raise HTTPException(status_code=404, detail="product not found")
+    raise HTTPException(status_code=404, detail={"message": "product not found", "label": "محصول یافت نشد"})
 
 
 @router.get("/product/update_attribute_collection/", status_code=200)
@@ -151,7 +155,7 @@ def update_attribute_collection():
         }
     ]
     attribute_setter(attributes)
-    return {"message": "success"}
+    return {"message": "attribute collection updated", "label": "جدول تنظیمات بروز شد"}
 
 
 @router.get("/product/suggest/{system_code}", status_code=200)

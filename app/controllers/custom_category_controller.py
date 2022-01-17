@@ -16,7 +16,7 @@ def add_product_to_custom_category(
     product = Product.construct()
     product.get(system_code)
     if product:
-        message, success = item.add_product(product.dict())
+        message, success = item.add(product.dict())
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
@@ -35,7 +35,7 @@ def remove_product_from_custom_category(
     stored_data = product.get(system_code)
     if stored_data:
         c_cat = CustomCategory(name=custom_category)
-        message, success = c_cat.remove_product(stored_data.dict())
+        message, success = c_cat.remove(stored_data.dict())
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
