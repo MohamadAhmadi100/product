@@ -48,7 +48,7 @@ class CustomCategory(BaseModel):
             result = mongo.custom_category.find({}, {"_id": 0, "products": 0})
             return [category.get("name") for category in list(result)]
 
-    def update_product(self, product) -> tuple:
+    def update_product_from_custom_category(self, product) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.custom_category.update_one(
                 {"name": self.name, 'products.system_code': product.get("system_code")},

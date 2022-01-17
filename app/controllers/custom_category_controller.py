@@ -77,7 +77,7 @@ def update_product_from_custom_category(
     product = Product.construct()
     product.get(system_code)
     if product:
-        message, success = item.update_product(product.dict())
+        message, success = item.update_product_from_custom_category(product.dict())
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)

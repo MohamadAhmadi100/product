@@ -49,3 +49,5 @@ def attribute_validator(kowsar_attribute_collection: list, item):
             new_attributes[kowsar_attribute_name] = attribute.get("default_value")
     item.attributes = new_attributes
     return item
+
+

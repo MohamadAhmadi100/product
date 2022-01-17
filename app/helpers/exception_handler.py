@@ -1,5 +1,8 @@
+import logging
 import traceback
-from time import strftime
+from time import strftime, localtime
+
+import requests
 
 from config import settings
 
@@ -10,7 +13,7 @@ def telegram_message_sender(message: str, timeout: int = 10):
         url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
         data = {"chat_id": chat_id, "text": message}
         # requests.post(url, data=data, proxies={"https": "155.138.150.199:23456"}, timeout=timeout)
-        requests.post(url, data=datas, timeout=timeout)
+        requests.post(url, data=data, timeout=timeout)
 
 
 def fastapi_exception_handler(func):

@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.post("/product/", status_code=201)
-def add_product(
+def create_product(
         item: Product
 ) -> dict:
     """
@@ -41,7 +41,7 @@ def add_product(
 
 
 @router.get("/products/{page}", status_code=200)
-def get_products(
+def get_all_products(
         page: int = Path(1, ge=1, le=1000),
         per_page: int = Query(10, ge=1, le=1000)
 ) -> list:
