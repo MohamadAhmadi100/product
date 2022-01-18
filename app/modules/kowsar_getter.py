@@ -177,9 +177,9 @@ class KowsarGetter:
 
     @staticmethod
     def system_code_items_getter(system_code: str):
-        '''
+        """
         return items in the system_code
-        '''
+        """
         with MongoConnection() as client:
             if system_code == "00":
                 re = "^[1-9][0-9]$"
@@ -187,23 +187,23 @@ class KowsarGetter:
                 re = '^' + system_code + ".{3}$"
             else:
                 re = '^' + system_code + ".{2}$"
-            products = client.kowsar_collection.find({'system_code': {'$regex': re}}, {"_id": 0})
+            products = client.kowsar_collection.find({'system_code': {'$regex': re}}, {"_id": 0, "attributes": 0})
             return list(products)
 
     @staticmethod
     def system_code_name_getter(system_code):
-        '''
+        """
         return name or config of the system_code
-        '''
+        """
         with MongoConnection() as client:
             data = client.kowsar_collection.find_one({'system_code': system_code}, {"_id": 0})
             return data
 
     @exception_handler
     def update_kowsar_collection(self):
-        '''
+        """
         This function will update kowsar_collection with new data
-        '''
+        """
         with MongoConnection() as mongo:
             for system_code in self.config_dict.keys():
                 mongo.kowsar_collection.update_one(
@@ -257,9 +257,9 @@ class KowsarGetter:
                     upsert=True)
 
     def product_getter(self):
-        '''
+        """
         This function will get product details from local dict
-        '''
+        """
         self.product_group_getter()
         name_configs_codes_with_brackets, name_configs_codes_without_brackets = self.product_config_getter()
         config_list, configs = self.name_config_separator(name_configs_codes_with_brackets,

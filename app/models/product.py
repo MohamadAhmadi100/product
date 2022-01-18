@@ -68,7 +68,8 @@ class Product(BaseModel):
     def class_attributes(cls):
         return cls.__dict__.get("__annotations__").keys()
 
-    def class_attributes_getter(self, keys):
+    def class_attributes_getter(self):
+        keys = self.class_attributes()
         dict_data = dict()
         for key in keys:
             db_key = key
@@ -107,8 +108,27 @@ class Product(BaseModel):
             if not kowsar_data:
                 return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
             self.set_kowsar_data(kowsar_data)
-            result = mongo.collection.insert_one(self.class_attributes_getter(self.class_attributes()))
+            result = mongo.collection.insert_one(self.class_attributes_getter())
         if result.inserted_id:
+            return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
+        return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
+
+    def create_child(self, system_codes) -> tuple:
+        """
+        Adds a product to main collection in database.
+        The system_code of the product should be unique!
+        """
+        with MongoConnection() as mongo:
+            new_childs = list()
+            for system_code in system_codes:
+                self.system_code = system_code
+                kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
+                if not kowsar_data:
+                    return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
+                self.set_kowsar_data(kowsar_data)
+                new_childs.append(self.class_attributes_getter())
+            result = mongo.collection.insert_many(new_childs)
+        if result.acknowledged:
             return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
         return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
 
@@ -134,7 +154,8 @@ class Product(BaseModel):
                 skips = per_page * (page - 1)
                 re = '^[0-9]{9}$'
                 data = mongo.collection.find({'system_code': {'$regex': re}}, {'_id': 0}).skip(skips).limit(per_page)
-                return list(data)
+                counts = mongo.collection.count_documents({'system_code': {'$regex': re}})
+                return {"page": page, "per_page": per_page, "total_counts": counts}, list(data)
             re = '^' + system_code
             result = mongo.collection.find({'system_code': {'$regex': re}}, {"_id": 0})
             return list(result)
@@ -149,8 +170,9 @@ class Product(BaseModel):
 
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
-            result = mongo.collection.delete_one({"system_code": self.system_code})
-            if result.deleted_count:
+            result = mongo.collection.find_one_and_delete({"system_code": self.system_code}, {'_id': 0})
+            mongo.archive.insert_one(result)
+            if result:
                 return {"message": "product deleted successfully", "label": "محصول با موفقیت حذف شد"}, True
             return {"error": "product deletion failed", "label": "فرایند حذف محصول به مشکل برخورد"}, False
 
@@ -180,3 +202,9 @@ class Product(BaseModel):
                 if item.get('system_code') in stored_system_codes:
                     item['created'] = True
             return data
+
+
+class Child(BaseModel):
+    system_codes: list = Field(
+        ..., title="کد های سیستمی", maxLength=63, minLength=1, placeholder=["100104021006"], isRequired=True
+    )

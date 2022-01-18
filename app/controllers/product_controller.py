@@ -1,6 +1,6 @@
 from fastapi import Query, Path, HTTPException, APIRouter, Body
 
-from app.models.product import Product
+from app.models.product import Product, Child
 from app.modules.attribute_setter import attribute_setter
 from app.modules.kowsar_getter import KowsarGetter
 
@@ -27,7 +27,7 @@ def create_parent(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        item.step = 1
+        item.step_setter(1)
         message, success = item.create()
         if success:
             return message
@@ -47,26 +47,30 @@ def create_child():
 
 @router.post("/product/child/", status_code=201)
 def create_child(
-        item: Product = Body(..., example={
-            "system_code": "100104021006"
+        item: Child = Body(..., example={
+            "system_codes": ["100104021006"]
         })
 ) -> dict:
     """
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    if item.system_code_is_unique():
-        item.step_setter(2)
+    system_codes = item.system_codes
+    item = Product.construct()
+    item.step_setter(2)
+    for system_code in system_codes:
+        item.system_code = system_code
+        if not item.system_code_is_unique():
+            raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
+                                                         "redirect": "/product/{system_code}"})
         if not item.check_parent():
             raise HTTPException(status_code=409,
                                 detail={"message": "product parent doesn't exist", "label": "محصول والد موجود نیست",
                                         "redirect": "/product/parent/"})
-        message, success = item.create()
-        if success:
-            return message
-        raise HTTPException(status_code=417, detail=message)
-    raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
-                                                 "redirect": "/product/{system_code}"})
+    message, success = item.create_child(system_codes)
+    if success:
+        return message
+    raise HTTPException(status_code=417, detail=message)
 
 
 @router.get("/product/attributes/", status_code=200)
@@ -107,13 +111,14 @@ def add_attributes(
 def get_all_products(
         page: int = Path(1, ge=1, le=1000),
         per_page: int = Query(10, ge=1, le=1000)
-) -> list:
+) -> dict:
     """
     Get all the products of the main collection in database.
     It shows 10 products per page.
     """
     product = Product.construct()
-    return product.get(page=page, per_page=per_page)
+    headers, data = product.get(page=page, per_page=per_page)
+    return {"headers": headers, "data": data}
 
 
 @router.get("/product/{system_code}", status_code=200)
