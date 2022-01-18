@@ -18,6 +18,7 @@ class MongoConnection(metaclass=Singleton):
                                           username=settings.MONGO_USER, password=settings.MONGO_PASS)
         self.db = self.client['db-product']
         self.collection = self.db['product']
+        self.archive = self.db['archive']
         self.kowsar_collection = self.db['kowsar']
         self.custom_category = self.db['custom-category']
 
