@@ -8,29 +8,56 @@ from app.validators.attribute_validator import attribute_validator
 
 
 class Product(BaseModel):
-    system_code: str = Field(max_length=12, min_length=9)
-    name: Optional[str] = ""
+    system_code: str = Field(
+        ..., title="کد سیستمی", maxLength=12, minLength=9, placeholder="100104021006", isRequired=True
+    )
+    name: Optional[str] = Field(
+        "", title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
+    )
     _step: int
     _main_category: Optional[str]
     _sub_category: Optional[str]
     _brand: Optional[str]
     _model: Optional[str]
     _config: Optional[dict]
-    attributes: Optional[dict] = {}
+    attributes: Optional[dict] = Field({}, title="صفت ها", maxLength=256, isRequired=False)
 
     @validator('system_code')
     def system_code_validator(cls, value):
         if not isinstance(value, str):
-            raise HTTPException(status_code=417, detail={"error": 'system_code must be a string'})
+            raise HTTPException(status_code=417, detail={
+                "error": "system code must be a string",
+                "label": "کد سیستمی باید از نوع رشته باشد"
+            })
         elif 2 > len(value) or len(value) > 12:
-            raise HTTPException(status_code=417, detail={"error": "system_code must be between 2 and 12 characters"})
+            raise HTTPException(status_code=417, detail={
+                "error": "system_code must be between 2 and 12 characters",
+                "label": "طول کد سیستمی باید میان ۲ تا ۱۲ کاراکتر باشد"
+            })
         return value
 
     @validator('attributes')
     def attributes_validator(cls, value):
         # TODO: needs attention!
         if not isinstance(value, dict):
-            raise HTTPException(status_code=417, detail={"error": "attributes must be a dictionary"})
+            raise HTTPException(status_code=417, detail={
+                "error": "attributes must be a dictionary",
+                "label": "صفت ها باید از نوع دیکشنری باشند"
+            })
+        return value
+
+    @validator('name')
+    def name_validator(cls, value):
+        if not isinstance(value, str):
+            raise HTTPException(status_code=417, detail={
+                "error": 'name must be a string',
+                "label": "اسم باید از نوع رشته باشد"
+            })
+        elif len(value) < 3 or len(value) > 256:
+            raise HTTPException(status_code=417, detail={
+                "error": "name must be between 3 and 256 characters",
+                "label": "طول اسم باید میان ۳ تا ۲۵۶ کاراکتر باشد"
+            })
         return value
 
     @classmethod
@@ -78,12 +105,12 @@ class Product(BaseModel):
         with MongoConnection() as mongo:
             kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
             if not kowsar_data:
-                return {"error": "product not found in kowsar"}, False
+                return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
             self.set_kowsar_data(kowsar_data)
             result = mongo.collection.insert_one(self.class_attributes_getter(self.class_attributes()))
         if result.inserted_id:
-            return {"message": "product created successfully"}, True
-        return {"error": "product creation failed"}, False
+            return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
+        return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
 
     def check_parent(self):
         with MongoConnection() as mongo:
@@ -97,8 +124,8 @@ class Product(BaseModel):
                                                  {"$set": {"step": self._step,
                                                            "attributes": self.attributes}})
             if result.modified_count:
-                return {"message": "attribute added successfully"}, True
-            return {"error": "attribute add failed"}, False
+                return {"message": "attribute added successfully", "label": "صفت با موفقیت اضافه شد"}, True
+            return {"error": "attribute add failed", "label": "فرایند افزودن صفت به مشکل برخورد"}, False
 
     @staticmethod
     def get(system_code: str = None, page: int = 1, per_page: int = 10):
@@ -124,8 +151,8 @@ class Product(BaseModel):
         with MongoConnection() as mongo:
             result = mongo.collection.delete_one({"system_code": self.system_code})
             if result.deleted_count:
-                return {"message": "product deleted successfully"}, True
-            return {"error": "product deletion failed"}, False
+                return {"message": "product deleted successfully", "label": "محصول با موفقیت حذف شد"}, True
+            return {"error": "product deletion failed", "label": "فرایند حذف محصول به مشکل برخورد"}, False
 
     def system_code_is_unique(self) -> bool:
         with MongoConnection() as mongo:

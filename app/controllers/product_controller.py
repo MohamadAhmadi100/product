@@ -7,6 +7,14 @@ from app.modules.kowsar_getter import KowsarGetter
 router = APIRouter()
 
 
+@router.get("/product/parent/", status_code=200)
+def create_parent():
+    form = Product.schema().get("properties").copy()
+    del form["attributes"]
+    form["system_code"]["maxLength"] = 9
+    return form
+
+
 @router.post("/product/parent/", status_code=201)
 def create_parent(
         item: Product = Body(..., example={
@@ -26,6 +34,15 @@ def create_parent(
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
                                                  "redirect": "/product/{system_code}"})
+
+
+@router.get("/product/child/", status_code=200)
+def create_child():
+    form = Product.schema().get("properties").copy()
+    form["system_code"]["minLength"] = 12
+    del form["name"]
+    del form["attributes"]
+    return form
 
 
 @router.post("/product/child/", status_code=201)
@@ -50,6 +67,14 @@ def create_child(
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
                                                  "redirect": "/product/{system_code}"})
+
+
+@router.get("/product/attributes/", status_code=200)
+def add_attributes():
+    form = Product.schema().get("properties").copy()
+    form["system_code"]["minLength"] = 12
+    del form["name"]
+    return form
 
 
 @router.post("/product/attributes/", status_code=201)
