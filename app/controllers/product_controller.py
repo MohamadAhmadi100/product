@@ -61,8 +61,9 @@ def create_child(
     for system_code in system_codes:
         item.system_code = system_code
         if not item.system_code_is_unique():
-            raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
-                                                         "redirect": "/product/{system_code}"})
+            raise HTTPException(status_code=409,
+                                detail={"message": "product already exists", "label": "محصول موجود است",
+                                        "redirect": "/product/{system_code}"})
         if not item.check_parent():
             raise HTTPException(status_code=409,
                                 detail={"message": "product parent doesn't exist", "label": "محصول والد موجود نیست",
@@ -130,8 +131,15 @@ def get_product_by_system_code(
     """
     product = Product.construct()
     stored_data = product.get(system_code)
+    output = dict()
+    for data in stored_data:
+        if stored_data.index(data) == 0:
+            output.update(data)
+            output.update({"products": list()})
+            continue
+        output['products'].append(data)
     if stored_data:
-        return stored_data
+        return output
     raise HTTPException(status_code=404, detail={"message": "product not found", "label": "محصول یافت نشد"})
 
 
