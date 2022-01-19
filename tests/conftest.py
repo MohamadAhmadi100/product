@@ -2,35 +2,74 @@ import pytest
 
 from app.models.custom_category import CustomCategory
 from app.models.product import Product
+from app.helpers.mongo_connection import MongoConnection
+
+
+def delete_parent():
+    with MongoConnection() as mongo:
+        mongo.collection.delete_one({'system_code': '100104021'})
+
+
+def delete_product():
+    with MongoConnection() as mongo:
+        mongo.collection.delete_one({'system_code': '100104021006'})
 
 
 @pytest.fixture
-def create_and_delete_product():
+def create_parent():
     sample_data = {
-        "system_code": "100104021006",
-        "attributes": {
-            "image": "/src/default.jpg",
-            "year": 2020
-        }
+        "system_code": "100104021",
+        "name": "ردمی 9c"
     }
     product = Product(**sample_data)
+    product.step_setter(1)
     product.create()
     yield product
-    product.get('100104021006')
-    product.delete()
+
+
+@pytest.fixture
+def create_and_delete_parent():
+    sample_data = {
+        "system_code": "100104021",
+        "name": "ردمی 9c"
+    }
+    product = Product(**sample_data)
+    product.step_setter(1)
+    product.create()
+    yield product
+    delete_parent()
+
+
+@pytest.fixture
+def create_child():
+    sample_data = {
+        "system_code": "100104021",
+        "name": "ردمی 9c"
+    }
+    product = Product(**sample_data)
+    product.step_setter(2)
+    product.create()
+    product.create_child('100104021006')
+    yield product
 
 
 @pytest.fixture
 def create_product():
     sample_data = {
-        "system_code": "100104021006",
+        "system_code": "100104021",
+        "name": "ردمی 9c"
+    }
+    product = Product(**sample_data)
+    product.step_setter(2)
+    product.create()
+    product.create_child('100104021006')
+    Product(**{
+        "system_code": '100104021006',
         "attributes": {
             "image": "/src/default.jpg",
             "year": 2020
         }
-    }
-    product = Product(**sample_data)
-    product.create()
+    })
     yield product
 
 
@@ -51,14 +90,6 @@ def create_and_delete_multiple_products():
     for system_code in system_code_list:
         product.get(system_code)
         product.delete()
-
-
-@pytest.fixture
-def delete_product():
-    yield
-    product = Product.construct()
-    product.get("100104021006")
-    product.delete()
 
 
 @pytest.fixture
