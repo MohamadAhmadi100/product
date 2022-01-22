@@ -31,6 +31,7 @@ def test_create_child(create_parent):
     product.create_child('100104021006')
     assert product.get("100104021006") == []
     delete_parent()
+    delete_product()
 
 
 def test_add_attribute():

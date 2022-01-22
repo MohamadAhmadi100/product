@@ -13,6 +13,8 @@ def delete_parent():
 def delete_product():
     with MongoConnection() as mongo:
         mongo.collection.delete_one({'system_code': '100104021006'})
+        mongo.collection.delete_one({'system_code': '100201002002'})
+        mongo.collection.delete_one({'system_code': '100101047003'})
 
 
 @pytest.fixture
@@ -86,10 +88,7 @@ def create_and_delete_multiple_products():
         })
         product.create()
     yield
-    product = Product.construct()
-    for system_code in system_code_list:
-        product.get(system_code)
-        product.delete()
+    delete_product()
 
 
 @pytest.fixture
@@ -102,13 +101,14 @@ def add_product_to_custom_category():
         }
     }
     product = Product(**sample_data)
+    product.step_setter(2)
     product.create()
     custom_category = CustomCategory(**{"name": "atish bazi"})
     custom_category.add(product.dict())
     yield custom_category
     product = Product.construct()
     product.get("100104021006")
-    product.delete()
+    delete_product()
 
 
 @pytest.fixture
@@ -121,12 +121,13 @@ def add_and_remove_product_from_category():
         }
     }
     product = Product(**sample_data)
+    product.step_setter(2)
     product.create()
     custom_category = CustomCategory(**{"name": "atish bazi"})
     custom_category.add(product.dict())
     yield
     custom_category.remove(product.dict())
-    product.delete()
+    delete_product()
 
 
 @pytest.fixture
@@ -140,10 +141,11 @@ def delete_product_from_custom_category():
         }
     }
     product = Product(**sample_data)
+    product.step_setter(1)
     product.create()
     product = product.get("100104021006")
     custom_category = CustomCategory(**{"name": "atish bazi"})
     custom_category.remove(product.dict())
     product = Product.construct()
     product.get("100104021006")
-    product.delete()
+    delete_product()
