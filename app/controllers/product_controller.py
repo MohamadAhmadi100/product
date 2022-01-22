@@ -8,10 +8,11 @@ router = APIRouter()
 
 
 @router.get("/product/parent/", status_code=200)
-def create_parent():
+def create_parent_schema():
     form = Product.schema().get("properties").copy()
     del form["attributes"]
     form["system_code"]["maxLength"] = 9
+    form["system_code"]["minLength"] = 9
     return form
 
 
@@ -27,18 +28,22 @@ def create_parent(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        item.step_setter(1)
-        message, success = item.create()
-        if success:
-            return message
-        raise HTTPException(status_code=417, detail=message)
+        if len(item.system_code) == 9:
+            message, success = item.create()
+            if success:
+                return message
+            raise HTTPException(status_code=417, detail=message)
+        raise HTTPException(status_code=409,
+                            detail={"message": "invalid system code", "label": "شناسه محصول میبایست ۹ رقم باشد",
+                                    "redirect": "/product/{system_code}"})
     raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
                                                  "redirect": "/product/{system_code}"})
 
 
 @router.get("/product/child/", status_code=200)
-def create_child():
+def create_child_schema():
     form = Product.schema().get("properties").copy()
+    form["system_code"]["maxLength"] = 12
     form["system_code"]["minLength"] = 12
     del form["name"]
     del form["attributes"]
@@ -57,25 +62,27 @@ def create_child(
     """
     system_codes = item.system_codes
     item = Product.construct()
-    item.step_setter(2)
     for system_code in system_codes:
-        item.system_code = system_code
-        if not item.system_code_is_unique():
+        if len(system_code) == 12:
+            item.system_code = system_code
+            if item.system_code_is_unique():
+                message, success = item.create_child()
+                if not success:
+                    break
+                continue
             raise HTTPException(status_code=409,
                                 detail={"message": "product already exists", "label": "محصول موجود است",
                                         "redirect": "/product/{system_code}"})
-        if not item.check_parent():
-            raise HTTPException(status_code=409,
-                                detail={"message": "product parent doesn't exist", "label": "محصول والد موجود نیست",
-                                        "redirect": "/product/parent/"})
-    message, success = item.create_child(system_codes)
+        raise HTTPException(status_code=409,
+                            detail={"message": "invalid system code", "label": "شناسه محصول میبایست ۹ رقم باشد",
+                                    "redirect": "/product/{system_code}"})
     if success:
         return message
     raise HTTPException(status_code=417, detail=message)
 
 
 @router.get("/product/attributes/", status_code=200)
-def add_attributes():
+def add_attributes_schema():
     form = Product.schema().get("properties").copy()
     form["system_code"]["minLength"] = 12
     del form["name"]
@@ -96,16 +103,15 @@ def add_attributes(
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    item.step_setter(3)
-    if not item.check_parent():
-        raise HTTPException(status_code=409,
-                            detail={"message": "product parent doesn't exist", "label": "محصول والد موجود نیست",
-                                    "redirect": "/product/child/"})
-    item.validate_attributes()
-    message, success = item.add_attributes()
-    if success:
-        return message
-    raise HTTPException(status_code=417, detail=message)
+    if not item.system_code_is_unique():
+        item.validate_attributes()
+        message, success = item.add_attributes()
+        if success:
+            return message
+        raise HTTPException(status_code=417, detail=message)
+    raise HTTPException(status_code=409,
+                        detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.get("/products/{page}", status_code=200)
@@ -131,15 +137,8 @@ def get_product_by_system_code(
     """
     product = Product.construct()
     stored_data = product.get(system_code)
-    output = dict()
-    for data in stored_data:
-        if stored_data.index(data) == 0:
-            output.update(data)
-            output.update({"products": list()})
-            continue
-        output['products'].append(data)
     if stored_data:
-        return output
+        return stored_data
     raise HTTPException(status_code=404, detail={"message": "product not found", "label": "محصول یافت نشد"})
 
 
