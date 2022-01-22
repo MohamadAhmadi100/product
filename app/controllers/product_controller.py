@@ -12,6 +12,7 @@ def create_parent_schema():
     form = Product.schema().get("properties").copy()
     del form["attributes"]
     form["system_code"]["maxLength"] = 9
+    form["system_code"]["minLength"] = 9
     return form
 
 
@@ -42,6 +43,7 @@ def create_parent(
 @router.get("/product/child/", status_code=200)
 def create_child_schema():
     form = Product.schema().get("properties").copy()
+    form["system_code"]["maxLength"] = 12
     form["system_code"]["minLength"] = 12
     del form["name"]
     del form["attributes"]
@@ -61,7 +63,7 @@ def create_child(
     system_codes = item.system_codes
     item = Product.construct()
     for system_code in system_codes:
-        if len(item.system_code) == 9:
+        if len(system_code) == 12:
             item.system_code = system_code
             if item.system_code_is_unique():
                 message, success = item.create_child()
