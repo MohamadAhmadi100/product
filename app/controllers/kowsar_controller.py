@@ -24,7 +24,11 @@ def get_kowsar_items(system_code: str):
     For the root category use "00"
     """
     data = KowsarGetter.system_code_items_getter(system_code)
-    return data
+    if data:
+        return data
+    raise HTTPException(status_code=404,
+                        detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.get("/update_collection", status_code=200)
