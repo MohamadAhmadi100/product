@@ -1,6 +1,6 @@
 from fastapi import Query, Path, HTTPException, APIRouter, Body
 
-from app.models.product import CreateParent, CreateChild, Product
+from app.models.product import CreateParent, CreateChild, AddAtributes, Product
 from app.modules.attribute_setter import attribute_setter
 from app.modules.kowsar_getter import KowsarGetter
 
@@ -43,7 +43,7 @@ def create_child(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        message, success = item.create_child()
+        message, success = item.create()
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
@@ -62,7 +62,7 @@ def add_attributes_schema():
 
 @router.post("/product/attributes/", status_code=201)
 def add_attributes(
-        item: Product = Body(..., example={
+        item: AddAtributes = Body(..., example={
             "system_code": "100104021006",
             "attributes": {
                 "image": "/src/default.jpg",
@@ -76,7 +76,7 @@ def add_attributes(
     """
     if not item.system_code_is_unique():
         item.validate_attributes()
-        message, success = item.add_attributes()
+        message, success = item.create()
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
@@ -120,9 +120,9 @@ def delete_product(
     """
     Delete a product by name in main collection in database.
     """
-    product = Product.construct()
-    stored_data = product.get_object(system_code)
-    if stored_data:
+    product = CreateChild.construct()
+    product.system_code = system_code
+    if not product.system_code_is_unique():
         message, success = product.delete()
         if success:
             return message
@@ -166,8 +166,8 @@ def update_attribute_collection():
     return {"message": "attribute collection updated", "label": "جدول تنظیمات بروز شد"}
 
 
-@router.get("/product/suggest/{system_code}", status_code=200)
+@router.get("/product/{system_code}/items", status_code=200)
 def suggest_product(system_code: str = Path(..., min_length=9, max_length=9)):
     data = KowsarGetter.system_code_items_getter(system_code)
-    suggests = Product.suggester(data)
+    suggests = CreateChild.suggester(data, system_code)
     return suggests
