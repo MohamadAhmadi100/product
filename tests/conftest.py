@@ -10,11 +10,6 @@ def delete_parent():
         mongo.collection.delete_one({'system_code': '100104021'})
 
 
-def delete_product():
-    with MongoConnection() as mongo:
-        mongo.collection.delete_one({'system_code': '100104021006'})
-
-
 @pytest.fixture
 def create_parent():
     sample_data = {
@@ -22,7 +17,6 @@ def create_parent():
         "name": "ردمی 9c"
     }
     product = Product(**sample_data)
-    product.step_setter(1)
     product.create()
     yield product
 
@@ -34,35 +28,23 @@ def create_and_delete_parent():
         "name": "ردمی 9c"
     }
     product = Product(**sample_data)
-    product.step_setter(1)
     product.create()
     yield product
     delete_parent()
 
 
 @pytest.fixture
-def create_child():
+def create_child(create_parent):
     sample_data = {
-        "system_code": "100104021",
-        "name": "ردمی 9c"
+        "system_code": "100104021006"
     }
     product = Product(**sample_data)
-    product.step_setter(2)
-    product.create()
-    product.create_child('100104021006')
+    product.create_child()
     yield product
 
 
 @pytest.fixture
-def create_product():
-    sample_data = {
-        "system_code": "100104021",
-        "name": "ردمی 9c"
-    }
-    product = Product(**sample_data)
-    product.step_setter(2)
-    product.create()
-    product.create_child('100104021006')
+def add_attributes(create_child):
     Product(**{
         "system_code": '100104021006',
         "attributes": {
@@ -70,6 +52,7 @@ def create_product():
             "year": 2020
         }
     })
+    product = Product.add_attributes()
     yield product
 
 
@@ -86,10 +69,7 @@ def create_and_delete_multiple_products():
         })
         product.create()
     yield
-    product = Product.construct()
-    for system_code in system_code_list:
-        product.get(system_code)
-        product.delete()
+
 
 
 @pytest.fixture
@@ -107,8 +87,8 @@ def add_product_to_custom_category():
     custom_category.add(product.dict())
     yield custom_category
     product = Product.construct()
-    product.get("100104021006")
-    product.delete()
+    product.get("100104021")
+    delete_parent()
 
 
 @pytest.fixture
@@ -126,7 +106,7 @@ def add_and_remove_product_from_category():
     custom_category.add(product.dict())
     yield
     custom_category.remove(product.dict())
-    product.delete()
+    delete_product()
 
 
 @pytest.fixture
@@ -146,4 +126,4 @@ def delete_product_from_custom_category():
     custom_category.remove(product.dict())
     product = Product.construct()
     product.get("100104021006")
-    product.delete()
+    delete_product()

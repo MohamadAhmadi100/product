@@ -13,8 +13,10 @@ def add_product_to_custom_category(
     """
     Add a product to custom category collection in database.
     """
+    print('system_code', system_code)
     product = Product.construct()
     product.get(system_code)
+    print('product.get', product)
     if product:
         message, success = item.add(product.dict())
         if success:
