@@ -12,7 +12,7 @@ class Product(BaseModel):
         ..., title="کد سیستمی", maxLength=12, minLength=9, placeholder="100104021006", isRequired=True
     )
     name: Optional[str] = Field(
-        "", title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
+        ..., title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
     )
     _main_category: Optional[str]
     _sub_category: Optional[str]
@@ -196,3 +196,145 @@ class Child(BaseModel):
     system_codes: list = Field(
         ..., title="کد های سیستمی", maxLength=63, minLength=1, placeholder=["100104021006"], isRequired=True
     )
+
+
+class CreateParent(BaseModel):
+    system_code: str = Field(
+        ..., title="شناسه محصول", maxLength=9, minLength=9, placeholder="100104021", isRequired=True
+    )
+    name: Optional[str] = Field(
+        None, title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
+    )
+    _main_category: Optional[str]
+    _sub_category: Optional[str]
+    _brand: Optional[str]
+    _model: Optional[str]
+
+    @validator('system_code')
+    def system_code_validator(cls, value):
+        if not isinstance(value, str):
+            raise HTTPException(status_code=417, detail={
+                "error": "system code must be a string",
+                "label": "کد سیستمی باید از نوع رشته باشد"
+            })
+        elif len(value) != 9:
+            raise HTTPException(status_code=417, detail={
+                "error": "system_code must be 9 characters",
+                "label": "طول شناسه محصول باید ۹ کاراکتر باشد"
+            })
+        return value
+
+    @validator('name')
+    def name_validator(cls, value):
+        if not isinstance(value, str):
+            raise HTTPException(status_code=417, detail={
+                "error": 'name must be a string',
+                "label": "اسم باید از نوع رشته باشد"
+            })
+        elif len(value) < 3 or len(value) > 256:
+            raise HTTPException(status_code=417, detail={
+                "error": "name must be between 3 and 256 characters",
+                "label": "طول اسم باید میان ۳ تا ۲۵۶ کاراکتر باشد"
+            })
+        return value
+
+    def system_code_is_unique(self) -> bool:
+        with MongoConnection() as mongo:
+            result = mongo.collection.find_one({'system_code': self.system_code})
+            return False if result else True
+
+    @classmethod
+    def set_kowsar_data(cls, data: dict) -> None:
+        cls._main_category = data.get('main_category')
+        cls._sub_category = data.get('sub_category')
+        cls._brand = data.get('brand')
+        cls._model = data.get('model')
+
+    @classmethod
+    def class_attributes(cls):
+        return cls.__dict__.get("__annotations__").keys()
+
+    def class_attributes_getter(self):
+        keys = self.class_attributes()
+        dict_data = dict()
+        for key in keys:
+            db_key = key
+            if key != "system_code":
+                db_key = key.replace("_", "", 1)
+            exec(f"dict_data['{db_key}'] = self.{key}")
+        return dict_data
+
+    def create(self) -> tuple:
+        """
+        Adds a product to main collection in database.
+        The system_code of the product should be unique!
+        """
+        with MongoConnection() as mongo:
+            kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
+            if not kowsar_data:
+                return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
+            self.set_kowsar_data(kowsar_data)
+            result = mongo.collection.insert_one(self.class_attributes_getter())
+        if result.inserted_id:
+            return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
+        return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
+
+
+class CreateChild(BaseModel):
+    system_code: str = Field(
+        ..., title="شناسه محصول", maxLength=12, minLength=12, placeholder="100104021006", isRequired=True
+    )
+    _config: Optional[dict]
+
+    @validator('system_code')
+    def system_code_validator(cls, value):
+        if not isinstance(value, str):
+            raise HTTPException(status_code=417, detail={
+                "error": "system codes must be a string",
+                "label": "شناسه های محصولات باید از نوع رشته باشد"
+            })
+        elif len(value) != 12:
+            raise HTTPException(status_code=417, detail={
+                "error": "system_code must be 12 characters",
+                "label": "طول شناسه محصول باید ۱۲ کاراکتر باشد"
+            })
+        return value
+
+    @classmethod
+    def class_attributes(cls):
+        return cls.__dict__.get("__annotations__").keys()
+
+    def class_attributes_getter(self):
+        keys = self.class_attributes()
+        dict_data = dict()
+        for key in keys:
+            db_key = key
+            if key != "system_code":
+                db_key = key.replace("_", "", 1)
+            exec(f"dict_data['{db_key}'] = self.{key}")
+        return dict_data
+
+    @classmethod
+    def set_kowsar_data(cls, data: dict) -> None:
+        cls._config = data.get('config')
+
+    def system_code_is_unique(self) -> bool:
+        with MongoConnection() as mongo:
+            result = mongo.collection.find_one({'products.system_code': self.system_code})
+            return False if result else True
+
+    def create_child(self) -> tuple:
+        """
+        Adds a product to main collection in database.
+        The system_code of the product should be unique!
+        """
+        with MongoConnection() as mongo:
+            kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
+            if not kowsar_data:
+                return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
+            self.set_kowsar_data(kowsar_data)
+            result = mongo.collection.update_one({"system_code": self.system_code[:9]},
+                                                 {'$addToSet': {'products': self.class_attributes_getter()}})
+        if result.modified_count:
+            return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
+        return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False

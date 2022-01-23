@@ -1,6 +1,6 @@
 from fastapi import Query, Path, HTTPException, APIRouter, Body
 
-from app.models.product import Product, Child
+from app.models.product import CreateParent, CreateChild, Product
 from app.modules.attribute_setter import attribute_setter
 from app.modules.kowsar_getter import KowsarGetter
 
@@ -9,76 +9,47 @@ router = APIRouter()
 
 @router.get("/product/parent/", status_code=200)
 def create_parent_schema():
-    form = Product.schema().get("properties").copy()
-    del form["attributes"]
-    form["system_code"]["maxLength"] = 9
-    form["system_code"]["minLength"] = 9
-    return form
+    return CreateParent.schema().get("properties")
 
 
 @router.post("/product/parent/", status_code=201)
 def create_parent(
-        item: Product = Body(..., example={
-            "system_code": "100104021",
-            "name": "ردمی 9c"
-        })
+        item: CreateParent
 ) -> dict:
     """
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        if len(item.system_code) == 9:
-            message, success = item.create()
-            if success:
-                return message
-            raise HTTPException(status_code=417, detail=message)
-        raise HTTPException(status_code=409,
-                            detail={"message": "invalid system code", "label": "شناسه محصول میبایست ۹ رقم باشد",
-                                    "redirect": "/product/{system_code}"})
+        message, success = item.create()
+        if success:
+            return message
+        raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
                                                  "redirect": "/product/{system_code}"})
 
 
 @router.get("/product/child/", status_code=200)
 def create_child_schema():
-    form = Product.schema().get("properties").copy()
-    form["system_code"]["maxLength"] = 12
-    form["system_code"]["minLength"] = 12
-    del form["name"]
-    del form["attributes"]
-    return form
+    return CreateChild.schema().get("properties")
 
 
 @router.post("/product/child/", status_code=201)
 def create_child(
-        item: Child = Body(..., example={
-            "system_codes": ["100104021006"]
-        })
+        item: CreateChild
 ) -> dict:
     """
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    system_codes = item.system_codes
-    item = Product.construct()
-    for system_code in system_codes:
-        if len(system_code) == 12:
-            item.system_code = system_code
-            if item.system_code_is_unique():
-                message, success = item.create_child()
-                if not success:
-                    break
-                continue
-            raise HTTPException(status_code=409,
-                                detail={"message": "product already exists", "label": "محصول موجود است",
-                                        "redirect": "/product/{system_code}"})
-        raise HTTPException(status_code=409,
-                            detail={"message": "invalid system code", "label": "شناسه محصول میبایست ۹ رقم باشد",
-                                    "redirect": "/product/{system_code}"})
-    if success:
-        return message
-    raise HTTPException(status_code=417, detail=message)
+    if item.system_code_is_unique():
+        message, success = item.create_child()
+        if success:
+            return message
+        raise HTTPException(status_code=417, detail=message)
+    raise HTTPException(status_code=409,
+                        detail={"message": "product already exists", "label": "محصول موجود است",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.get("/product/attributes/", status_code=200)

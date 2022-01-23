@@ -183,12 +183,26 @@ class KowsarGetter:
         with MongoConnection() as client:
             if system_code == "00":
                 re = "^[1-9][0-9]$"
-            elif len(system_code) == 6 or len(system_code) == 9:
+                label = "main_category"
+            elif len(system_code) == 2:
+                label = "sub_category"
+                re = '^' + system_code + ".{2}$"
+            elif len(system_code) == 4:
+                label = "brand"
+                re = '^' + system_code + ".{2}$"
+            elif len(system_code) == 6:
+                label = "model"
+                re = '^' + system_code + ".{3}$"
+            elif len(system_code) == 9:
+                label = "config"
                 re = '^' + system_code + ".{3}$"
             else:
-                re = '^' + system_code + ".{2}$"
-            products = client.kowsar_collection.find({'system_code': {'$regex': re}}, {"_id": 0, "attributes": 0})
-            return list(products)
+                return None
+            products = list(client.kowsar_collection.aggregate([
+                {"$match": {'system_code': {'$regex': re}}},
+                {"$project": {"_id": 0, "system_code": 1, "label": f"${label}"}}
+            ]))
+            return products
 
     @staticmethod
     def system_code_name_getter(system_code):
