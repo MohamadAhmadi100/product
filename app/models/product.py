@@ -24,6 +24,27 @@ class Product(ABC):
         return dict_data
 
     @staticmethod
+    def get_all_categories(system_code, page, per_page):
+        with MongoConnection() as mongo:
+            if system_code == "00":
+                items = list(mongo.collection.find({}, {"system_code": {"$substr": ["$system_code", 0, 2]}, "_id": 0,
+                                                        "label": "$main_category"}))
+            elif len(system_code) == 2:
+                items = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}},
+                                              {"system_code": {"$substr": ["$system_code", 0, 4]}, "_id": 0,
+                                               "label": "$sub_category"})
+            elif len(system_code) == 4:
+                items = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}},
+                                              {"system_code": {"$substr": ["$system_code", 0, 6]}, "_id": 0,
+                                               "label": "$brand"})
+            elif len(system_code) == 6:
+                skip = (page - 1) * per_page
+                items = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}},
+                                              {"system_code": {"$substr": ["$system_code", 0, 9]}, "_id": 0,
+                                               "label": "$model"}).skip(skip).limit(per_page)
+            return [dict(t) for t in {tuple(d.items()) for d in items}]
+
+    @staticmethod
     def get(system_code: str = None, page: int = 1, per_page: int = 10):
         with MongoConnection() as mongo:
             if not system_code:
@@ -35,6 +56,14 @@ class Product(ABC):
             re = '^' + system_code
             result = mongo.collection.find({'system_code': {'$regex': re}}, {"_id": 0})
             return list(result)
+
+    @staticmethod
+    def get_product_by_system_code(system_code):
+        """
+        """
+        with MongoConnection() as mongo:
+            result = mongo.collection.find_one({'system_code': system_code}, {"_id": 0})
+            return result
 
     @abstractmethod
     def system_code_is_unique(self) -> bool:
@@ -63,7 +92,7 @@ class CreateParent(BaseModel, Product):
         ..., title="شناسه محصول", maxLength=9, minLength=9, placeholder="100104021", isRequired=True
     )
     name: Optional[str] = Field(
-        None, title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
+        None, title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False, alias="name"
     )
     _main_category: Optional[str]
     _sub_category: Optional[str]
