@@ -46,7 +46,7 @@ def test_create_child_schema():
 
 def test_create_child(create_and_delete_parent):
     response = client.post("/api/v1/product/child/", json={
-        "system_code": "stringstring"
+        "system_code": "100104021015"
     })
     assert response.status_code == 201
     assert response.json() == {'label': 'محصول با موفقیت ساخته شد', 'message': 'product created successfully'}
@@ -82,8 +82,8 @@ def test_add_attributes(create_child):
     delete_parent()
 
 
-def test_get_all_product(create_and_delete_parent):
-    response = client.get('api/v1//products/1')
+def test_get_all_products(create_and_delete_parent):
+    response = client.get('/api/v1/products/1')
     assert response.status_code == 200
     assert response.json() == {'data': [{'attributes': {},
                                          'brand': 'Mobile Xiaomi',
@@ -122,7 +122,7 @@ def test_update_attribute_collection():
 
 
 def test_suggest_product():
-    response = client.get("/api/v1/product/suggest/100104021")
+    response = client.get("/api/v1/product/100104021/items")
     assert response.status_code == 200
     assert response.json() == [{'label': {'color': 'gray',
                                           'guarantee': 'awat',

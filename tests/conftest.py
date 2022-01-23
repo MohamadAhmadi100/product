@@ -1,7 +1,7 @@
 import pytest
 
 from app.models.custom_category import CustomCategory
-from app.models.product import Product
+from app.models.product import Product, CreateParent, CreateChild, AddAtributes
 from app.helpers.mongo_connection import MongoConnection
 
 
@@ -16,7 +16,7 @@ def create_parent():
         "system_code": "100104021",
         "name": "ردمی 9c"
     }
-    product = Product(**sample_data)
+    product = CreateParent(**sample_data)
     product.create()
     yield product
 
@@ -27,7 +27,7 @@ def create_and_delete_parent():
         "system_code": "100104021",
         "name": "ردمی 9c"
     }
-    product = Product(**sample_data)
+    product = CreateParent(**sample_data)
     product.create()
     yield product
     delete_parent()
@@ -38,21 +38,21 @@ def create_child(create_parent):
     sample_data = {
         "system_code": "100104021006"
     }
-    product = Product(**sample_data)
-    product.create_child()
+    product = CreateChild(**sample_data)
+    product.create()
     yield product
 
 
 @pytest.fixture
 def add_attributes(create_child):
-    Product(**{
+    AddAtributes(**{
         "system_code": '100104021006',
         "attributes": {
             "image": "/src/default.jpg",
             "year": 2020
         }
     })
-    product = Product.add_attributes()
+    product = AddAtributes.create()
     yield product
 
 
@@ -65,12 +65,12 @@ def add_product_to_custom_category():
             "year": 2020
         }
     }
-    product = Product(**sample_data)
+    product = AddAtributes(**sample_data)
     product.create()
     custom_category = CustomCategory(**{"name": "atish bazi"})
     custom_category.add(product.dict())
     yield custom_category
-    product = Product.construct()
+    product = AddAtributes.construct()
     product.get("100104021")
     delete_parent()
 
