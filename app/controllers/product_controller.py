@@ -85,20 +85,6 @@ def add_attributes(
                                 "redirect": "/product/{system_code}"})
 
 
-@router.get("/products/{page}", status_code=200)
-def get_all_products(
-        page: int = Path(1, ge=1, le=1000),
-        per_page: int = Query(10, ge=1, le=1000)
-) -> dict:
-    """
-    Get all the products of the main collection in database.
-    It shows 10 products per page.
-    """
-    product = Product.construct()
-    headers, data = product.get(page=page, per_page=per_page)
-    return {"headers": headers, "data": data}
-
-
 @router.get("/product/{system_code}", status_code=200)
 def get_product_by_system_code(
         system_code: str = Path(..., min_length=9, max_length=9)
@@ -106,11 +92,12 @@ def get_product_by_system_code(
     """
     Get a product by system_code in main collection in database.
     """
-    product = Product.construct()
-    stored_data = product.get(system_code)
-    if stored_data:
-        return stored_data
-    raise HTTPException(status_code=404, detail={"message": "product not found", "label": "محصول یافت نشد"})
+    result = Product.get_product_by_system_code(system_code)
+    if result:
+        return result
+    raise HTTPException(status_code=404,
+                        detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.delete("/product/{system_code}", status_code=200)
@@ -171,3 +158,13 @@ def suggest_product(system_code: str = Path(..., min_length=9, max_length=9)):
     data = KowsarGetter.system_code_items_getter(system_code)
     suggests = CreateChild.suggester(data, system_code)
     return suggests
+
+
+@router.get("/categories/{system_code}/")
+def get_all_categories(system_code: str = Path(00, min_length=2, max_length=6),
+                       page: int = Query(1, ge=1, le=1000),
+                       per_page: int = Query(15, ge=1, le=1000)):
+    """
+
+    """
+    return Product.get_all_categories(system_code, page, per_page)
