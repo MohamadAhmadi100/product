@@ -19,9 +19,8 @@ def test_add_parent():
 
 
 def test_delete_parent(create_child):
-    product = CreateParent.construct()
-    product.get('100104021')
-    product.delete()
+    Product.get('100104021')
+    Product.delete()
     assert Product.get('100104021') == []
 
 
