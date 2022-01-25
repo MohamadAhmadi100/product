@@ -165,6 +165,134 @@ def get_all_categories(system_code: str = Path(00, min_length=2, max_length=6),
                        page: int = Query(1, ge=1, le=1000),
                        per_page: int = Query(15, ge=1, le=1000)):
     """
-
     """
     return Product.get_all_categories(system_code, page, per_page)
+
+
+@router.get("/product/mock/")
+def get_mock():
+    return {
+        "kowsar_system_code": "100102001",
+        "system_code": "10010200101",
+        "name": "ggg",
+        "main_category": "Device",
+        "sub_category": "Mobile",
+        "brand": "Mobile Apple",
+        "model": "iPhone 11",
+        "routes": {
+            "route": "Device",
+            "label": "لوازم الکترونیک ",
+            "children": {
+                "route": "Mobile",
+                "label": "موبایل",
+                "children": {
+                    "route": "Mobile Apple",
+                    "label": "موبایل اپل ",
+                }
+            }
+        },
+        "related_products": [{"kowsar_system_code": "100102001",
+                              "system_code": "10010200101",
+                              "name": "ggg",
+                              "colors": [{
+                                  "value": "black",
+                                  "type": "color"}, {
+                                  "value": "black",
+                                  "type": "color"}],
+                              "price": {
+                                  "regular": 60000000,
+                                  "special": 50000000,
+                              }}],
+        "attributes": {
+            "images": {
+                "main_image": "url",
+                "closeup_image": "url",
+                "other_images": ["url", "url"]
+            },
+            "storage": {"attribute_label": "حافظه داخلی",
+                        "label": "۶۴"},
+            "ram": {"attribute_label": "رم",
+                    "label": "۸"}
+        },
+        "visible_to_site": True,
+        "products": [
+            {
+                "kowsar_system_code": "100102001001",
+                "system_code": "10010200101001",
+                "config": {
+                    "color": {"attribute_label": "رنگ",
+                              "value": "black",
+                              "label": "مشکی",
+                              "type": "color"},
+                    "guarantee": {"attribute_label": "گارانتی",
+                                  "value": "awat",
+                                  "label": "آوات",
+                                  "type": "radio"},
+                    "seller": {"attribute_label": "فروشنده",
+                               "value": "aasood",
+                               "label": "آسود",
+                               "type": "radio"},
+                    "warehouse": [{"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "تهران",
+                                   "attribute_label": "انبار"},
+                                  {"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "مشهد",
+                                   "attribute_label": "انبار"}]
+                },
+                "visible_to_site": True,
+            },
+            {
+                "kowsar_system_code": "100102001002",
+                "system_code": "10010200101002",
+                "config": {
+                    "color": {"attribute_label": "رنگ",
+                              "value": "black",
+                              "label": "مشکی",
+                              "type": "color"},
+                    "guarantee": {"attribute_label": "گارانتی",
+                                  "value": "awat",
+                                  "label": "آوات",
+                                  "type": "radio"},
+                    "seller": {"attribute_label": "فروشنده",
+                               "value": "aasood",
+                               "label": "آسود",
+                               "type": "radio"},
+                    "warehouse": [{"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "تهران",
+                                   "attribute_label": "انبار"},
+                                  {"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "مشهد",
+                                   "attribute_label": "انبار"}]
+                },
+                "visible_to_site": True,
+            }
+        ]
+    }
