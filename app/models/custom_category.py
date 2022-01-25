@@ -22,6 +22,7 @@ class CustomCategory(BaseModel):
 
     def add(self, product: dict):
         with MongoConnection() as mongo:
+            print('product', product)
             parent = mongo.kowsar_collection.find_one({"system_code": product.get("system_code")[:9]}, {"_id": 0})
             mongo.custom_category.update_one({"name": self.name}, {"$addToSet": {"products": parent}},
                                              upsert=True)

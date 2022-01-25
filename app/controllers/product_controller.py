@@ -1,6 +1,6 @@
 from fastapi import Query, Path, HTTPException, APIRouter, Body
 
-from app.models.product import CreateParent, CreateChild, Product
+from app.models.product import CreateParent, CreateChild, AddAtributes, Product
 from app.modules.attribute_setter import attribute_setter
 from app.modules.kowsar_getter import KowsarGetter
 
@@ -43,7 +43,7 @@ def create_child(
     attributes will be validated before insert.
     """
     if item.system_code_is_unique():
-        message, success = item.create_child()
+        message, success = item.create()
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
@@ -62,7 +62,7 @@ def add_attributes_schema():
 
 @router.post("/product/attributes/", status_code=201)
 def add_attributes(
-        item: Product = Body(..., example={
+        item: AddAtributes = Body(..., example={
             "system_code": "100104021006",
             "attributes": {
                 "image": "/src/default.jpg",
@@ -76,27 +76,13 @@ def add_attributes(
     """
     if not item.system_code_is_unique():
         item.validate_attributes()
-        message, success = item.add_attributes()
+        message, success = item.create()
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409,
                         detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
                                 "redirect": "/product/{system_code}"})
-
-
-@router.get("/products/{page}", status_code=200)
-def get_all_products(
-        page: int = Path(1, ge=1, le=1000),
-        per_page: int = Query(10, ge=1, le=1000)
-) -> dict:
-    """
-    Get all the products of the main collection in database.
-    It shows 10 products per page.
-    """
-    product = Product.construct()
-    headers, data = product.get(page=page, per_page=per_page)
-    return {"headers": headers, "data": data}
 
 
 @router.get("/product/{system_code}", status_code=200)
@@ -106,11 +92,12 @@ def get_product_by_system_code(
     """
     Get a product by system_code in main collection in database.
     """
-    product = Product.construct()
-    stored_data = product.get(system_code)
-    if stored_data:
-        return stored_data
-    raise HTTPException(status_code=404, detail={"message": "product not found", "label": "محصول یافت نشد"})
+    result = Product.get_product_by_system_code(system_code)
+    if result:
+        return result
+    raise HTTPException(status_code=404,
+                        detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.delete("/product/{system_code}", status_code=200)
@@ -120,9 +107,9 @@ def delete_product(
     """
     Delete a product by name in main collection in database.
     """
-    product = Product.construct()
-    stored_data = product.get_object(system_code)
-    if stored_data:
+    product = CreateChild.construct()
+    product.system_code = system_code
+    if not product.system_code_is_unique():
         message, success = product.delete()
         if success:
             return message
@@ -166,8 +153,146 @@ def update_attribute_collection():
     return {"message": "attribute collection updated", "label": "جدول تنظیمات بروز شد"}
 
 
-@router.get("/product/suggest/{system_code}", status_code=200)
+@router.get("/product/{system_code}/items", status_code=200)
 def suggest_product(system_code: str = Path(..., min_length=9, max_length=9)):
     data = KowsarGetter.system_code_items_getter(system_code)
-    suggests = Product.suggester(data)
+    suggests = CreateChild.suggester(data, system_code)
     return suggests
+
+
+@router.get("/categories/{system_code}/")
+def get_all_categories(system_code: str = Path(00, min_length=2, max_length=6),
+                       page: int = Query(1, ge=1, le=1000),
+                       per_page: int = Query(15, ge=1, le=1000)):
+    """
+    """
+    return Product.get_all_categories(system_code, page, per_page)
+
+
+@router.get("/product/mock/")
+def get_mock():
+    return {
+        "kowsar_system_code": "100102001",
+        "system_code": "10010200101",
+        "name": "ggg",
+        "main_category": "Device",
+        "sub_category": "Mobile",
+        "brand": "Mobile Apple",
+        "model": "iPhone 11",
+        "routes": {
+            "route": "Device",
+            "label": "لوازم الکترونیک ",
+            "children": {
+                "route": "Mobile",
+                "label": "موبایل",
+                "children": {
+                    "route": "Mobile Apple",
+                    "label": "موبایل اپل ",
+                }
+            }
+        },
+        "related_products": [{"kowsar_system_code": "100102001",
+                              "system_code": "10010200101",
+                              "name": "ggg",
+                              "colors": [{
+                                  "value": "black",
+                                  "type": "color"}, {
+                                  "value": "black",
+                                  "type": "color"}],
+                              "price": {
+                                  "regular": 60000000,
+                                  "special": 50000000,
+                              }}],
+        "attributes": {
+            "images": {
+                "main_image": "url",
+                "closeup_image": "url",
+                "other_images": ["url", "url"]
+            },
+            "storage": {"attribute_label": "حافظه داخلی",
+                        "label": "۶۴"},
+            "ram": {"attribute_label": "رم",
+                    "label": "۸"}
+        },
+        "visible_to_site": True,
+        "products": [
+            {
+                "kowsar_system_code": "100102001001",
+                "system_code": "10010200101001",
+                "config": {
+                    "color": {"attribute_label": "رنگ",
+                              "value": "black",
+                              "label": "مشکی",
+                              "type": "color"},
+                    "guarantee": {"attribute_label": "گارانتی",
+                                  "value": "awat",
+                                  "label": "آوات",
+                                  "type": "radio"},
+                    "seller": {"attribute_label": "فروشنده",
+                               "value": "aasood",
+                               "label": "آسود",
+                               "type": "radio"},
+                    "warehouse": [{"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "تهران",
+                                   "attribute_label": "انبار"},
+                                  {"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "مشهد",
+                                   "attribute_label": "انبار"}]
+                },
+                "visible_to_site": True,
+            },
+            {
+                "kowsar_system_code": "100102001002",
+                "system_code": "10010200101002",
+                "config": {
+                    "color": {"attribute_label": "رنگ",
+                              "value": "black",
+                              "label": "مشکی",
+                              "type": "color"},
+                    "guarantee": {"attribute_label": "گارانتی",
+                                  "value": "awat",
+                                  "label": "آوات",
+                                  "type": "radio"},
+                    "seller": {"attribute_label": "فروشنده",
+                               "value": "aasood",
+                               "label": "آسود",
+                               "type": "radio"},
+                    "warehouse": [{"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "تهران",
+                                   "attribute_label": "انبار"},
+                                  {"quantity": 0,
+                                   "price": 0,
+                                   "special_price": 0,
+                                   "warehouse_id": 0,
+                                   "warehouse_state": "",
+                                   "warehouse_city": "",
+                                   "warehouse_state_id": "",
+                                   "warehouse_city_id": "",
+                                   "warehouse_label": "مشهد",
+                                   "attribute_label": "انبار"}]
+                },
+                "visible_to_site": True,
+            }
+        ]
+    }
