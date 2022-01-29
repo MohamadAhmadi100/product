@@ -172,7 +172,6 @@ def get_all_categories(system_code: str = Path(00, min_length=2, max_length=6),
 @router.get("/product/mock/")
 def get_mock():
     return {
-        "kowsar_system_code": "100102001",
         "system_code": "10010200101",
         "name": "ggg",
         "main_category": "Device",
@@ -182,27 +181,27 @@ def get_mock():
         "routes": {
             "route": "Device",
             "label": "لوازم الکترونیک ",
-            "children": {
+            "child": {
                 "route": "Mobile",
                 "label": "موبایل",
-                "children": {
+                "child": {
                     "route": "Mobile Apple",
                     "label": "موبایل اپل ",
                 }
             }
         },
-        "related_products": [{"kowsar_system_code": "100102001",
-                              "system_code": "10010200101",
-                              "name": "ggg",
-                              "colors": [{
-                                  "value": "black",
-                                  "type": "color"}, {
-                                  "value": "black",
-                                  "type": "color"}],
-                              "price": {
-                                  "regular": 60000000,
-                                  "special": 50000000,
-                              }}],
+        "related_products": [{
+            "system_code": "10010200101",
+            "name": "ggg",
+            "colors": [{
+                "value": "black",
+                "type": "color"}, {
+                "value": "black",
+                "type": "color"}],
+            "price": {
+                "regular": 60000000,
+                "special": 50000000,
+            }}],
         "attributes": {
             "images": {
                 "main_image": "url",
@@ -217,8 +216,7 @@ def get_mock():
         "visible_to_site": True,
         "products": [
             {
-                "kowsar_system_code": "100102001001",
-                "system_code": "10010200101001",
+                "system_code": "100102001001",
                 "config": {
                     "color": {"attribute_label": "رنگ",
                               "value": "black",
@@ -232,32 +230,31 @@ def get_mock():
                                "value": "aasood",
                                "label": "آسود",
                                "type": "radio"},
-                    "warehouse": [{"quantity": 0,
-                                   "price": 0,
-                                   "special_price": 0,
-                                   "warehouse_id": 0,
-                                   "warehouse_state": "",
-                                   "warehouse_city": "",
-                                   "warehouse_state_id": "",
-                                   "warehouse_city_id": "",
+                    "warehouse": [{"quantity": 21,
+                                   "price": 20000000000,
+                                   "special_price": None,
+                                   "warehouse_id": 1,
+                                   "warehouse_state": "aasood",
+                                   "warehouse_city": "dev",
+                                   "warehouse_state_id": "1",
+                                   "warehouse_city_id": "1",
                                    "warehouse_label": "تهران",
                                    "attribute_label": "انبار"},
-                                  {"quantity": 0,
-                                   "price": 0,
-                                   "special_price": 0,
-                                   "warehouse_id": 0,
-                                   "warehouse_state": "",
-                                   "warehouse_city": "",
-                                   "warehouse_state_id": "",
-                                   "warehouse_city_id": "",
+                                  {"quantity": 22,
+                                   "price": 484122315312,
+                                   "special_price": 544865,
+                                   "warehouse_id": 2,
+                                   "warehouse_state": "awat",
+                                   "warehouse_city": "dev",
+                                   "warehouse_state_id": "2",
+                                   "warehouse_city_id": "2",
                                    "warehouse_label": "مشهد",
                                    "attribute_label": "انبار"}]
                 },
                 "visible_to_site": True,
             },
             {
-                "kowsar_system_code": "100102001002",
-                "system_code": "10010200101002",
+                "system_code": "100102001002",
                 "config": {
                     "color": {"attribute_label": "رنگ",
                               "value": "black",
@@ -271,24 +268,24 @@ def get_mock():
                                "value": "aasood",
                                "label": "آسود",
                                "type": "radio"},
-                    "warehouse": [{"quantity": 0,
-                                   "price": 0,
-                                   "special_price": 0,
-                                   "warehouse_id": 0,
-                                   "warehouse_state": "",
-                                   "warehouse_city": "",
-                                   "warehouse_state_id": "",
-                                   "warehouse_city_id": "",
+                    "warehouse": [{"quantity": 21,
+                                   "price": 20000000000,
+                                   "special_price": None,
+                                   "warehouse_id": 1,
+                                   "warehouse_state": "aasood",
+                                   "warehouse_city": "dev",
+                                   "warehouse_state_id": "1",
+                                   "warehouse_city_id": "1",
                                    "warehouse_label": "تهران",
                                    "attribute_label": "انبار"},
-                                  {"quantity": 0,
-                                   "price": 0,
-                                   "special_price": 0,
-                                   "warehouse_id": 0,
-                                   "warehouse_state": "",
-                                   "warehouse_city": "",
-                                   "warehouse_state_id": "",
-                                   "warehouse_city_id": "",
+                                  {"quantity": 12,
+                                   "price": 5456464545465,
+                                   "special_price": 156498744123446,
+                                   "warehouse_id": 2,
+                                   "warehouse_state": "awat",
+                                   "warehouse_city": "dev",
+                                   "warehouse_state_id": "2",
+                                   "warehouse_city_id": "2",
                                    "warehouse_label": "مشهد",
                                    "attribute_label": "انبار"}]
                 },
