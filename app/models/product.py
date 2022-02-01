@@ -6,6 +6,8 @@ from pydantic import BaseModel, validator, Field
 
 from app.helpers.mongo_connection import MongoConnection
 from app.validators.attribute_validator import attribute_validator
+from app.helpers.redis_connection import RedisConnection
+from app.modules.translator import RamStorageTranslater
 
 
 class Product(ABC):
@@ -58,12 +60,40 @@ class Product(ABC):
             return list(result)
 
     @staticmethod
-    def get_product_by_system_code(system_code):
+    def get_product_by_system_code(system_code, lang):
         """
         """
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'system_code': system_code}, {"_id": 0})
-            return result
+            with RedisConnection() as redis_db:
+                if result and result.get('products'):
+                    for product in result['products']:
+                        for key, value in product['config'].items():
+                            label = redis_db.client.hget(value, lang) if key != "images" else None
+                            product['config'][key] = {
+                                "attribute_label": redis_db.client.hget(key, lang),
+                                "label": RamStorageTranslater(value,
+                                                              lang).translate() if key == "storage" or key == "ram" else label
+                            }
+                            if key == "images":
+                                del product['config'][key]['label']
+                                del product['config'][key]['label']
+
+                    result.update({
+                        "routes": {
+                            "route": result.get('main_category'),
+                            "label": redis_db.client.hget(result.get('main_category'), lang),
+                            "child": {
+                                "route": result.get('sub_category'),
+                                "label": redis_db.client.hget(result.get('sub_category'), lang),
+                                "child": {
+                                    "route": result.get('brand'),
+                                    "label": redis_db.client.hget(result.get('brand'), lang),
+                                }
+                            }
+                        }
+                    })
+                return result
 
     @abstractmethod
     def system_code_is_unique(self) -> bool:
@@ -89,15 +119,17 @@ class Product(ABC):
 
 class CreateParent(BaseModel, Product):
     system_code: str = Field(
-        ..., title="شناسه محصول", maxLength=9, minLength=9, placeholder="100104021", isRequired=True
+        ..., title="شناسه محصول", maxLength=11, minLength=11, placeholder="10010402101", isRequired=True
     )
     name: Optional[str] = Field(
-        None, title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False, alias="name"
+        None, title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
     )
+    visible_in_site: bool
     _main_category: Optional[str]
     _sub_category: Optional[str]
     _brand: Optional[str]
     _model: Optional[str]
+    _attributes: Optional[dict]
 
     @validator('system_code')
     def system_code_validator(cls, value):
@@ -106,10 +138,10 @@ class CreateParent(BaseModel, Product):
                 "error": "system code must be a string",
                 "label": "کد سیستمی باید از نوع رشته باشد"
             })
-        elif len(value) != 9:
+        elif len(value) != 11:
             raise HTTPException(status_code=417, detail={
-                "error": "system_code must be 9 characters",
-                "label": "طول شناسه محصول باید ۹ کاراکتر باشد"
+                "error": "system_code must be 11 characters",
+                "label": "طول شناسه محصول باید ۱۱ کاراکتر باشد"
             })
         return value
 
@@ -127,6 +159,27 @@ class CreateParent(BaseModel, Product):
             })
         return value
 
+    @validator('visible_in_site')
+    def visible_in_site_validator(cls, value):
+        if not isinstance(value, bool):
+            raise HTTPException(status_code=417, detail={
+                "error": 'visible_in_site must be a boolean',
+                "label": "نمایش در سایت باید از نوع بولی باشد"
+            })
+        return value
+
+    @staticmethod
+    def get_configs(system_code):
+        with MongoConnection() as mongo:
+            parents = list(mongo.parent_col.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}))
+            stored_parents = mongo.collection.distinct("system_code", {"system_code": {"$regex": f"^{system_code}"}})
+            for parent in parents:
+                if parent['system_code'] in stored_parents:
+                    parent.update({
+                        "created": True
+                    })
+            return parents
+
     def system_code_is_unique(self) -> bool:
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'system_code': self.system_code})
@@ -138,6 +191,7 @@ class CreateParent(BaseModel, Product):
         cls._sub_category = data.get('sub_category')
         cls._brand = data.get('brand')
         cls._model = data.get('model')
+        cls._attributes = data.get('attributes')
 
     def create(self) -> tuple:
         """
@@ -145,7 +199,7 @@ class CreateParent(BaseModel, Product):
         The system_code of the product should be unique!
         """
         with MongoConnection() as mongo:
-            kowsar_data = mongo.kowsar_collection.find_one({'system_code': self.system_code}, {'_id': 0})
+            kowsar_data = mongo.parent_col.find_one({'system_code': self.system_code}, {'_id': 0})
             if not kowsar_data:
                 return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
             self.set_kowsar_data(kowsar_data)
@@ -159,9 +213,13 @@ class CreateParent(BaseModel, Product):
 
 
 class CreateChild(BaseModel, Product):
+    parent_system_code: str = Field(
+        ..., title="شناسه محصول", maxLength=11, minLength=11, placeholder="10010402101", isRequired=True
+    )
     system_code: str = Field(
         ..., title="شناسه محصول", maxLength=12, minLength=12, placeholder="100104021006", isRequired=True
     )
+    visible_in_site: bool
     _config: Optional[dict]
 
     @validator('system_code')
@@ -178,6 +236,15 @@ class CreateChild(BaseModel, Product):
             })
         return value
 
+    @validator('visible_in_site')
+    def visible_in_site_validator(cls, value):
+        if not isinstance(value, bool):
+            raise HTTPException(status_code=417, detail={
+                "error": 'visible_in_site must be a boolean',
+                "label": "نمایش در سایت باید از نوع بولی باشد"
+            })
+        return value
+
     @classmethod
     def set_kowsar_data(cls, data: dict) -> None:
         cls._config = data.get('config')
@@ -186,6 +253,11 @@ class CreateChild(BaseModel, Product):
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'products.system_code': self.system_code})
             return False if result else True
+
+    @staticmethod
+    def get_configs(system_code):
+        with MongoConnection() as mongo:
+            return list(mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}))
 
     def create(self) -> tuple:
         """
@@ -197,20 +269,26 @@ class CreateChild(BaseModel, Product):
             if not kowsar_data:
                 return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
             self.set_kowsar_data(kowsar_data)
-            result = mongo.collection.update_one({"system_code": self.system_code[:9]},
-                                                 {'$addToSet': {'products': self.class_attributes_getter()}})
+            product = self.class_attributes_getter()
+            product.pop("parent_system_code")
+            result = mongo.collection.update_one(
+                {"system_code": self.parent_system_code},
+                {'$addToSet': {'products': product}})
         if result.modified_count:
             return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
         return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
 
     @staticmethod
-    def suggester(data, system_code):
+    def suggester(data, system_code, config):
         with MongoConnection() as mongo:
+            sugested_products = list()
             system_codes = mongo.collection.distinct("products.system_code", {"system_code": system_code})
             for obj in data:
                 if obj['system_code'] in system_codes:
                     obj['created'] = True
-            return data
+                if obj.get('label').get('storage') == config[0] and obj.get('label').get('ram') == config[1]:
+                    sugested_products.append(obj)
+            return sugested_products
 
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
@@ -240,7 +318,7 @@ class AddAtributes(BaseModel, Product):
                 item = attribute_validator(attributes_from_collection, self)
                 self = item
             else:
-                delattr(self, "attributes")
+                pass
 
     def create(self) -> tuple:
         with MongoConnection() as mongo:

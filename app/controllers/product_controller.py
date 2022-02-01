@@ -7,6 +7,11 @@ from app.modules.kowsar_getter import KowsarGetter
 router = APIRouter()
 
 
+@router.get("/product/parent/{system_code}/configs/", status_code=200)
+def get_parent_config(system_code: str):
+    return CreateParent.get_configs(system_code)
+
+
 @router.get("/product/parent/", status_code=200)
 def create_parent_schema():
     return CreateParent.schema().get("properties")
@@ -27,6 +32,19 @@ def create_parent(
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409, detail={"message": "product already exists", "label": "محصول موجود است",
                                                  "redirect": "/product/{system_code}"})
+
+
+@router.get("/product/{system_code}/items", status_code=200)
+def suggest_product(system_code: str = Path(..., min_length=11, max_length=11)):
+    data = KowsarGetter.system_code_items_getter(system_code[:9])
+    parents_data = KowsarGetter.get_parents(system_code)
+    if parents_data:
+        config = (parents_data.get("attributes").get("storage"), parents_data.get("attributes").get("ram"))
+        suggests = CreateChild.suggester(data, system_code, config)
+        return suggests
+    raise HTTPException(status_code=404,
+                        detail={"message": "product couldn't found", "label": "محصول یافت نشد",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.get("/product/child/", status_code=200)
@@ -80,19 +98,20 @@ def add_attributes(
         if success:
             return message
         raise HTTPException(status_code=417, detail=message)
-    raise HTTPException(status_code=409,
+    raise HTTPException(status_code=404,
                         detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
                                 "redirect": "/product/{system_code}"})
 
 
-@router.get("/product/{system_code}", status_code=200)
+@router.get("/product/{system_code}/{lang}", status_code=200)
 def get_product_by_system_code(
-        system_code: str = Path(..., min_length=9, max_length=9)
+        system_code: str = Path(..., min_length=11, max_length=11),
+        lang: str = Path("fa_ir", min_length=2, max_length=127)
 ) -> dict:
     """
     Get a product by system_code in main collection in database.
     """
-    result = Product.get_product_by_system_code(system_code)
+    result = Product.get_product_by_system_code(system_code, lang)
     if result:
         return result
     raise HTTPException(status_code=404,
@@ -151,13 +170,6 @@ def update_attribute_collection():
     ]
     attribute_setter(attributes)
     return {"message": "attribute collection updated", "label": "جدول تنظیمات بروز شد"}
-
-
-@router.get("/product/{system_code}/items", status_code=200)
-def suggest_product(system_code: str = Path(..., min_length=9, max_length=9)):
-    data = KowsarGetter.system_code_items_getter(system_code)
-    suggests = CreateChild.suggester(data, system_code)
-    return suggests
 
 
 @router.get("/categories/{system_code}/")

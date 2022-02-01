@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     MONGO_USER: str = ""
     MONGO_PASS: str = ""
 
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_USER: str = ""
+    REDIS_PASS: str = ""
+
     UVICORN_HOST: str = "0.0.0.0"
     UVICORN_PORT: int = 8000
 

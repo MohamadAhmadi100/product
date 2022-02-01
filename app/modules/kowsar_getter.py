@@ -1,6 +1,8 @@
 import os
+import re
 
 import xlrd
+
 from app.helpers.exception_handler import exception_handler
 from app.helpers.mongo_connection import MongoConnection
 
@@ -74,7 +76,7 @@ class KowsarGetter:
 
     def name_config_separator(
             self, name_config_code_with_bracket: list, name_config_code_without_bracket: list
-    ) -> list:
+    ) -> tuple:
         '''
         This function will return configs_list: [system_code, model, config]
         It will also set self.configs which will later be used for configs bag-of-words(BOW)
@@ -136,10 +138,18 @@ class KowsarGetter:
         '''
         for key in conf_dict.get(keyword):
             if key in conf:
-                new_conf[keyword] = key
+                if keyword == "storage" or keyword == "ram":
+                    if "t" in key:
+                        new_conf[keyword] = str(list(map(int, re.findall(r'\d+', key)))[0]) + " TB"
+                    elif "m" in key:
+                        new_conf[keyword] = str(list(map(int, re.findall(r'\d+', key)))[0]) + " MB"
+                    else:
+                        new_conf[keyword] = str(list(map(int, re.findall(r'\d+', key)))[0]) + " GB"
+                else:
+                    new_conf[keyword] = key
                 conf = conf.replace(key, "")
                 break
-        return conf, new_conf
+        return conf
 
     @staticmethod
     def check_conf_is_empty(conf):
@@ -158,9 +168,9 @@ class KowsarGetter:
             new_conf = {}
             for key in conf_dict_sample.keys():
                 if key == 'ignore_case':
-                    config, ignore_conf = self.config_matcher(config, new_conf, conf_dict_sample, key)
+                    config = self.config_matcher(config, new_conf.copy(), conf_dict_sample, key)
                 else:
-                    config, new_conf = self.config_matcher(config, new_conf, conf_dict_sample, key)
+                    config = self.config_matcher(config, new_conf, conf_dict_sample, key)
                 if self.check_conf_is_empty(config):
                     self.config_dict[system_code] = new_conf
                     break
@@ -171,9 +181,62 @@ class KowsarGetter:
                 continue
             if system_code.startswith('1205'):  # power bank
                 new_conf['capacity'] = config
-            elif new_conf.get('storage') is None:
-                new_conf['storage'] = config
+            elif config and new_conf.get('storage') is None:
+                new_conf['storage'] = str(list(map(int, re.findall(r'\d+', config)))[0]) + " GB"
             self.config_dict[system_code] = new_conf
+
+    def add_seller(self, sellers):
+        for system_code in self.config_dict.keys():
+            seller = sellers.get(self.config_dict.get(system_code, {}).get('guarantee', ""))
+            seller = seller if seller else "Aasood"
+            self.config_dict[system_code]['seller'] = seller
+
+    def check_storage_ram(self):
+        """
+        if ram is bigger than storage it swap them
+        """
+        for system_code, configs in self.config_dict.items():
+            config_keys = configs.keys()
+            if "storage" in config_keys and "ram" in config_keys:
+                if "TB" not in configs['storage'] and "MB" not in configs['storage']:
+                    storage = configs['storage'].replace(" GB", "")
+                    ram = configs['ram'].replace(" GB", "")
+                    if int(ram) > int(storage):
+                        configs['storage'] = f"{ram} GB"
+                        configs['ram'] = f"{storage} GB"
+
+    @staticmethod
+    def create_new_parents():
+        new_parents = dict()
+        with MongoConnection() as mongo:
+            db_data = list(mongo.kowsar_collection.find({"system_code": {"$regex": "^[\s\S]{12,}$"}}, {"_id": 0}))
+            for obj in db_data:
+                system_code = obj.get('system_code')
+                parent_schema = {'system_code': f'{system_code[:9]}01',
+                                 "main_category": obj.get('main_category'),
+                                 "sub_category": obj.get('sub_category'),
+                                 "brand": obj.get('brand'),
+                                 "model": obj.get('model'),
+                                 "attributes": {
+                                     "storage": obj.get('config', {}).get('storage'),
+                                     "ram": obj.get('config', {}).get('ram')
+                                 }
+                                 }
+                if system_code[:9] in new_parents.keys():
+                    storage_rams = [(a['attributes']['storage'], a['attributes']['ram']) for a in
+                                    new_parents[system_code[:9]]]
+                    if (obj.get('config', {}).get('storage'), obj.get('config', {}).get('ram')) not in storage_rams:
+                        index = len(new_parents[system_code[:9]]) + 1
+                        parent_schema[
+                            "system_code"] = f"{system_code[:9]}{index}" if index > 9 else f'{system_code[:9]}0{index}'
+                        new_parents[system_code[:9]].append(parent_schema)
+                else:
+                    new_parents[system_code[:9]] = [parent_schema]
+            insert_db = []
+            for i in new_parents.values():
+                insert_db.extend(i)
+            mongo.parent_col.insert_many(insert_db)
+            return True
 
     @staticmethod
     def system_code_items_getter(system_code: str):
@@ -222,15 +285,16 @@ class KowsarGetter:
             for system_code in self.config_dict.keys():
                 mongo.kowsar_collection.update_one(
                     {'system_code': system_code},
-                    {"$set":
-                         {"system_code": system_code,
-                          "main_category": self.main_category_dict.get(system_code[:2]),
-                          "sub_category": self.sub_category_dict.get(system_code[:4]),
-                          "brand": self.brand_category_dict.get(system_code[:6]),
-                          "model": self.model_dict.get(system_code[:9]),
-                          "config": self.config_dict.get(system_code)}
-                     },
+                    {"$set": {
+                        "system_code": system_code,
+                        "main_category": self.main_category_dict.get(system_code[:2]),
+                        "sub_category": self.sub_category_dict.get(system_code[:4]),
+                        "brand": self.brand_category_dict.get(system_code[:6]),
+                        "model": self.model_dict.get(system_code[:9]),
+                        "config": self.config_dict.get(system_code)}
+                    },
                     upsert=True)
+
             for system_code in self.model_dict.keys():
                 mongo.kowsar_collection.update_one(
                     {'system_code': system_code},
@@ -270,6 +334,11 @@ class KowsarGetter:
                      },
                     upsert=True)
 
+    @staticmethod
+    def get_parents(system_code):
+        with MongoConnection() as mongo:
+            return mongo.parent_col.find_one({'system_code': system_code}, {"_id": 0})
+
     def product_getter(self):
         """
         This function will get product details from local dict
@@ -282,16 +351,17 @@ class KowsarGetter:
             'storage': ['512gb', '512 gb', '256gb', '256 gb', '128gb', '128 gb', '64gb', '64 gb', '32gb', '32 gb',
                         '16gb', '16 gb', '1gb', '1 gb', '32mg', '1tb', '1 tb', '2tb', '2 tb', '4tb', '4 tb', '5tb',
                         '5 tb'],
-            'color': ['dark blue', 'white/blue', 'haze silver', 'iceberg blue', 'gold coffe', 'gold black', 'rose gold',
+            'color': ['dark blue', 'white/blue', 'haze silver', 'iceberg blue', 'gold coffe', 'gold black',
+                      'rose gold',
                       'black/red', 'ocean blue', 'white red', 'white/red',
                       'black/blue', 'black red', 'orange', 'breathing crystal', 'white', 'green', 'blue',
                       'black', 'color', 'gray', 'violet', 'gold',
-                      'silver', 'red', 'pink', 'bronze', 'purple', 'yellow', 'charcoal', 'brown', 'mix', 'aura glow',
+                      'silver', 'red', 'pink', 'bronze', 'purple', 'yellow', 'charcoal', 'brown', 'mix',
+                      'aura glow',
                       'coral', 'boronz', 'dark nebula', 'olive', 'cyan', 'rose', 'dusk', 'military', 'sand',
                       'dark night', 'bedone rang', 'ice', 'titanium', 'fjord'],
             'guarantee': ['sherkati 01', 'sherkati', 'aban digi', 'abandigi', 'life time', 'awat', 'asli', 'nog',
-                          'sazgar',
-                          'nabeghe'],
+                          'sazgar', 'nabeghe'],
             'ram': ['16gb', '12gb', '8gb', '6gb', '4gb', '3gb', '2gb', '1gb'],
             'network': ['5g', '4g'],
             'capacity': ['20k', '10000mah', '10k', '2600mah', '6800mah', '20100 mah', '10400mah', '5000mah'],
@@ -303,4 +373,30 @@ class KowsarGetter:
             'processor': ['7020u'],
             'ignore_case': ['case', 'glass', 'headphones', 'smart band', 'smart watch', 'i3', 'intel', 'tamam']
         }
+        seller_sample = {
+            "sherkati 01": "همراه غرب",
+            "sherkati": "تجارت خانه حاجی قاسم",
+            "aban digi": "آبان دیجی",
+            "abandigi": "آبان دیجی",
+            "life time": "آسود",
+            "awat": "آوات",
+            "asli": "آسود",
+            "nog": "آسود",
+            "sazgar": "آوات",
+            "nabeghe": "نابغه",
+        }
+        seller_sample = {
+            "sherkati 01": "Hamrah Gharb",
+            "sherkati": "TejaratKhane Haj Ghasem",
+            "aban digi": "Aban Digi",
+            "abandigi": "Aban Digi",
+            "life time": "Aasood",
+            "awat": "Awat",
+            "asli": "Aasood",
+            "nog": "Aasood",
+            "sazgar": "Awat",
+            "nabeghe": "Nabeghe",
+        }
         self.configs_list_maker(conf_dict_sample, config_list)
+        self.add_seller(seller_sample)
+        self.check_storage_ram()
