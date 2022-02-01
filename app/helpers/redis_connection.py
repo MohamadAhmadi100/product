@@ -19,7 +19,8 @@ class RedisConnection(metaclass=Singleton):
             port=settings.REDIS_PORT,
             username=settings.REDIS_USER,
             password=settings.REDIS_PASS,
-            decode_responses=True
+            decode_responses=True,
+            db=settings.REDIS_DB
         )
 
     def __enter__(self):
