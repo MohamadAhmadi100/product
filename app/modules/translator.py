@@ -296,7 +296,19 @@ mock = {'Accessory': {'en_us': 'Accessory', 'fa_ir': 'اکسسوری'},
         'Hamrah Gharb': {'en_us': 'Hamrah Gharb', 'fa_ir': 'همراه غرب'},
         'TejaratKhane Haj Ghasem': {'en_us': 'TejaratKhane Haj Ghasem', 'fa_ir': 'تجارت خانه حاجی قاسم'},
         'Aban Digi': {'en_us': 'Aban Digi', 'fa_ir': 'آبان دیجی'}, 'Aasood': {'en_us': 'Aasood', 'fa_ir': 'آسود'},
-        'Awat': {'en_us': 'Awat', 'fa_ir': 'آوات'}, 'Nabeghe': {'en_us': 'Nabeghe', 'fa_ir': 'نابغه'}}
+        'Awat': {'en_us': 'Awat', 'fa_ir': 'آوات'}, 'Nabeghe': {'en_us': 'Nabeghe', 'fa_ir': 'نابغه'},
+        'GB': {'en_us': 'GigaByte', 'fa_ir': 'گیگابایت'},
+        'TB': {'en_us': 'TeraByte', 'fa_ir': 'ترابایت'},
+        'MB': {'en_us': 'MegaByte', 'fa_ir': 'مگابایت'}
+        }
+
+
+def update_redis_database():
+    list_of_words = mock
+    with RedisConnection() as redis_db:
+        for key, value in list_of_words.items():
+            for in_key, in_value in value.items():
+                redis_db.client.hset(key, in_key, in_value)
 
 
 class RamStorageTranslater:

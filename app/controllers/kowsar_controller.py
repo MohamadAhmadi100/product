@@ -1,6 +1,6 @@
 from app.modules.kowsar_getter import KowsarGetter
 from fastapi import APIRouter, HTTPException
-
+from app.modules.translator import update_redis_database
 router = APIRouter()
 
 
@@ -40,4 +40,5 @@ def update_kowsar_collection():
     kowsar.product_getter()
     kowsar.update_kowsar_collection()
     KowsarGetter.create_new_parents()
+    update_redis_database()
     return {"message": "kowsar collection updated", "label": "جدول کالاهای کوثر بروز شد"}
