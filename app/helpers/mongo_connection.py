@@ -20,6 +20,7 @@ class MongoConnection(metaclass=Singleton):
         self.collection = self.db['product']
         self.archive = self.db['archive']
         self.kowsar_collection = self.db['kowsar']
+        self.parent_col = self.db['kowsar-parent']
         self.custom_category = self.db['custom-category']
 
     def __enter__(self):
