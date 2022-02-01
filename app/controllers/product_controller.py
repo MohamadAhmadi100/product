@@ -1,3 +1,5 @@
+from typing import Dict
+
 from fastapi import Query, Path, HTTPException, APIRouter, Body
 
 from app.models.product import CreateParent, CreateChild, AddAtributes, Product
@@ -244,7 +246,7 @@ def get_mock():
                                "label": "آسود",
                                "type": "radio"},
                     "warehouse": [{"quantity": 21,
-                                   "price": 20000000000,
+                                   "price": 20,
                                    "special_price": None,
                                    "warehouse_id": 1,
                                    "warehouse_state": "aasood",
@@ -254,8 +256,8 @@ def get_mock():
                                    "warehouse_label": "تهران",
                                    "attribute_label": "انبار"},
                                   {"quantity": 22,
-                                   "price": 484122315312,
-                                   "special_price": 544865,
+                                   "price": 22,
+                                   "special_price": 21,
                                    "warehouse_id": 2,
                                    "warehouse_state": "awat",
                                    "warehouse_city": "dev",
@@ -282,7 +284,7 @@ def get_mock():
                                "label": "آسود",
                                "type": "radio"},
                     "warehouse": [{"quantity": 21,
-                                   "price": 20000000000,
+                                   "price": 23,
                                    "special_price": None,
                                    "warehouse_id": 1,
                                    "warehouse_state": "aasood",
@@ -292,8 +294,8 @@ def get_mock():
                                    "warehouse_label": "تهران",
                                    "attribute_label": "انبار"},
                                   {"quantity": 12,
-                                   "price": 5456464545465,
-                                   "special_price": 156498744123446,
+                                   "price": 25,
+                                   "special_price": 24,
                                    "warehouse_id": 2,
                                    "warehouse_state": "awat",
                                    "warehouse_city": "dev",
@@ -320,7 +322,7 @@ def get_mock():
                                "label": "آسود",
                                "type": "radio"},
                     "warehouse": [{"quantity": 21,
-                                   "price": 20000000000,
+                                   "price": 26,
                                    "special_price": None,
                                    "warehouse_id": 1,
                                    "warehouse_state": "aasood",
@@ -330,8 +332,8 @@ def get_mock():
                                    "warehouse_label": "تهران",
                                    "attribute_label": "انبار"},
                                   {"quantity": 12,
-                                   "price": 5456464545465,
-                                   "special_price": 156498744123446,
+                                   "price": 28,
+                                   "special_price": 27,
                                    "warehouse_id": 2,
                                    "warehouse_state": "awat",
                                    "warehouse_city": "dev",
@@ -358,7 +360,7 @@ def get_mock():
                                "label": "نابغه",
                                "type": "radio"},
                     "warehouse": [{"quantity": 21,
-                                   "price": 20000000000,
+                                   "price": 29,
                                    "special_price": None,
                                    "warehouse_id": 1,
                                    "warehouse_state": "aasood",
@@ -368,8 +370,8 @@ def get_mock():
                                    "warehouse_label": "تهران",
                                    "attribute_label": "انبار"},
                                   {"quantity": 22,
-                                   "price": 484122315312,
-                                   "special_price": 544865,
+                                   "price": 30,
+                                   "special_price": 20,
                                    "warehouse_id": 2,
                                    "warehouse_state": "awat",
                                    "warehouse_city": "dev",
@@ -382,3 +384,77 @@ def get_mock():
             }
         ]
     }
+
+
+from pydantic import BaseModel, validator
+
+
+class Test(BaseModel):
+    attributes: dict
+
+    @validator("attributes")
+    def attributes(cls, value):
+        if not isinstance(value, dict):
+            raise HTTPException(detail={"error": "bad attributes"})
+
+
+class AttributesValidator:
+    def __init__(self, attributes):
+        self.attributes = attributes
+        self.requireds = []
+        self.values = []
+
+    def validate(self):
+        for item in self.attributes:
+            if item.get("required"):
+                self.requireds.append(item.get("name"))
+            if item.get("values"):
+                self.values.append((item.get("name"), item.get("values")))
+
+        self.required_validator()
+        self.required_validator()
+
+    def required_validator(self):
+        for required in self.requireds:
+            if required not in self.attributes.keys():
+                raise HTTPException(detail={"error": f"{required} is required"})
+
+    def values_validator(self):
+        for value in self.values:
+            if value[0] in self.attributes.keys():
+                if self.attributes.get(value[0]) not in value[1]:
+                    raise HTTPException(detail={"error": f"{value[0]} is not valid"})
+
+
+attributes_mock = [
+    {
+        "required": True,
+        "use_in_filter": False,
+        "use_for_sort": False,
+        "default_value": None,
+        "values": None,
+        "set_to_nodes": False,
+        "name": "year",
+        "label": "سال",
+        "input_type": "Number",
+        "parent": "100104021006"
+    },
+    {
+        "required": False,
+        "use_in_filter": False,
+        "use_for_sort": False,
+        "default_value": "/src/default.png",
+        "values": None,
+        "set_to_nodes": True,
+        "name": "image",
+        "label": "عکس",
+        "input_type": "Media Image",
+        "parent": "1001"
+    }
+]
+
+
+@router.post("test/bemola")
+def testing(item: Test):
+    AttributesValidator(item.attributes).validate()
+    return item.attributes
