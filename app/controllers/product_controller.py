@@ -11,7 +11,12 @@ router = APIRouter()
 
 @router.get("/product/parent/{system_code}/configs/", status_code=200)
 def get_parent_config(system_code: str):
-    return CreateParent.get_configs(system_code)
+    reslut = CreateParent.get_configs(system_code)
+    if reslut:
+        return reslut
+    raise HTTPException(status_code=404,
+                        detail={"message": "product doesn't exists", "label": "محصول موجود نیست",
+                                "redirect": "/product/{system_code}"})
 
 
 @router.get("/product/parent/", status_code=200)
