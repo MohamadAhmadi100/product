@@ -5,9 +5,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel, validator, Field
 
 from app.helpers.mongo_connection import MongoConnection
-from app.validators.attribute_validator import attribute_validator
 from app.helpers.redis_connection import RedisConnection
 from app.modules.translator import RamStorageTranslater
+from app.validators.attribute_validator import attribute_validator
 
 
 class Product(ABC):
@@ -65,35 +65,40 @@ class Product(ABC):
         """
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'system_code': system_code}, {"_id": 0})
-            with RedisConnection() as redis_db:
-                if result and result.get('products'):
-                    for product in result['products']:
-                        for key, value in product['config'].items():
-                            label = redis_db.client.hget(value, lang) if key != "images" else None
-                            product['config'][key] = {
-                                "attribute_label": redis_db.client.hget(key, lang),
-                                "label": RamStorageTranslater(value,
-                                                              lang).translate() if key == "storage" or key == "ram" else label
-                            }
-                            if key == "images":
-                                del product['config'][key]['label']
-                                del product['config'][key]['label']
-
-                    result.update({
-                        "routes": {
-                            "route": result.get('main_category'),
-                            "label": redis_db.client.hget(result.get('main_category'), lang),
-                            "child": {
-                                "route": result.get('sub_category'),
-                                "label": redis_db.client.hget(result.get('sub_category'), lang),
+            if result.get("visible_in_site"):
+                with RedisConnection() as redis_db:
+                    if result and result.get('products'):
+                        for product in result['products']:
+                            if product.get("visible_in_site"):
+                                for key, value in product['config'].items():
+                                    label = redis_db.client.hget(value, lang) if key != "images" else None
+                                    product['config'][key] = {
+                                        "value": value,
+                                        "attribute_label": redis_db.client.hget(key, lang),
+                                        "label": RamStorageTranslater(value,
+                                                                      lang).translate() if key == "storage" or key == "ram" else label
+                                    }
+                                    if key == "images":
+                                        del product['config'][key]['label']
+                                        del product['config'][key]['label']
+                            else:
+                                result['products'].remove(product)
+                        result.update({
+                            "routes": {
+                                "route": result.get('main_category'),
+                                "label": redis_db.client.hget(result.get('main_category'), lang),
                                 "child": {
-                                    "route": result.get('brand'),
-                                    "label": redis_db.client.hget(result.get('brand'), lang),
+                                    "route": result.get('sub_category'),
+                                    "label": redis_db.client.hget(result.get('sub_category'), lang),
+                                    "child": {
+                                        "route": result.get('brand'),
+                                        "label": redis_db.client.hget(result.get('brand'), lang),
+                                    }
                                 }
                             }
-                        }
-                    })
-                return result
+                        })
+                    return result
+            return None
 
     @abstractmethod
     def system_code_is_unique(self) -> bool:
@@ -214,7 +219,7 @@ class CreateParent(BaseModel, Product):
 
 class CreateChild(BaseModel, Product):
     parent_system_code: str = Field(
-        ..., title="شناسه محصول", maxLength=11, minLength=11, placeholder="10010402101", isRequired=True
+        ..., title="شناسه اصلی محصول", maxLength=11, minLength=11, placeholder="10010402101", isRequired=True
     )
     system_code: str = Field(
         ..., title="شناسه محصول", maxLength=12, minLength=12, placeholder="100104021006", isRequired=True
@@ -275,19 +280,32 @@ class CreateChild(BaseModel, Product):
                 {"system_code": self.parent_system_code},
                 {'$addToSet': {'products': product}})
         if result.modified_count:
-            return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
-        return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
+            return {"message": f"product {self.system_code} created successfully",
+                    "label": f"محصول {self.system_code} با موفقیت ساخته شد"}, True
+        return {"error": f"product creation {self.system_code} failed",
+                "label": f"فرایند ساخت محصول {self.system_code} به مشکل خورد"}, False
 
     @staticmethod
     def suggester(data, system_code, config):
         with MongoConnection() as mongo:
-            sugested_products = list()
-            system_codes = mongo.collection.distinct("products.system_code", {"system_code": system_code})
-            for obj in data:
-                if obj['system_code'] in system_codes:
-                    obj['created'] = True
-                if obj.get('label').get('storage') == config[0] and obj.get('label').get('ram') == config[1]:
-                    sugested_products.append(obj)
+            with RedisConnection() as redis_db:
+                sugested_products = list()
+                system_codes = mongo.collection.distinct("products.system_code", {"system_code": system_code})
+                for obj in data:
+                    if obj['system_code'] in system_codes:
+                        obj['created'] = True
+                    if obj.get('label').get('storage') == config[0] and obj.get('label').get('ram') == config[1]:
+                        configs = obj.get('label')
+                        del obj['label']
+                        for key, value in configs.items():
+                            configs[key] = {
+                                "value": value,
+                                "attribute_label": redis_db.client.hget(key, "fa_ir"),
+                                "label": redis_db.client.hget(value, "fa_ir") if key != 'storage' and key != 'ram'
+                                else RamStorageTranslater(value, "fa_ir").translate()
+                            }
+                        obj['configs'] = configs
+                        sugested_products.append(obj)
             return sugested_products
 
     def delete(self) -> tuple:
@@ -318,7 +336,7 @@ class AddAtributes(BaseModel, Product):
                 item = attribute_validator(attributes_from_collection, self)
                 self = item
             else:
-                pass
+                self.attributes = None
 
     def create(self) -> tuple:
         with MongoConnection() as mongo:
