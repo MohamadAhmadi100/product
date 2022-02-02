@@ -68,16 +68,14 @@ def create_child(
             return message
         raise HTTPException(status_code=417, detail=message)
     raise HTTPException(status_code=409,
-                        detail={"message": "product already exists", "label": "محصول موجود است",
+                        detail={"message": f"product {item.system_code} already exists",
+                                "label": f"محصول {item.system_code} موجود است",
                                 "redirect": "/product/{system_code}"})
 
 
 @router.get("/product/attributes/", status_code=200)
 def add_attributes_schema():
-    form = Product.schema().get("properties").copy()
-    form["system_code"]["minLength"] = 12
-    del form["name"]
-    return form
+    return AddAtributes.schema().get("properties")
 
 
 @router.post("/product/attributes/", status_code=201)
@@ -231,7 +229,7 @@ def get_mock():
         "visible_to_site": True,
         "products": [
             {
-                "system_code": "100102001001",
+                "system_code": "100102001004",
                 "config": {
                     "color": {"attribute_label": "رنگ",
                               "value": "black",
@@ -257,7 +255,7 @@ def get_mock():
                                    "attribute_label": "انبار"},
                                   {"quantity": 22,
                                    "price": 22,
-                                   "special_price": 21,
+                                   "special_price": 18,
                                    "warehouse_id": 2,
                                    "warehouse_state": "awat",
                                    "warehouse_city": "dev",
@@ -269,7 +267,7 @@ def get_mock():
                 "visible_to_site": True,
             },
             {
-                "system_code": "100102001002",
+                "system_code": "100102001003",
                 "config": {
                     "color": {"attribute_label": "رنگ",
                               "value": "red",
@@ -284,7 +282,7 @@ def get_mock():
                                "label": "آسود",
                                "type": "radio"},
                     "warehouse": [{"quantity": 21,
-                                   "price": 23,
+                                   "price": 16,
                                    "special_price": None,
                                    "warehouse_id": 1,
                                    "warehouse_state": "aasood",
@@ -384,5 +382,3 @@ def get_mock():
             }
         ]
     }
-
-

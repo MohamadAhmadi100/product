@@ -209,6 +209,7 @@ class KowsarGetter:
     def create_new_parents():
         new_parents = dict()
         with MongoConnection() as mongo:
+            mongo.parent_col.drop()
             db_data = list(mongo.kowsar_collection.find({"system_code": {"$regex": "^[\s\S]{12,}$"}}, {"_id": 0}))
             for obj in db_data:
                 system_code = obj.get('system_code')
