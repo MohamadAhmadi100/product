@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     MONGO_USER: str = ""
     MONGO_PASS: str = ""
 
-    REDIS_HOST: str = "localhost"
+    REDIS_HOST: str = "200.100.100.223"
     REDIS_PORT: int = 6379
     REDIS_USER: str = ""
     REDIS_PASS: str = ""
