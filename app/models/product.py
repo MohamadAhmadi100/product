@@ -1,29 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from fastapi import HTTPException
-from pydantic import BaseModel, validator, Field
-
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.redis_connection import RedisConnection
 from app.modules.translator import RamStorageTranslater
-from app.validators.attribute_validator import attribute_validator
+
+
+# from app.validators.attribute_validator import attribute_validator
 
 
 class Product(ABC):
-    @classmethod
-    def class_attributes(cls):
-        return cls.__dict__.get("__annotations__").keys()
-
-    def class_attributes_getter(self):
-        keys = self.class_attributes()
-        dict_data = dict()
-        for key in keys:
-            db_key = key
-            if key[0] == "_":
-                db_key = key.replace("_", "", 1)
-            exec(f"dict_data['{db_key}'] = self.{key}")
-        return dict_data
 
     @staticmethod
     def get_all_categories(system_code, page, per_page):
@@ -122,56 +108,17 @@ class Product(ABC):
         pass
 
 
-class CreateParent(BaseModel, Product):
-    system_code: str = Field(
-        ..., title="شناسه محصول", maxLength=11, minLength=11, placeholder="10010402101", isRequired=True
-    )
-    name: Optional[str] = Field(
-        None, title="نام", minLength=3, maxLength=256, placeholder="ردمی ۹ سی", isRequired=False
-    )
-    visible_in_site: bool
-    _main_category: Optional[str]
-    _sub_category: Optional[str]
-    _brand: Optional[str]
-    _model: Optional[str]
-    _attributes: Optional[dict]
+class CreateParent(Product):
 
-    @validator('system_code')
-    def system_code_validator(cls, value):
-        if not isinstance(value, str):
-            raise HTTPException(status_code=417, detail={
-                "error": "system code must be a string",
-                "label": "کد سیستمی باید از نوع رشته باشد"
-            })
-        elif len(value) != 11:
-            raise HTTPException(status_code=417, detail={
-                "error": "system_code must be 11 characters",
-                "label": "طول شناسه محصول باید ۱۱ کاراکتر باشد"
-            })
-        return value
-
-    @validator('name')
-    def name_validator(cls, value):
-        if not isinstance(value, str):
-            raise HTTPException(status_code=417, detail={
-                "error": 'name must be a string',
-                "label": "اسم باید از نوع رشته باشد"
-            })
-        elif len(value) < 3 or len(value) > 256:
-            raise HTTPException(status_code=417, detail={
-                "error": "name must be between 3 and 256 characters",
-                "label": "طول اسم باید میان ۳ تا ۲۵۶ کاراکتر باشد"
-            })
-        return value
-
-    @validator('visible_in_site')
-    def visible_in_site_validator(cls, value):
-        if not isinstance(value, bool):
-            raise HTTPException(status_code=417, detail={
-                "error": 'visible_in_site must be a boolean',
-                "label": "نمایش در سایت باید از نوع بولی باشد"
-            })
-        return value
+    def __init__(self, system_code, name, visible_in_site):
+        self.system_code = system_code
+        self.name = name
+        self.visible_in_site = visible_in_site
+        self.main_category = None
+        self.sub_category = None
+        self.brand = None
+        self.model = None
+        self.attributes = None
 
     @staticmethod
     def get_configs(system_code):
@@ -190,13 +137,12 @@ class CreateParent(BaseModel, Product):
             result = mongo.collection.find_one({'system_code': self.system_code})
             return False if result else True
 
-    @classmethod
-    def set_kowsar_data(cls, data: dict) -> None:
-        cls._main_category = data.get('main_category')
-        cls._sub_category = data.get('sub_category')
-        cls._brand = data.get('brand')
-        cls._model = data.get('model')
-        cls._attributes = data.get('attributes')
+    def set_kowsar_data(self, data: dict) -> None:
+        self.main_category = data.get('main_category')
+        self.sub_category = data.get('sub_category')
+        self.brand = data.get('brand')
+        self.model = data.get('model')
+        self.attributes = data.get('attributes')
 
     def create(self) -> tuple:
         """
@@ -208,7 +154,7 @@ class CreateParent(BaseModel, Product):
             if not kowsar_data:
                 return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
             self.set_kowsar_data(kowsar_data)
-            result = mongo.collection.insert_one(self.class_attributes_getter())
+            result = mongo.collection.insert_one(self.__dict__)
         if result.inserted_id:
             return {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"}, True
         return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
@@ -217,42 +163,16 @@ class CreateParent(BaseModel, Product):
         pass
 
 
-class CreateChild(BaseModel, Product):
-    parent_system_code: str = Field(
-        ..., title="شناسه اصلی محصول", maxLength=11, minLength=11, placeholder="10010402101", isRequired=True
-    )
-    system_code: str = Field(
-        ..., title="شناسه محصول", maxLength=12, minLength=12, placeholder="100104021006", isRequired=True
-    )
-    visible_in_site: bool
-    _config: Optional[dict]
+class CreateChild(Product):
 
-    @validator('system_code')
-    def system_code_validator(cls, value):
-        if not isinstance(value, str):
-            raise HTTPException(status_code=417, detail={
-                "error": "system codes must be a string",
-                "label": "شناسه های محصولات باید از نوع رشته باشد"
-            })
-        elif len(value) != 12:
-            raise HTTPException(status_code=417, detail={
-                "error": "system_code must be 12 characters",
-                "label": "طول شناسه محصول باید ۱۲ کاراکتر باشد"
-            })
-        return value
+    def __init__(self, system_code, parent_system_code, visible_in_site):
+        self.system_code = system_code
+        self.parent_system_code = parent_system_code
+        self.visible_in_site = visible_in_site
+        self.config = None
 
-    @validator('visible_in_site')
-    def visible_in_site_validator(cls, value):
-        if not isinstance(value, bool):
-            raise HTTPException(status_code=417, detail={
-                "error": 'visible_in_site must be a boolean',
-                "label": "نمایش در سایت باید از نوع بولی باشد"
-            })
-        return value
-
-    @classmethod
-    def set_kowsar_data(cls, data: dict) -> None:
-        cls._config = data.get('config')
+    def set_kowsar_data(self, data: dict) -> None:
+        self.config = data.get('config')
 
     def system_code_is_unique(self) -> bool:
         with MongoConnection() as mongo:
@@ -274,10 +194,11 @@ class CreateChild(BaseModel, Product):
             if not kowsar_data:
                 return {"error": "product not found in kowsar", "label": "محصول در کوثر یافت نشد"}, False
             self.set_kowsar_data(kowsar_data)
-            product = self.class_attributes_getter()
+            product = self.__dict__
+            parent_system_code = self.parent_system_code
             product.pop("parent_system_code")
             result = mongo.collection.update_one(
-                {"system_code": self.parent_system_code},
+                {"system_code": parent_system_code},
                 {'$addToSet': {'products': product}})
         if result.modified_count:
             return {"message": f"product {self.system_code} created successfully",
@@ -317,26 +238,16 @@ class CreateChild(BaseModel, Product):
             return {"ok": False}, False
 
 
-class AddAtributes(BaseModel, Product):
-    system_code: str = Field(
-        ..., title="شناسه محصول", maxLength=12, minLength=12, placeholder="100104021006", isRequired=True
-    )
-    attributes: dict
+class AddAtributes(Product):
+
+    def __init__(self, system_code, attributes):
+        self.system_code = system_code
+        self.attributes = attributes
 
     def system_code_is_unique(self) -> bool:
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'products.system_code': self.system_code})
             return False if result else True
-
-    def validate_attributes(self):
-        with MongoConnection() as mongo:
-            result = mongo.kowsar_collection.find_one({'system_code': self.system_code})
-            attributes_from_collection = result.get("attributes")
-            if attributes_from_collection:
-                item = attribute_validator(attributes_from_collection, self)
-                self = item
-            else:
-                self.attributes = None
 
     def create(self) -> tuple:
         with MongoConnection() as mongo:

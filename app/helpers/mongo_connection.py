@@ -12,7 +12,7 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class MongoConnection(metaclass=Singleton):
+class MongoConnection:
     def __init__(self):
         self.client = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT,
                                           username=settings.MONGO_USER, password=settings.MONGO_PASS)
