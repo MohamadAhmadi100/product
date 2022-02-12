@@ -2,7 +2,7 @@ import json
 import sys
 
 import pika
-
+from app.modules import terminal_log
 from config import settings
 
 
@@ -53,10 +53,7 @@ class RabbitRPCClient:
 
     def publish(self, channel, method, properties, body):
         message = self.callback(json.loads(body))
-        sys.stdout.write("\033[1;31m")
-        print("                  Responce: ", end="")
-        sys.stdout.write("\033[;1m\033[1;34m")
-        print(message)
+        terminal_log.responce_log(message)
         channel.basic_publish(exchange='',
                               routing_key=properties.reply_to,
                               properties=pika.BasicProperties(correlation_id=properties.correlation_id),
@@ -84,11 +81,7 @@ class RabbitRPCClient:
     def consume(self):
         self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
         try:
-            sys.stdout.write("\033[0;32m")
-            print(" [x] Consumer running on host \"" + self.host + ":" + str(self.port) + "\" , "
-                  + "headers : " + str(self.headers), end="")
-            sys.stdout.write("\033[1;36m")
-            print(" -- Waiting for Requests ...")
+            terminal_log.connection_log(self.host, self.port, self.headers)
             self.channel.start_consuming()
         except KeyboardInterrupt:
             self.channel.stop_consuming()

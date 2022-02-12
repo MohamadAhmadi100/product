@@ -6,15 +6,15 @@ from config import settings
 from app.controllers.product_controller import *
 from app.controllers.kowsar_controller import *
 
+from app.modules import terminal_log
+
 response = {}
 app_name = settings.APP_NAME
 
 
 def callback(message: dict) -> dict:
-    sys.stdout.write("\033[1;31m")
-    print("\n => Entry action: ", end="")
-    sys.stdout.write("\033[;1m\033[1;34m")
-    print(message.get(app_name).get("action"))
+    terminal_log.action_log(message, app_name)
+    terminal_log.request_log(message, app_name)
     data = message.get(app_name, {})
     action = data.get("action")
     if action:
