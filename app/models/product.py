@@ -110,7 +110,7 @@ class Product(ABC):
 
 class CreateParent(Product):
 
-    def __init__(self, system_code, name, visible_in_site, jalali_date):
+    def __init__(self, system_code, name, visible_in_site):
         self.system_code = system_code
         self.name = name
         self.visible_in_site = visible_in_site
