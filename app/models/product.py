@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
+from app.helpers.date_convertor import jalali_now, gregorian_now
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.redis_connection import RedisConnection
 from app.modules.translator import RamStorageTranslater
@@ -110,7 +110,7 @@ class Product(ABC):
 
 class CreateParent(Product):
 
-    def __init__(self, system_code, name, visible_in_site):
+    def __init__(self, system_code, name, visible_in_site, jalali_date):
         self.system_code = system_code
         self.name = name
         self.visible_in_site = visible_in_site
@@ -119,6 +119,8 @@ class CreateParent(Product):
         self.brand = None
         self.model = None
         self.attributes = None
+        self.jalali_date = jalali_now()
+        self.date = gregorian_now()
 
     @staticmethod
     def get_configs(system_code):
@@ -170,6 +172,8 @@ class CreateChild(Product):
         self.parent_system_code = parent_system_code
         self.visible_in_site = visible_in_site
         self.config = None
+        self.jalali_date = jalali_now()
+        self.date = gregorian_now()
 
     def set_kowsar_data(self, data: dict) -> None:
         self.config = data.get('config')
