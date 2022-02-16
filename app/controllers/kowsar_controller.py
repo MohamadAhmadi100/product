@@ -9,7 +9,7 @@ def get_kowsar(system_code: str):
     data = KowsarGetter.system_code_name_getter(system_code)
     if data:
         return {"success": True, "message": data, "status_code": 200}
-    return {"success": False, "status_code": 400, "message": "کالای مورد نظر یافت نشد"}
+    return {"success": False, "status_code": 404, "error": "کالای مورد نظر یافت نشد"}
 
 
 def get_kowsar_items(system_code: str):
@@ -20,7 +20,7 @@ def get_kowsar_items(system_code: str):
     data = KowsarGetter.system_code_items_getter(system_code)
     if data:
         return {"success": True, "message": data, "status_code": 200}
-    return {"success": False, "message": "کالای مورد نظر یافت نشد", "status_code": 400}
+    return {"success": False, "error": "کالای مورد نظر یافت نشد", "status_code": 404}
 
 
 def update_kowsar_collection():

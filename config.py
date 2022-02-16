@@ -1,26 +1,31 @@
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Settings:
-    APP_NAME: str = "product"
+    APP_NAME: str = os.getenv("APP_NAME")
 
-    MONGO_HOST: str = "200.100.100.223"
-    MONGO_PORT: int = 27017
-    MONGO_USER: str = "root"
-    MONGO_PASS: str = "qweasdQWEASD"
+    MONGO_HOST: str = os.getenv("MONGO_HOST")
+    MONGO_PORT: int = int(os.getenv("MONGO_PORT"))
+    MONGO_USER: str = os.getenv("MONGO_USER")
+    MONGO_PASS: str = os.getenv("MONGO_PASS")
 
-    REDIS_HOST: str = "200.100.100.223"
-    REDIS_PORT: int = 6379
-    REDIS_USER: str = ""
-    REDIS_PASS: str = ""
-    REDIS_DB: int = 1
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT"))
+    REDIS_USER: str = os.getenv("REDIS_USER")
+    REDIS_PASS: str = os.getenv("REDIS_PASS")
+    REDIS_DB: int = int(os.getenv("REDIS_DB"))
 
-    RABBIT_HOST: str = "200.100.100.205"
+    RABBIT_HOST: str = os.getenv("RABBIT_HOST")
 
-    UVICORN_HOST: str = "0.0.0.0"
-    UVICORN_PORT: int = 8000
+    UVICORN_HOST: str = os.getenv("UVICORN_HOST")
+    UVICORN_PORT: int = int(os.getenv("UVICORN_PORT"))
 
-    TELEGRAM_BOT_TOKEN: str = "5010568783:AAH0ArPhZ_UtUFb-tUVAkPkQQLiRCHtflgM"
-    CHAT_IDS: list = [172110099]
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN")
+    CHAT_IDS: list = [int(chat_id) for chat_id in os.getenv("CHAT_IDS").split(",")]
 
 
 settings = Settings()

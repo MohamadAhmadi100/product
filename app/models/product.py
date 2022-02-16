@@ -51,7 +51,7 @@ class Product(ABC):
         """
         with MongoConnection() as mongo:
             result = mongo.collection.find_one({'system_code': system_code}, {"_id": 0})
-            if result.get("visible_in_site"):
+            if result and result.get("visible_in_site"):
                 with RedisConnection() as redis_db:
                     if result and result.get('products'):
                         for product in result['products']:
@@ -238,8 +238,8 @@ class CreateChild(Product):
             result = mongo.collection.update_one({"products.system_code": self.system_code},
                                                  {"$set": {"products.$.archived": True}})
             if result.modified_count:
-                return {"ok": True}, True
-            return {"ok": False}, False
+                return {"message": "product archived successfully", "label": "محصول با موفقیت حذف شد"}, True
+            return {"message": "product failed to archive", "label": "حذف محصول با خطا مواجه شد"}, False
 
 
 class AddAtributes(Product):

@@ -1,112 +1,51 @@
 import pytest
 
-from app.models.custom_category import CustomCategory
-from app.models.product import Product, CreateParent, CreateChild, AddAtributes
 from app.helpers.mongo_connection import MongoConnection
+from app.controllers.product_controller import *
 
 
-def delete_parent():
+@pytest.fixture
+def create_parent_fixture():
     with MongoConnection() as mongo:
-        mongo.collection.delete_one({'system_code': '100104021'})
+        mongo.collection.delete_one({'system_code': '10011000101'})
+        yield
+        mongo.collection.delete_one({'system_code': '10011000101'})
 
 
 @pytest.fixture
-def create_parent():
-    sample_data = {
-        "system_code": "100104021",
-        "name": "ردمی 9c"
-    }
-    product = CreateParent(**sample_data)
-    product.create()
-    yield product
+def create_child_fixture():
+    with MongoConnection() as mongo:
+        create_parent('10011000101', name="محصول تست", visible_in_site=True)
+        yield
+        mongo.collection.delete_one({'system_code': '10011000101'})
 
 
 @pytest.fixture
-def create_and_delete_parent():
-    sample_data = {
-        "system_code": "100104021",
-        "name": "ردمی 9c"
-    }
-    product = CreateParent(**sample_data)
-    product.create()
-    yield product
-    delete_parent()
+def add_attributes_fixture():
+    create_parent('10011000101', name="محصول تست", visible_in_site=True)
+    create_child("100110001001", "10011000101", True)
+    yield
+    with MongoConnection() as mongo:
+        mongo.collection.delete_one({'system_code': '10011000101'})
 
 
 @pytest.fixture
-def create_child(create_parent):
-    sample_data = {
-        "system_code": "100104021006"
-    }
-    product = CreateChild(**sample_data)
-    product.create()
-    yield product
-
-
-@pytest.fixture
-def add_attributes(create_child):
-    AddAtributes(**{
-        "system_code": '100104021006',
-        "attributes": {
-            "image": "/src/default.jpg",
-            "year": 2020
-        }
+def get_product_by_system_code_fixture():
+    create_parent('10011000101', name="محصول تست", visible_in_site=True)
+    create_child("100110001001", "10011000101", True)
+    add_attributes("100110001001", {
+        "image": "/src/default.jpg",
+        "year": 2020
     })
-    product = AddAtributes.create()
-    yield product
-
-
-@pytest.fixture
-def add_product_to_custom_category():
-    sample_data = {
-        "system_code": "100104021006",
-        "attributes": {
-            "image": "/src/default.jpg",
-            "year": 2020
-        }
-    }
-    product = AddAtributes(**sample_data)
-    product.create()
-    custom_category = CustomCategory(**{"name": "atish bazi"})
-    custom_category.add(product.dict())
-    yield custom_category
-    product = AddAtributes.construct()
-    product.get("100104021")
-    delete_parent()
-
-
-@pytest.fixture
-def add_and_remove_product_from_category():
-    sample_data = {
-        "system_code": "100104021006",
-        "attributes": {
-            "image": "/src/default.jpg",
-            "year": 2020
-        }
-    }
-    product = Product(**sample_data)
-    product.create()
-    custom_category = CustomCategory(**{"name": "atish bazi"})
-    custom_category.add(product.dict())
     yield
-    custom_category.remove(product.dict())
+    with MongoConnection() as mongo:
+        mongo.collection.delete_one({'system_code': '10011000101'})
 
 
 @pytest.fixture
-def delete_product_from_custom_category():
+def delete_product_fixure():
+    create_parent('10011000101', name="محصول تست", visible_in_site=True)
+    create_child("100110001001", "10011000101", True)
     yield
-    sample_data = {
-        "system_code": "100104021006",
-        "attributes": {
-            "image": "/src/default.jpg",
-            "year": 2020
-        }
-    }
-    product = Product(**sample_data)
-    product.create()
-    product = product.get("100104021006")
-    custom_category = CustomCategory(**{"name": "atish bazi"})
-    custom_category.remove(product.dict())
-    product = Product.construct()
-    product.get("100104021006")
-
+    with MongoConnection() as mongo:
+        mongo.collection.delete_one({'system_code': '10011000101'})

@@ -4,3 +4,4 @@ app.log
 .idea
 __pycache__
 temp*
+.env

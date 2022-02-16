@@ -91,7 +91,6 @@ def update_attribute_collection(attributes: list) -> dict:
     """
     Update the attribute collection in database.
     """
-    # TODO: Later, the attributes below should come from API GW
     attribute_setter(attributes)
     return {"success": True, "message": {"message": "attribute collection updated"}, "status_code": 200}
 
