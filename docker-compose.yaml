@@ -19,13 +19,11 @@ services:
         container_name: redis-db
         volumes:
             - redis-data:/data/redis
-            - ./conf/redis.conf:/etc/redis.conf
         networks:
             - redis_network
         ports:
             - 6379:6379
         restart: always
-        command: ["redis-server", "/etc/redis.conf"]
     api:
         build: .
 
