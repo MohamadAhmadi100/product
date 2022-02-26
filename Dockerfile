@@ -16,4 +16,6 @@ RUN pip install --upgrade pip
 
 RUN pip install -e /product/.
 
-ENTRYPOINT ["python", "/product/app/main.py"]
+RUN cd /product/
+
+CMD ["python", "/app/main.py"]
