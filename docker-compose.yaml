@@ -1,5 +1,33 @@
 version: "3"
 
 services:
+    mongodb:
+        image: mongo:4.4.4
+        container_name: mongo-db
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=root
+            - MONGO_INITDB_ROOT_PASSWORD=qweasdQWEASD
+        volumes:
+            - mongodb-data:/data/db
+        networks:
+            - mongodb_network
+        ports:
+            27017:27017
+        interval: 10s
+        timeout: 10s
+        retries: 3
+        restart: unless-stopped
+    redis:
+        image: redis
+        container_name: redis-db
+        volumes:
+            - redis-data:/data/redis
+            - ./conf/redis.conf:/etc/redis.conf
+        networks:
+            - redis_network
+        ports:
+            6379:6379
+        restart: always
+        command: ["redis-server", "/etc/redis.conf"]
     api:
         build: .
