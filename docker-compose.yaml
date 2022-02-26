@@ -12,10 +12,7 @@ services:
         networks:
             - mongodb_network
         ports:
-            27017:27017
-        interval: 10s
-        timeout: 10s
-        retries: 3
+            - 27017:27017
         restart: unless-stopped
     redis:
         image: redis
@@ -26,7 +23,7 @@ services:
         networks:
             - redis_network
         ports:
-            6379:6379
+            - 6379:6379
         restart: always
         command: ["redis-server", "/etc/redis.conf"]
     api:
