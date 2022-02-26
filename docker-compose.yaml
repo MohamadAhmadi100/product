@@ -32,3 +32,9 @@ services:
 volumes:
     mongodb-data:
     redis-data:
+
+networks:
+    mongodb_network:
+        drvier: bridge
+    redis_network:
+        driver: bridge
