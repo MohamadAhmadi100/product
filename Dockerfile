@@ -16,6 +16,4 @@ RUN pip install --upgrade pip
 
 RUN pip install -e /product/.
 
-RUN cd /product/
-
-CMD ["python", "/app/main.py"]
+CMD ["cd", "/product/",";python", "/app/main.py"]
