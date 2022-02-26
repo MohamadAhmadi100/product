@@ -1,25 +1,36 @@
-from pydantic import BaseSettings
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
-class Settings(BaseSettings):
-    APP_NAME: str = "Product App"
+class Settings:
+    # Settings
+    APP_NAME = os.getenv("APP_NAME")
 
-    MONGO_HOST: str = "mongodb://localhost"
-    MONGO_PORT: int = 27017
-    MONGO_USER: str = ""
-    MONGO_PASS: str = ""
+    # Mongo DB
+    MONGO_HOST: str = os.getenv("MONGO_HOST")
+    MONGO_PORT: int = os.getenv("MONGO_PORT")
+    MONGO_USER: str = os.getenv("MONGO_USER")
+    MONGO_PASS: str = os.getenv("MONGO_PASS")
 
-    REDIS_HOST: str = "200.100.100.223"
-    REDIS_PORT: int = 6379
-    REDIS_USER: str = ""
-    REDIS_PASS: str = ""
-    REDIS_DB: int = 1
+    # Redis
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = os.getenv("REIDS_PORT")
+    REDIS_USER: str = os.getenv("REDIS_USER")
+    REDIS_PASS: str = os.getenv("REDIS_PASS")
+    REDIS_DB: int = os.getenv("REDIS_DB")
 
-    UVICORN_HOST: str = "0.0.0.0"
-    UVICORN_PORT: int = 8000
+    # RabbitMQ
+    RABBIT_HOST: str = os.getenv("RABBIT_HOST")
+    RABBIT_PORT: int = os.getenv("RABBIT_PORT")
+    RABBIT_USER: int = os.getenv("RABBIT_USER")
+    RABBIT_PASS: int = os.getenv("RABBIT_PASS")
 
-    TELEGRAM_BOT_TOKEN: str = "5010568783:AAH0ArPhZ_UtUFb-tUVAkPkQQLiRCHtflgM"
-    CHAT_IDS: list = [172110099]
+    # Kavenegar
+    TOKEN: str = os.getenv("TOKEN")
+    SENDER: str = os.getenv("SENDER")
+    RECIPIENTS: list = os.getenv("RECIPIENTS")
+    TEMPLATE: str = os.getenv("TEMPLATE")
 
 
 settings = Settings()
