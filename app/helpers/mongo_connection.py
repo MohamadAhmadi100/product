@@ -1,6 +1,6 @@
 import pymongo
 
-from config import settings
+from app.config import settings
 
 
 class Singleton(type):
