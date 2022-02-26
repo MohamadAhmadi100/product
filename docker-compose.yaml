@@ -35,6 +35,6 @@ volumes:
 
 networks:
     mongodb_network:
-        drvier: bridge
+        driver: bridge
     redis_network:
         driver: bridge
