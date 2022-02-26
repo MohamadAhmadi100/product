@@ -28,3 +28,7 @@ services:
         command: ["redis-server", "/etc/redis.conf"]
     api:
         build: .
+
+volumes:
+    mongodb-data:
+    redis-data:
