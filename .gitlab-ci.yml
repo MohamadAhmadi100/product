@@ -9,7 +9,7 @@ build:
   only:
     - dev
   tags:
-    - ci
+    - ci-jon
   script:
     - ls
     - echo APP_NAME=$APP_NAME >> .env
@@ -40,7 +40,7 @@ dev_deploy:
   only:
     - dev
   tags:
-    - ci
+    - ci-jon
   script:
     - echo APP_NAME=$APP_NAME >> .env
     - echo MONGO_HOST=$MONGO_HOST >> .env
@@ -68,7 +68,7 @@ push:
   only:
     - master
   tags:
-    - ci
+    - ci-jon
   script:
     - docker login 200.100.100.219:80 -u registry -p $REGPASS
     - docker build -t product:0.0.1 . -t 200.100.100.219:80/backend/web-product:$CI_COMMIT_SHORT_SHA
@@ -79,7 +79,7 @@ master_deploy:
   only:
     - master
   tags:
-    - ci
+    - ci-jon
   script:
     - docker login 200.100.100.219:80 -u registry -p $REGPASS
     - docker run -p 8000:80 product:0.0.1
