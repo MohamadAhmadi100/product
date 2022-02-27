@@ -86,6 +86,137 @@ class Product(ABC):
                     return result
             return None
 
+    @staticmethod
+    def get_product_list(brand, page, per_page):
+        with MongoConnection() as mongo:
+            with RedisConnection() as redis_db:
+                skips = per_page * (page - 1)
+                db_brands = mongo.collection.distinct("brand")
+                brands_dict = [{"brand": brands, "label": redis_db.client.hget(brands, "fa_ir"),
+                                "active": True if brands == brand else False} for brands in db_brands]
+                result = mongo.collection.find({"brand": brand}, {"_id": 0}).skip(skips).limit(per_page)
+                product_list = list()
+                for product in result:
+                    if product.get("visible_in_site"):
+                        if product.get('products'):
+                            colors = [color['config']['color'] for color in product['products'] if
+                                      color.get("visible_in_site")]
+                            product.update({"colors": colors})
+                            del product['products']
+                            product_list.append(product)
+
+                return {"brands": brands_dict, "products": product_list}
+
+    @staticmethod
+    def get_category_list():
+        with MongoConnection() as mongo:
+            with RedisConnection() as redis_db:
+                result_Accessory = mongo.collection.distinct("sub_category", {"main_category": "Accessory"})
+                category_list_Accessory = [{"sub_category": category, "label": redis_db.client.hget(category, "fa_ir")}
+                                           for category in result_Accessory]
+
+                result_main_category = mongo.collection.distinct("main_category")
+                category_list_main_category = [
+                    {"main_category": category, "label": redis_db.client.hget(category, "fa_ir")}
+                    for category in result_main_category]
+
+                result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
+                category_list_brand = [{"brand": brand, "label": redis_db.client.hget(brand, "fa_ir")}
+                                       for brand in result_brand]
+
+                result_latest_product = mongo.collection.find(
+                    {"sub_category": "Mobile", "products": {"$ne": None}, "visible_in_site": True,
+                     "products.visible_in_site": True},
+
+                    {"_id": 0, "system_code": 1, "name": 1,
+                     "products": {"$elemMatch": {"visible_in_site": True}},
+                     }).sort("date", -1).limit(20)
+                return {
+                    "category_list_Accessory": category_list_Accessory,
+                    "category_list_main_category": category_list_main_category,
+                    "category_list_brand": category_list_brand,
+                    "latest_product": list(result_latest_product)
+                }
+
+    @staticmethod
+    def get_product_list_back_office():
+        colors_list = list()
+        brands_list = list()
+        warehouses_list = list()
+        seller_list = list()
+        gaurantee_list = list()
+        step_list = list()
+        return {
+            "filters": [
+                {
+                    "name": "brand",
+                    "label": "برند",
+                    "input_type": "multi_select",
+                    "options": brands_list
+                },
+                {
+                    "name": "color",
+                    "label": "رنگ",
+                    "input_type": "multi_select",
+                    "options": colors_list
+                },
+                {
+                    "name": "price",
+                    "label": "قیمت",
+                    "input_type": "range",
+                },
+                {
+                    "name": "warehouse",
+                    "label": "انبار",
+                    "input_type": "multi_select",
+                    "options": warehouses_list
+                },
+                {
+                    "name": "seller",
+                    "label": "فروشنده",
+                    "input_type": "multi_select",
+                    "options": seller_list
+                },
+                {
+                    "name": "quantity",
+                    "label": "تعداد",
+                    "input_type": "range",
+                },
+                {
+                    "name": "date",
+                    "label": "تاریخ",
+                    "input_type": "date",
+                },
+                {
+                    "name": "gaurantee",
+                    "label": "گارانتی",
+                    "input_type": "multi_select",
+                    "options": gaurantee_list
+                },
+                {
+                    "name": "visibleInSite",
+                    "label": "قابل نمایش",
+                    "input_type": "checkbox",
+                },
+                {
+                    "name": "aproved",
+                    "label": "تایید شده",
+                    "input_type": "checkbox",
+                },
+                {
+                    "name": "available",
+                    "label": "موجود",
+                    "input_type": "checkbox",
+                },
+                {
+                    "name": "step",
+                    "label": "مرحله",
+                    "input_type": "multi_select",
+                    "options": step_list
+                }
+            ]
+        }
+
     @abstractmethod
     def system_code_is_unique(self) -> bool:
         """
@@ -171,6 +302,7 @@ class CreateChild(Product):
         self.system_code = system_code
         self.parent_system_code = parent_system_code
         self.visible_in_site = visible_in_site
+        self.step = 2
         self.config = None
         self.jalali_date = jalali_now()
         self.date = gregorian_now()
@@ -256,7 +388,7 @@ class AddAtributes(Product):
     def create(self) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.collection.update_one({"products.system_code": self.system_code},
-                                                 {"$set": {"products.$.attributes": self.attributes}})
+                                                 {"$set": {"products.$.attributes": self.attributes, "products.$.step": 3}})
             if result.modified_count:
                 return {"message": "attribute added successfully", "label": "صفت با موفقیت اضافه شد"}, True
             return {"error": "attribute add failed", "label": "فرایند افزودن صفت به مشکل برخورد"}, False
