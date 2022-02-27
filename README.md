@@ -100,7 +100,6 @@ have an `image` and `year` attribute.
 In this project, we used the following technologies:
 
 * [Python](https://www.python.org)
-* [Fast API](https://fastapi.tiangolo.com)
 * [Mongo DB](https://www.mongodb.com)
 * Later, [Vue.js](https://vuejs.org) may included.
 
@@ -142,29 +141,30 @@ After installing prerequisites, now you can install dependencies of this project
    ```sh
    pip install -e .
    ```
-5. Create config.py file in main directory
+5. Create .env file in main directory
 
-```python
-from pydantic import BaseSettings
+    ```text
+    APP_NAME="product"
 
-
-class Settings(BaseSettings):
-    APP_NAME: str = "Product App"
-
-    MONGO_HOST: str = "mongodb://localhost"
-    MONGO_PORT: int = 27017
-    MONGO_USER: str = ""
-    MONGO_PASS: str = ""
-
-    UVICORN_HOST: str = "0.0.0.0"
-    UVICORN_PORT: int = 8000
-
-    TELEGRAM_BOT_TOKEN: str = "your telegram bot token"
-    CHAT_IDS: list = [111111111]
-
-
-settings = Settings()
-```
+    MONGO_HOST="localhost"
+    MONGO_PORT="27017"
+    MONGO_USER=""
+    MONGO_PASS=""
+    
+    REDIS_HOST="localhost"
+    REDIS_PORT="6379"
+    REDIS_USER=""
+    REDIS_PASS=""
+    REDIS_DB="1"
+    
+    RABBIT_HOST="localhost"
+    
+    UVICORN_HOST="0.0.0.0"
+    UVICORN_PORT="8000"
+    
+    TELEGRAM_BOT_TOKEN=""
+    CHAT_IDS=[123456789]
+    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -177,12 +177,10 @@ settings = Settings()
 To run the project, make sure that the mongodb service is up locally and run this in the app directory
 
 ```sh
-uvicorn main:app --reload
+python main.py
 ```
 
 - You can visit [localhost:8000](http://localhost:8000) for root directory.
-- The API docs are available at [localhost:8000/docs/](http://localhost:8000/api/v1/docs/)
-- Alternative API docs are also available at [localhost:8000/redoc](http://localhost:8000/redoc)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -217,7 +215,8 @@ pytest --cov
 - [x] add products to custom category
 - [x] Refactor according to needs
 - [ ] Multi-language Support
-    - [ ] Persian
+    - [x] Persian
+    - [x] English
     - [ ] Arabic
 
 <p align="right">(<a href="#top">back to top</a>)</p>

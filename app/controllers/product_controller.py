@@ -91,7 +91,6 @@ def update_attribute_collection(attributes: list) -> dict:
     """
     Update the attribute collection in database.
     """
-    # TODO: Later, the attributes below should come from API GW
     attribute_setter(attributes)
     return {"success": True, "message": {"message": "attribute collection updated"}, "status_code": 200}
 
@@ -103,3 +102,30 @@ def get_all_categories(system_code: str, page: int, per_page: int):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "categories not found", "status_code": 404}
+
+
+def get_product_list(brand: str, page: int, per_page: int):
+    """
+    """
+    result = Product.get_product_list(brand, page, per_page)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "products not found", "status_code": 404}
+
+
+def get_category_list():
+    """
+    """
+    result = Product.get_category_list()
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "categories not found", "status_code": 404}
+
+
+def get_product_list_back_office():
+    """
+    """
+    result = Product.get_product_list_back_office()
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "products not found", "status_code": 404}
