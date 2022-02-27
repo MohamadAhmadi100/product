@@ -217,6 +217,12 @@ class Product(ABC):
             ]
         }
 
+    @staticmethod
+    def step_up_product(system_code):
+        with MongoConnection() as mongo:
+            mongo.collection.update_one({"products.system_code": system_code}, {"$inc": {"products.$.step": 1}})
+        return True
+
     @abstractmethod
     def system_code_is_unique(self) -> bool:
         """
@@ -388,7 +394,8 @@ class AddAtributes(Product):
     def create(self) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.collection.update_one({"products.system_code": self.system_code},
-                                                 {"$set": {"products.$.attributes": self.attributes, "products.$.step": 3}})
+                                                 {"$set": {"products.$.attributes": self.attributes,
+                                                           "products.$.step": 3}})
             if result.modified_count:
                 return {"message": "attribute added successfully", "label": "صفت با موفقیت اضافه شد"}, True
             return {"error": "attribute add failed", "label": "فرایند افزودن صفت به مشکل برخورد"}, False

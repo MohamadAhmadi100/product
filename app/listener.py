@@ -13,6 +13,7 @@ app_name = settings.APP_NAME
 
 
 def callback(message: dict) -> dict:
+    print(message)
     terminal_log.action_log(message, app_name)
     terminal_log.request_log(message, app_name)
     data = message.get(app_name, {})

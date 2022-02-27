@@ -34,3 +34,5 @@ class Settings:
 
 
 settings = Settings()
+
+hi = 1
