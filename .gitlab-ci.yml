@@ -50,10 +50,10 @@ dev_deploy:
     - echo REDIS_USER=$REDIS_USER >> .env
     - echo REDIS_PASS=$REDIS_PASS >> .env
     - echo REDIS_DB=$REDIS_DB >> .env
-    - echo RABBITMQ_HOST=$RABBITMQ_HOST >> .env
-    - echo RABBITMQ_PORT=$RABBITMQ_PORT >> .env
-    - echo RABBITMQ_USER=$RABBITMQ_USER >> .env
-    - echo RABBITMQ_PASS=$RABBITMQ_PASS >> .env
+    - echo RABBIT_HOST=$RABBIT_HOST >> .env
+    - echo RABBIT_PORT=$RABBIT_PORT >> .env
+    - echo RABBIT_USER=$RABBIT_USER >> .env
+    - echo RABBIT_PASS=$RABBIT_PASS >> .env
     - echo TOKEN=$TOKEN >> .env
     - echo SENDER=$SENDER >> .env
     - echo RECIPIENTS=$RECIPIENTS >> .env
