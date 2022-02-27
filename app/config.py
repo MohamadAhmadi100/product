@@ -15,7 +15,7 @@ class Settings:
 
     # Redis
     REDIS_HOST: str = os.getenv("REDIS_HOST")
-    REDIS_PORT: int = int(os.getenv("REIDS_PORT"))
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT"))
     REDIS_USER: str = os.getenv("REDIS_USER")
     REDIS_PASS: str = os.getenv("REDIS_PASS")
     REDIS_DB: int = int(os.getenv("REDIS_DB"))
