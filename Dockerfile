@@ -12,8 +12,6 @@ COPY ./setup.py /product/setup.py
 
 COPY ./app /product/app
 
-RUN pip install --upgrade pip
-
 RUN pip install -e /product/.
 
 CMD ["python", "/product/app/main.py"]
