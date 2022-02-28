@@ -12,7 +12,7 @@ services:
         networks:
             - mongodb_network
         ports:
-            - 27017:27017
+            - ${MONGO_PORT}:${MONGO_PORT}
         restart: unless-stopped
     redis:
         image: redis
@@ -22,7 +22,7 @@ services:
         networks:
             - redis_network
         ports:
-            - 6379:6379
+            - ${REDIS_PORT}:${REDIS_PORT}
         restart: always
     api:
         build: .
