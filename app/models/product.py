@@ -94,7 +94,8 @@ class Product(ABC):
                 db_brands = mongo.collection.distinct("brand")
                 brands_dict = [{"brand": brands, "label": redis_db.client.hget(brands, "fa_ir"),
                                 "active": True if brands == system_code else False} for brands in db_brands]
-                result = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}).skip(skips).limit(per_page)
+                result = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}).skip(
+                    skips).limit(per_page)
                 product_list = list()
                 for product in result:
                     if product.get("visible_in_site"):
@@ -357,6 +358,11 @@ class CreateChild(Product):
                 for obj in data:
                     if obj['system_code'] in system_codes:
                         obj['created'] = True
+                        db_data = mongo.collection.find_one({"products.system_code": obj['system_code']},
+                                                            {"_id": 0, "products": {
+                                                                "$elemMatch": {"system_code": obj['system_code']}}})
+                        obj['visibleInSite'] = db_data.get("products", [])[0].get("visible_in_site",
+                                                                                  False) if db_data else False
                     if obj.get('label').get('storage') == config[0] and obj.get('label').get('ram') == config[1]:
                         configs = obj.get('label')
                         del obj['label']
