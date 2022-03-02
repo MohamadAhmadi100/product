@@ -20,6 +20,9 @@ class Settings:
     REDIS_DB: int = int(os.getenv("REDIS_DB"))
 
     RABBIT_HOST: str = os.getenv("RABBIT_HOST")
+    RABBIT_PORT: int = int(os.getenv("RABBIT_PORT"))
+    RABBIT_USER: str = os.getenv("RABBIT_USER")
+    RABBIT_PASS: str = os.getenv("RABBIT_PASS")
 
     UVICORN_HOST: str = os.getenv("UVICORN_HOST")
     UVICORN_PORT: int = int(os.getenv("UVICORN_PORT"))
