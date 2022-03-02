@@ -104,10 +104,10 @@ def get_all_categories(system_code: str, page: int, per_page: int):
     return {"success": False, "error": "categories not found", "status_code": 404}
 
 
-def get_product_list(brand: str, page: int, per_page: int):
+def get_product_list_by_system_code(system_code: str, page: int, per_page: int):
     """
     """
-    result = Product.get_product_list(brand, page, per_page)
+    result = Product.get_product_list_by_system_code(system_code, page, per_page)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}

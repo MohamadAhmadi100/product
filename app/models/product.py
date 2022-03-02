@@ -87,14 +87,14 @@ class Product(ABC):
             return None
 
     @staticmethod
-    def get_product_list(brand, page, per_page):
+    def get_product_list_by_system_code(system_code, page, per_page):
         with MongoConnection() as mongo:
             with RedisConnection() as redis_db:
                 skips = per_page * (page - 1)
                 db_brands = mongo.collection.distinct("brand")
                 brands_dict = [{"brand": brands, "label": redis_db.client.hget(brands, "fa_ir"),
-                                "active": True if brands == brand else False} for brands in db_brands]
-                result = mongo.collection.find({"brand": brand}, {"_id": 0}).skip(skips).limit(per_page)
+                                "active": True if brands == system_code else False} for brands in db_brands]
+                result = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}).skip(skips).limit(per_page)
                 product_list = list()
                 for product in result:
                     if product.get("visible_in_site"):
