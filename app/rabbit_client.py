@@ -1,13 +1,12 @@
 import json
 import sys
-import threading
 
 import pika
 from app.modules import terminal_log
 from config import settings
 
 
-class RabbitRPCClient(threading.Thread):
+class RabbitRPCClient:
     def __init__(
             self,
             receiving_queue: str,
@@ -16,7 +15,6 @@ class RabbitRPCClient(threading.Thread):
             headers: dict,
             headers_match_all: bool = False
     ):
-        threading.Thread.__init__(self)
         self.host = settings.RABBIT_HOST
         self.port = settings.RABBIT_PORT
         self.user = settings.RABBIT_USER
@@ -41,7 +39,6 @@ class RabbitRPCClient(threading.Thread):
             routing_key="",
             arguments=self.headers
         )
-        threading.Thread(target=self.consume())
 
     def connect(self):
         if not self.connection or self.connection.is_closed():
