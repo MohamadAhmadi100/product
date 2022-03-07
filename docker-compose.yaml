@@ -5,8 +5,8 @@ services:
         image: mongo:4.4.4
         container_name: mongo-db-product
         environment:
-            - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-            - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+            - MONGO_INITDB_ROOT_USERNAME=masood
+            - MONGO_INITDB_ROOT_PASSWORD=123456789
         volumes:
             - mongodb-data-product:/data/db
         networks:
