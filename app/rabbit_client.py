@@ -1,6 +1,5 @@
 import json
 import sys
-import threading
 
 import pika
 from app.modules import terminal_log
@@ -41,9 +40,7 @@ class RabbitRPCClient:
             routing_key="",
             arguments=self.headers
         )
-        thread = threading.Thread(target=self.consume())
-        thread.setDaemon(True)
-        thread.start()
+        self.consume()
 
     def connect(self):
         if not self.connection or self.connection.is_closed():
@@ -62,11 +59,10 @@ class RabbitRPCClient:
     def publish(self, channel, method, properties, body):
         message = self.callback(json.loads(body))
         terminal_log.responce_log(message)
-        with self.internal_lock:
-            channel.basic_publish(exchange='',
-                                routing_key=properties.reply_to,
-                                properties=pika.BasicProperties(correlation_id=properties.correlation_id),
-                                body=json.dumps(message))
+        channel.basic_publish(exchange='',
+                            routing_key=properties.reply_to,
+                            properties=pika.BasicProperties(correlation_id=properties.correlation_id),
+                            body=json.dumps(message))
         channel.basic_ack(delivery_tag=method.delivery_tag)
 
     def fanout_callback_runnable(self, channel, method, properties, body):
