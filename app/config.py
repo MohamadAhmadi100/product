@@ -3,36 +3,35 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Settings:
     # Settings
-    APP_NAME = os.getenv("APP_NAME")
+    APP_NAME = "product"
 
     # Mongo DB
-    MONGO_HOST: str = os.getenv("MONGO_HOST")
-    MONGO_PORT: int = int(os.getenv("MONGO_PORT"))
-    MONGO_USER: str = os.getenv("MONGO_USER")
-    MONGO_PASS: str = os.getenv("MONGO_PASS")
+    MONGO_HOST: str = "200.100.100.223"
+    MONGO_PORT: int = 27017
+    MONGO_USER: str = "root"
+    MONGO_PASS: str = "qweasdQWEASD"
 
     # Redis
-    REDIS_HOST: str = os.getenv("REDIS_HOST")
-    REDIS_PORT: int = int(os.getenv("REDIS_PORT"))
-    REDIS_USER: str = os.getenv("REDIS_USER")
-    REDIS_PASS: str = os.getenv("REDIS_PASS")
-    REDIS_DB: int = int(os.getenv("REDIS_DB"))
+    REDIS_HOST: str = "200.100.100.223"
+    REDIS_PORT: int = 6379
+    REDIS_USER: str = ""
+    REDIS_PASS: str = ""
+    REDIS_DB: int = 1
 
     # RabbitMQ
-    RABBIT_HOST: str = os.getenv("RABBIT_HOST")
-    RABBIT_PORT: int = int(os.getenv("RABBIT_PORT"))
-    RABBIT_USER: int = os.getenv("RABBIT_USER")
-    RABBIT_PASS: int = os.getenv("RABBIT_PASS")
+    RABBIT_HOST: str = "200.100.100.208"
+    RABBIT_PORT: int = 5672
+    RABBIT_USER: int = "rbtmq"
+    RABBIT_PASS: int = "rbtmq@RBTMQ"
 
     # Kavenegar
-    TOKEN: str = os.getenv("TOKEN")
-    SENDER: str = os.getenv("SENDER")
-    RECIPIENTS: list = os.getenv("RECIPIENTS")
-    TEMPLATE: str = os.getenv("TEMPLATE")
+    TOKEN: str = "535041646375714D57613535695561696E7355724A796B2B5657715833434939"
+    SENDER: str = "10008663"
+    RECIPIENTS: list = ["09025606950", "09113485808", "09123854358"]
+    TEMPLATE: str = "service-error"
 
 
 settings = Settings()
-
-hi = 1

@@ -111,19 +111,27 @@ class Product(ABC):
     @staticmethod
     def get_category_list():
         with MongoConnection() as mongo:
+            def db_data_getter(query):
+                result = mongo.kowsar_collection.find_one(query, {"_id": 0})
+                return result if result else {}
+
             with RedisConnection() as redis_db:
                 result_Accessory = mongo.collection.distinct("sub_category", {"main_category": "Accessory"})
-                category_list_Accessory = [{"sub_category": category, "label": redis_db.client.hget(category, "fa_ir")}
-                                           for category in result_Accessory]
+                category_list_Accessory = [{"sub_category": category, "label": redis_db.client.hget(category, "fa_ir"),
+                                            "system_code": db_data_getter({"sub_category": category, "brand": None}).get("system_code")
+                                            } for
+                                           category in result_Accessory]
 
                 result_main_category = mongo.collection.distinct("main_category")
                 category_list_main_category = [
-                    {"main_category": category, "label": redis_db.client.hget(category, "fa_ir")}
+                    {"main_category": category, "label": redis_db.client.hget(category, "fa_ir"),
+                     "system_code": db_data_getter({"main_category": category, "sub_category": None}).get("system_code")}
                     for category in result_main_category]
 
                 result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
-                category_list_brand = [{"brand": brand, "label": redis_db.client.hget(brand, "fa_ir")}
-                                       for brand in result_brand]
+                category_list_brand = [{"brand": brand, "label": redis_db.client.hget(brand, "fa_ir"),
+                                        "system_code": db_data_getter({"brand": brand, "model": None}).get("system_code")} for brand in
+                                       result_brand]
 
                 result_latest_product = mongo.collection.find(
                     {"sub_category": "Mobile", "products": {"$ne": None}, "visible_in_site": True,
@@ -133,20 +141,49 @@ class Product(ABC):
                      "products": {"$elemMatch": {"visible_in_site": True}},
                      }).sort("date", -1).limit(20)
                 return {
-                    "category_list_Accessory": category_list_Accessory,
-                    "category_list_main_category": category_list_main_category,
-                    "category_list_brand": category_list_brand,
+                    "categories": {
+                        "label": "دسته بندی",
+                        "items": category_list_main_category},
+                    "brands": {
+                        "label": "برند ها",
+                        "items": category_list_brand},
+                    "accessories": {
+                        "label": "لوازم جانبی",
+                        "items": category_list_Accessory},
                     "latest_product": list(result_latest_product)
                 }
 
     @staticmethod
+    def get_product_attributes(system_code):
+        with MongoConnection() as mongo:
+            result = mongo.collection.find_one({"system_code": system_code}, {"_id": 0, "products": 1})
+            if result:
+                return result.get("products")
+            return None
+
+    @staticmethod
     def get_product_list_back_office():
-        colors_list = list()
-        brands_list = list()
-        warehouses_list = list()
-        seller_list = list()
-        gaurantee_list = list()
-        step_list = list()
+        with MongoConnection() as mongo:
+            result = list(mongo.collection.aggregate([
+                {
+                    "$group":
+                        {
+                            "_id": 0,
+                            "brand": {"$addToSet": '$brand'},
+                            "visible_in_site": {"$addToSet": '$visible_in_site'},
+                            "color": {"$addToSet": '$products.config.color'},
+                            "seller": {"$addToSet": '$products.config.seller'},
+                            "gaurantee": {"$addToSet": '$products.config.gaurantee'},
+                            "step": {"$addToSet": '$products.step'}
+                        }
+                }
+            ]))
+            colors_list = result[0]['color']
+            brands_list = result[0]['brand']
+            warehouses_list = list()
+            seller_list = result[0]['seller']
+            gaurantee_list = result[0]['gaurantee']
+            step_list = result[0]['step']
         return {
             "filters": [
                 {
@@ -195,7 +232,7 @@ class Product(ABC):
                     "options": gaurantee_list
                 },
                 {
-                    "name": "visibleInSite",
+                    "name": "visible_in_site",
                     "label": "قابل نمایش",
                     "input_type": "checkbox",
                 },
