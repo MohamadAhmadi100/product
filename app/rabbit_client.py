@@ -41,11 +41,9 @@ class RabbitRPCClient:
             routing_key="",
             arguments=self.headers
         )
-        thread = threading.Thread(target=self.consume)
+        thread = threading.Thread(target=self.consume())
         thread.setDaemon(True)
         thread.start()
-        self.consume()
-        
 
     def connect(self):
         if not self.connection or self.connection.is_closed():
