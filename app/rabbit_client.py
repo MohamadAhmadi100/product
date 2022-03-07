@@ -7,7 +7,6 @@ from config import settings
 
 
 class RabbitRPCClient:
-    internal_lock = threading.Lock()
     def __init__(
             self,
             receiving_queue: str,
