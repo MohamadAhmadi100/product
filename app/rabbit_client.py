@@ -44,6 +44,7 @@ class RabbitRPCClient:
         thread = threading.Thread(target=self.consume)
         thread.setDaemon(True)
         thread.start()
+        self.consume()
         
 
     def connect(self):
