@@ -21,9 +21,10 @@ class RabbitRPCClient:
         self.port = settings.RABBIT_PORT
         self.user = settings.RABBIT_USER
         self.password = settings.RABBIT_PASS
-        self.connection = self.connect()
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange=exchange_name, exchange_type="headers")
+        self.exchange_name = exchange_name
+        self.connection = None
+        self.channel = None 
+        self.connect()
         self.receiving_queue = receiving_queue
         self.channel.queue_declare(queue=self.receiving_queue, durable=True)
         self.channel.basic_qos(prefetch_count=1)
@@ -40,18 +41,23 @@ class RabbitRPCClient:
             routing_key="",
             arguments=self.headers
         )
+        thread = threading.Thread(target=self.consume)
+        thread.setDaemon(True)
+        thread.start()
 
     def connect(self):
-        credentials = pika.PlainCredentials(self.user, self.password)
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=self.host,
-                port=self.port,
-                credentials=credentials,
-                # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
+        if not self.connection or self.connection.is_closed():
+            credentials = pika.PlainCredentials(self.user, self.password)
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=self.host,
+                    port=self.port,
+                    credentials=credentials,
+                    # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
+                )
             )
-        )
-        return connection
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange=self.exchange_name, exchange_type='headers')
 
     def publish(self, channel, method, properties, body):
         message = self.callback(json.loads(body))
