@@ -88,8 +88,7 @@ class RabbitRPCClient:
         self.channel.start_consuming()
 
     def consume(self):
-        with self.internal_lock:
-            self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
+        self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
         try:
             terminal_log.connection_log(self.host, self.port, self.headers)
             self.channel.start_consuming()
