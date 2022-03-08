@@ -49,6 +49,7 @@ class RabbitRPCClient:
                 # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
             )
         )
+        # self.connection.sleep(1)
         self.channel = self.connection.channel()
         self.channel.exchange_declare(exchange=self.exchange_name, exchange_type='headers')
         self.channel.basic_qos(prefetch_count=1)
@@ -81,9 +82,11 @@ class RabbitRPCClient:
         self.channel.start_consuming()
 
     def consume(self):
-        self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
         try:
+            self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
             terminal_log.connection_log(self.host, self.port, self.headers)
             self.channel.start_consuming()
+        except (pika.exceptions.ConnectionClosed, pika.exceptions.ChannelClosed, pika.exceptions.ChannelWrongStateError) as error:
+            self.connect()
         except KeyboardInterrupt:
             self.channel.stop_consuming()
