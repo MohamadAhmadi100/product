@@ -49,7 +49,7 @@ class RabbitRPCClient:
                     host=self.host,
                     port=self.port,
                     credentials=credentials,
-                    # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
+                    blocked_connection_timeout=86400  # 86400 seconds = 24 hours
                 )
             )
         self.channel = self.connection.channel()
