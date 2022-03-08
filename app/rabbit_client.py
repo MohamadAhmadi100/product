@@ -39,6 +39,7 @@ class RabbitRPCClient:
             routing_key="",
             arguments=self.headers
         )
+        self.connect()
 
     def connect(self):
         if not self.connection or self.connection.is_closed():
