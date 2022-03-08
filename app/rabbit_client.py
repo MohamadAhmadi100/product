@@ -57,11 +57,14 @@ class RabbitRPCClient:
     def publish(self, channel, method, properties, body):
         message = self.callback(json.loads(body))
         terminal_log.responce_log(message)
-        channel.basic_publish(exchange='',
-                            routing_key=properties.reply_to,
-                            properties=pika.BasicProperties(correlation_id=properties.correlation_id),
-                            body=json.dumps(message))
-        channel.basic_ack(delivery_tag=method.delivery_tag)
+        try:
+            channel.basic_publish(exchange='',
+                                routing_key=properties.reply_to,
+                                properties=pika.BasicProperties(correlation_id=properties.correlation_id),
+                                body=json.dumps(message))
+            channel.basic_ack(delivery_tag=method.delivery_tag)
+        except (pika.exceptions.ConnectionClosed, pika.exceptions.ChannelClosed, pika.exceptions.ChannelWrongStateError) as error:
+            self.connect()
 
     def fanout_callback_runnable(self, channel, method, properties, body):
         self.fanout_callback(json.loads(body))
