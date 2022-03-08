@@ -20,8 +20,7 @@ class RabbitRPCClient:
         self.user = settings.RABBIT_USER
         self.password = settings.RABBIT_PASS
         self.exchange_name = exchange_name
-        self.connection = None
-        self.channel = None 
+        self.credentials = pika.PlainCredentials(self.user, self.password)
         self.connect()
         self.receiving_queue = receiving_queue
         self.channel.queue_declare(queue=self.receiving_queue, durable=True)
@@ -42,16 +41,14 @@ class RabbitRPCClient:
         self.consume()
 
     def connect(self):
-        if not self.connection:
-            credentials = pika.PlainCredentials(self.user, self.password)
-            self.connection = pika.BlockingConnection(
-                pika.ConnectionParameters(
-                    host=self.host,
-                    port=self.port,
-                    credentials=credentials,
-                    blocked_connection_timeout=86400  # 86400 seconds = 24 hours
-                )
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=self.host,
+                port=self.port,
+                credentials=credentials,
+                # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
             )
+        )
         self.channel = self.connection.channel()
         self.channel.exchange_declare(exchange=self.exchange_name, exchange_type='headers')
 
