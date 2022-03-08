@@ -42,7 +42,7 @@ class RabbitRPCClient:
         self.connect()
 
     def connect(self):
-        if not self.connection or self.connection.is_closed():
+        if not self.connection:
             credentials = pika.PlainCredentials(self.user, self.password)
             self.connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
