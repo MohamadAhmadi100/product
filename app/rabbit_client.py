@@ -39,7 +39,7 @@ class RabbitRPCClient:
             routing_key="",
             arguments=self.headers
         )
-        self.connect()
+        self.consume()
 
     def connect(self):
         if not self.connection:
