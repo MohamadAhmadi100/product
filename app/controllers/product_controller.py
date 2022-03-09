@@ -122,13 +122,28 @@ def get_category_list():
     return {"success": False, "error": "categories not found", "status_code": 404}
 
 
-def get_product_list_back_office():
+def get_product_list_back_office(
+        brands, warehouses, price, sellers, colors, quantity,
+        date, guarantees, steps, visible_in_site,
+        approved, available, page, per_page
+):
     """
     """
-    result = Product.get_product_list_back_office()
+    result = Product.get_product_list_back_office(brands, warehouses, price, sellers, colors, quantity, date,
+                                                  guarantees, steps, visible_in_site, approved, available, page,
+                                                  per_page)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}
+
+
+def get_product_attributes(system_code: str):
+    """
+    """
+    result = Product.get_product_attributes(system_code)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "attributes not found", "status_code": 404}
 
 
 def step_up_product(system_code: str):
