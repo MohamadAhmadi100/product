@@ -65,6 +65,7 @@ class RabbitRPCClient:
             channel.basic_ack(delivery_tag=method.delivery_tag)
         except (pika.exceptions.ConnectionClosed, pika.exceptions.ChannelClosed, pika.exceptions.ChannelWrongStateError) as error:
             self.connect()
+            self.publish(channel, method, properties, body)
 
     def fanout_callback_runnable(self, channel, method, properties, body):
         self.fanout_callback(json.loads(body))
@@ -91,5 +92,6 @@ class RabbitRPCClient:
             self.channel.start_consuming()
         except (pika.exceptions.ConnectionClosed, pika.exceptions.ChannelClosed, pika.exceptions.ChannelWrongStateError) as error:
             self.connect()
+            self.consume()
         except KeyboardInterrupt:
             self.channel.stop_consuming()
