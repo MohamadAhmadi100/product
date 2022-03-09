@@ -118,19 +118,22 @@ class Product(ABC):
             with RedisConnection() as redis_db:
                 result_Accessory = mongo.collection.distinct("sub_category", {"main_category": "Accessory"})
                 category_list_Accessory = [{"sub_category": category, "label": redis_db.client.hget(category, "fa_ir"),
-                                            "system_code": db_data_getter({"sub_category": category, "brand": None}).get("system_code")
+                                            "system_code": db_data_getter(
+                                                {"sub_category": category, "brand": None}).get("system_code")
                                             } for
                                            category in result_Accessory]
 
                 result_main_category = mongo.collection.distinct("main_category")
                 category_list_main_category = [
                     {"main_category": category, "label": redis_db.client.hget(category, "fa_ir"),
-                     "system_code": db_data_getter({"main_category": category, "sub_category": None}).get("system_code")}
+                     "system_code": db_data_getter({"main_category": category, "sub_category": None}).get(
+                         "system_code")}
                     for category in result_main_category]
 
                 result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
                 category_list_brand = [{"brand": brand, "label": redis_db.client.hget(brand, "fa_ir"),
-                                        "system_code": db_data_getter({"brand": brand, "model": None}).get("system_code")} for brand in
+                                        "system_code": db_data_getter({"brand": brand, "model": None}).get(
+                                            "system_code")} for brand in
                                        result_brand]
 
                 result_latest_product = mongo.collection.find(
@@ -162,98 +165,116 @@ class Product(ABC):
             return None
 
     @staticmethod
-    def get_product_list_back_office():
+    def get_product_list_back_office(brands, warehouses, price, sellers, colors, quantity, date,
+                                     guarantees, steps, visible_in_site, approved, available, page,
+                                     per_page):
         with MongoConnection() as mongo:
-            result = list(mongo.collection.aggregate([
-                {
-                    "$group":
-                        {
-                            "_id": 0,
-                            "brand": {"$addToSet": '$brand'},
-                            "visible_in_site": {"$addToSet": '$visible_in_site'},
-                            "color": {"$addToSet": '$products.config.color'},
-                            "seller": {"$addToSet": '$products.config.seller'},
-                            "gaurantee": {"$addToSet": '$products.config.gaurantee'},
-                            "step": {"$addToSet": '$products.step'}
-                        }
-                }
-            ]))
-            colors_list = result[0]['color']
-            brands_list = result[0]['brand']
+            colors_list = mongo.collection.distinct("products.config.color")
+            brands_list = mongo.collection.distinct("brand")
             warehouses_list = list()
-            seller_list = result[0]['seller']
-            gaurantee_list = result[0]['gaurantee']
-            step_list = result[0]['step']
-        return {
-            "filters": [
-                {
-                    "name": "brand",
-                    "label": "برند",
-                    "input_type": "multi_select",
-                    "options": brands_list
-                },
-                {
-                    "name": "color",
-                    "label": "رنگ",
-                    "input_type": "multi_select",
-                    "options": colors_list
-                },
-                {
-                    "name": "price",
-                    "label": "قیمت",
-                    "input_type": "range",
-                },
-                {
-                    "name": "warehouse",
-                    "label": "انبار",
-                    "input_type": "multi_select",
-                    "options": warehouses_list
-                },
-                {
-                    "name": "seller",
-                    "label": "فروشنده",
-                    "input_type": "multi_select",
-                    "options": seller_list
-                },
-                {
-                    "name": "quantity",
-                    "label": "تعداد",
-                    "input_type": "range",
-                },
-                {
-                    "name": "date",
-                    "label": "تاریخ",
-                    "input_type": "date",
-                },
-                {
-                    "name": "gaurantee",
-                    "label": "گارانتی",
-                    "input_type": "multi_select",
-                    "options": gaurantee_list
-                },
-                {
-                    "name": "visible_in_site",
-                    "label": "قابل نمایش",
-                    "input_type": "checkbox",
-                },
-                {
-                    "name": "aproved",
-                    "label": "تایید شده",
-                    "input_type": "checkbox",
-                },
-                {
-                    "name": "available",
-                    "label": "موجود",
-                    "input_type": "checkbox",
-                },
-                {
-                    "name": "step",
-                    "label": "مرحله",
-                    "input_type": "multi_select",
-                    "options": step_list
-                }
-            ]
-        }
+            seller_list = mongo.collection.distinct("products.config.seller")
+            guarantee_list = mongo.collection.distinct("products.config.guarantee")
+            step_list = mongo.collection.distinct("products.step")
+
+            skip = (page - 1) * per_page
+            limit = per_page
+
+            query = dict()
+            if brands:
+                query["brand"] = {"$in": brands}
+            if warehouses:
+                query["warehouse"] = {"$in": warehouses}
+            if price:
+                query["products.price"] = {"$gte": price[0], "$lte": price[1]}
+            if sellers:
+                query["products.config.seller"] = {"$in": sellers}
+            if colors:
+                query["products.config.color"] = {"$in": colors}
+            if quantity:
+                query["products.quantity"] = {"$gte": quantity[0], "$lte": quantity[1]}
+            if date:
+                query["date"] = {"$gte": date[0], "$lte": date[1]}
+            if guarantees:
+                query["products.config.guarantee"] = {"$in": guarantees}
+            if steps:
+                query["products.step"] = {"$in": steps}
+            if visible_in_site:
+                query["visible_in_site"] = visible_in_site
+            if approved:
+                query["approved"] = approved
+
+            db_result = mongo.collection.find(query, {"_id": 0}).skip(skip).limit(limit)
+            return {
+                "filters": [
+                    {
+                        "name": "brands",
+                        "label": "برند",
+                        "input_type": "multi_select",
+                        "options": brands_list
+                    },
+                    {
+                        "name": "colors",
+                        "label": "رنگ",
+                        "input_type": "multi_select",
+                        "options": colors_list
+                    },
+                    {
+                        "name": "price",
+                        "label": "قیمت",
+                        "input_type": "range",
+                    },
+                    {
+                        "name": "warehouse",
+                        "label": "انبار",
+                        "input_type": "multi_select",
+                        "options": warehouses_list
+                    },
+                    {
+                        "name": "sellers",
+                        "label": "فروشنده",
+                        "input_type": "multi_select",
+                        "options": seller_list
+                    },
+                    {
+                        "name": "quantity",
+                        "label": "تعداد",
+                        "input_type": "range",
+                    },
+                    {
+                        "name": "date",
+                        "label": "تاریخ",
+                        "input_type": "date",
+                    },
+                    {
+                        "name": "guarantees",
+                        "label": "گارانتی",
+                        "input_type": "multi_select",
+                        "options": guarantee_list
+                    },
+                    {
+                        "name": "visible_in_site",
+                        "label": "قابل نمایش",
+                        "input_type": "checkbox",
+                    },
+                    {
+                        "name": "approved",
+                        "label": "تایید شده",
+                        "input_type": "checkbox",
+                    },
+                    {
+                        "name": "available",
+                        "label": "موجود",
+                        "input_type": "checkbox",
+                    },
+                    {
+                        "name": "steps",
+                        "label": "مرحله",
+                        "input_type": "multi_select",
+                        "options": step_list
+                    }
+                ],
+                "products": list(db_result)
+            }
 
     @staticmethod
     def step_up_product(system_code):
