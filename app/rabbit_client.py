@@ -19,9 +19,9 @@ class RabbitRPCClient:
         self.port = settings.RABBIT_PORT
         self.user = settings.RABBIT_USER
         self.password = settings.RABBIT_PASS
-        self.connection = self.connect()
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange=exchange_name, exchange_type="headers")
+        self.exchange_name = exchange_name
+        self.credentials = pika.PlainCredentials(self.user, self.password)
+        self.connect()
         self.receiving_queue = receiving_queue
         self.channel.queue_declare(queue=self.receiving_queue, durable=True)
         self.channel.basic_qos(prefetch_count=1)
@@ -38,27 +38,33 @@ class RabbitRPCClient:
             routing_key="",
             arguments=self.headers
         )
+        self.consume()
 
     def connect(self):
-        credentials = pika.PlainCredentials(self.user, self.password)
-        connection = pika.BlockingConnection(
+        self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=self.host,
                 port=self.port,
-                credentials=credentials,
-                blocked_connection_timeout=86400  # 86400 seconds = 24 hours
+                credentials=self.credentials,
+                # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
             )
         )
-        return connection
-
+        # self.connection.sleep(1)
+        self.channel = self.connection.channel()
+        self.channel.exchange_declare(exchange=self.exchange_name, exchange_type='headers')
+        self.channel.basic_qos(prefetch_count=1)
+        
     def publish(self, channel, method, properties, body):
         message = self.callback(json.loads(body))
         terminal_log.responce_log(message)
-        channel.basic_publish(exchange='',
-                              routing_key=properties.reply_to,
-                              properties=pika.BasicProperties(correlation_id=properties.correlation_id),
-                              body=json.dumps(message))
-        channel.basic_ack(delivery_tag=method.delivery_tag)
+        try:
+            channel.basic_publish(exchange='',
+                                routing_key=properties.reply_to,
+                                properties=pika.BasicProperties(correlation_id=properties.correlation_id),
+                                body=json.dumps(message))
+            channel.basic_ack(delivery_tag=method.delivery_tag)
+        except (pika.exceptions.ConnectionClosed, pika.exceptions.ChannelClosed, pika.exceptions.ChannelWrongStateError) as error:
+            self.connect()
 
     def fanout_callback_runnable(self, channel, method, properties, body):
         self.fanout_callback(json.loads(body))
@@ -79,9 +85,11 @@ class RabbitRPCClient:
         self.channel.start_consuming()
 
     def consume(self):
-        self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
         try:
+            self.channel.basic_consume(queue=self.receiving_queue, on_message_callback=self.publish)
             terminal_log.connection_log(self.host, self.port, self.headers)
             self.channel.start_consuming()
+        except (pika.exceptions.ConnectionClosed, pika.exceptions.ChannelClosed, pika.exceptions.ChannelWrongStateError) as error:
+            self.connect()
         except KeyboardInterrupt:
             self.channel.stop_consuming()
