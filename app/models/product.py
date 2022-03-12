@@ -166,10 +166,17 @@ class Product(ABC):
     @staticmethod
     def get_product_attributes(system_code):
         with MongoConnection() as mongo:
-            result = mongo.collection.find_one({"system_code": system_code}, {"_id": 0, "products": 1})
+            result = mongo.collection.find_one({"products.system_code": system_code}, {"_id": 0})
             if result:
-                return result.get("products")
-            return None
+                out_data = {
+                    "name": result['name'],
+                }
+                result_attribute = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+                if result_attribute:
+                    out_data.update(result_attribute)
+                    return out_data, True
+                return "attribute not found", False
+            return "product not found", False
 
     @staticmethod
     def get_product_list_back_office(brands, warehouses, price, sellers, colors, quantity, date,

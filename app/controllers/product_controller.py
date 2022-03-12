@@ -50,6 +50,16 @@ def create_child(system_code: str, parent_system_code: str, visible_in_site: boo
     return {"success": False, "error": "child system code is not unique", "status_code": 400}
 
 
+def get_product_attributes(system_code: str) -> dict:
+    """
+    Get a product by system_code in main collection in database.
+    """
+    message, result = Product.get_product_attributes(system_code)
+    if result:
+        return {"success": True, "message": message, "status_code": 200}
+    return {"success": False, "error": message, "status_code": 404}
+
+
 def add_attributes(system_code: str, attributes: dict) -> dict:
     """
     Create a product for sale in main collection in database.
@@ -135,15 +145,6 @@ def get_product_list_back_office(
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}
-
-
-def get_product_attributes(system_code: str):
-    """
-    """
-    result = Product.get_product_attributes(system_code)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "attributes not found", "status_code": 404}
 
 
 def step_up_product(system_code: str):
