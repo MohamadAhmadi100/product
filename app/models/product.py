@@ -117,7 +117,8 @@ class Product(ABC):
 
             with RedisConnection() as redis_db:
                 result_Accessory = mongo.collection.distinct("sub_category", {"main_category": "Accessory"})
-                category_list_Accessory = [{"sub_category": category, "label": redis_db.client.hget(category, "fa_ir"),
+                category_list_Accessory = [{"name": category, "label": redis_db.client.hget(category, "fa_ir"),
+                                            "route": category.replace(" ", ""),
                                             "system_code": db_data_getter(
                                                 {"sub_category": category, "brand": None}).get("system_code")
                                             } for
@@ -126,14 +127,14 @@ class Product(ABC):
                 result_main_category = mongo.collection.distinct("main_category")
                 category_list_main_category = [
                     {"name": category, "label": redis_db.client.hget(category, "fa_ir"),
-                     "route": category,
+                     "route": category.replace(" ", ""),
                      "system_code": db_data_getter({"main_category": category, "sub_category": None}).get(
                          "system_code")}
                     for category in result_main_category]
 
                 result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
                 category_list_brand = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
-                                        "route": brand,
+                                        "route": brand.replace(" ", ""),
                                         "system_code": db_data_getter({"brand": brand, "model": None}).get(
                                             "system_code")} for brand in
                                        result_brand]
@@ -147,7 +148,8 @@ class Product(ABC):
                      },
                      "route": "$name"
                      }).sort("date", -1).limit(20))
-
+                for i in result_latest_product:
+                    i['route'] = i['route'].replace(" ", "")
                 return {
                     "categories": {
                         "label": "دسته بندی",
