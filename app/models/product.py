@@ -125,24 +125,29 @@ class Product(ABC):
 
                 result_main_category = mongo.collection.distinct("main_category")
                 category_list_main_category = [
-                    {"main_category": category, "label": redis_db.client.hget(category, "fa_ir"),
+                    {"name": category, "label": redis_db.client.hget(category, "fa_ir"),
+                     "route": category,
                      "system_code": db_data_getter({"main_category": category, "sub_category": None}).get(
                          "system_code")}
                     for category in result_main_category]
 
                 result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
-                category_list_brand = [{"brand": brand, "label": redis_db.client.hget(brand, "fa_ir"),
+                category_list_brand = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
+                                        "route": brand,
                                         "system_code": db_data_getter({"brand": brand, "model": None}).get(
                                             "system_code")} for brand in
                                        result_brand]
 
-                result_latest_product = mongo.collection.find(
+                result_latest_product = list(mongo.collection.find(
                     {"sub_category": "Mobile", "products": {"$ne": None}, "visible_in_site": True,
                      "products.visible_in_site": True},
-
                     {"_id": 0, "system_code": 1, "name": 1,
-                     "products": {"$elemMatch": {"visible_in_site": True}},
-                     }).sort("date", -1).limit(20)
+                     "products": {
+                         "$elemMatch": {"visible_in_site": True},
+                     },
+                     "route": "$name"
+                     }).sort("date", -1).limit(20))
+
                 return {
                     "categories": {
                         "label": "دسته بندی",
@@ -150,10 +155,10 @@ class Product(ABC):
                     "brands": {
                         "label": "برند ها",
                         "items": category_list_brand},
-                    "accessories": {
+                    "accessory": {
                         "label": "لوازم جانبی",
                         "items": category_list_Accessory},
-                    "latest_product": list(result_latest_product)
+                    "latest_product": result_latest_product
                 }
 
     @staticmethod
