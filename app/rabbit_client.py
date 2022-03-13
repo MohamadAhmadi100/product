@@ -41,19 +41,20 @@ class RabbitRPCClient:
         self.consume()
 
     def connect(self):
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=self.host,
-                port=self.port,
-                credentials=self.credentials,
-                # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
+        if not self.connection or self.connection.is_closed:
+            self.connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=self.host,
+                    port=self.port,
+                    credentials=self.credentials,
+                    # blocked_connection_timeout=86400  # 86400 seconds = 24 hours
+                )
             )
-        )
-        # self.connection.sleep(1)
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange=self.exchange_name, exchange_type='headers')
-        self.channel.basic_qos(prefetch_count=1)
-        
+            # self.connection.sleep(1)
+            self.channel = self.connection.channel()
+            self.channel.exchange_declare(exchange=self.exchange_name, exchange_type='headers')
+            self.channel.basic_qos(prefetch_count=1)
+
     def publish(self, channel, method, properties, body):
         message = self.callback(json.loads(body))
         terminal_log.responce_log(message)

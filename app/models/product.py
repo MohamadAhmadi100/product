@@ -160,7 +160,10 @@ class Product(ABC):
                     "accessory": {
                         "label": "لوازم جانبی",
                         "items": category_list_Accessory},
-                    "latest_product": result_latest_product
+                    "latest_product": {
+                        "label": "جدیدترین محصولات",
+                        "items": result_latest_product
+                    }
                 }
 
     @staticmethod
