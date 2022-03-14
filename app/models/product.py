@@ -154,13 +154,13 @@ class Product(ABC):
                     "categories": {
                         "label": "دسته بندی",
                         "items": category_list_main_category},
-                    "brands": {
-                        "label": "برند ها",
+                    "mobile": {
+                        "label": "برند های موبایل",
                         "items": category_list_brand},
                     "accessory": {
-                        "label": "لوازم جانبی",
+                        "label": "دسته بندی لوازم جانبی",
                         "items": category_list_Accessory},
-                    "latest_product": {
+                    "product": {
                         "label": "جدیدترین محصولات",
                         "items": result_latest_product
                     }
