@@ -92,11 +92,24 @@ class Product(ABC):
     @staticmethod
     def get_product_list_by_system_code(system_code, page, per_page):
         with MongoConnection() as mongo:
+            def db_data_getter(query):
+                result = mongo.kowsar_collection.find_one(query, {"_id": 0})
+                return result if result else {}
+
             with RedisConnection() as redis_db:
                 skips = per_page * (page - 1)
-                db_brands = mongo.collection.distinct("brand")
-                brands_dict = [{"brand": brands, "label": redis_db.client.hget(brands, "fa_ir"),
-                                "active": True if brands == system_code else False} for brands in db_brands]
+                is_brand = False
+                if len(str(system_code)) == 6:
+                    is_brand = True
+                result_brand = mongo.collection.distinct("brand",
+                                                         {"system_code": {"$regex": f"^{str(system_code)[:2]}"}})
+                brands_dict = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
+                                "route": brand.replace(" ", ""),
+                                "system_code": db_data_getter({"brand": brand, "model": None}).get(
+                                    "system_code"),
+                                "active": (True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
+                                    "system_code") else False) if is_brand else False} for brand in result_brand]
+
                 result = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}).skip(
                     skips).limit(per_page)
                 product_list = list()
