@@ -54,6 +54,7 @@ class Product(ABC):
             if result and result.get("visible_in_site"):
                 with RedisConnection() as redis_db:
                     if result and result.get('products'):
+                        visible_products = list()
                         for product in result['products']:
                             if product.get("visible_in_site"):
                                 for key, value in product['config'].items():
@@ -67,8 +68,10 @@ class Product(ABC):
                                     if key == "images":
                                         del product['config'][key]['label']
                                         del product['config'][key]['label']
-                            else:
-                                result['products'].remove(product)
+
+                                visible_products.append(product)
+
+                        result['products'] = visible_products
                         result.update({
                             "routes": {
                                 "route": result.get('main_category'),
