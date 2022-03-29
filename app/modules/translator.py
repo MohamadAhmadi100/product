@@ -327,6 +327,5 @@ class RamStorageTranslater:
             translated_list += [" "] + [translated_word]
             return "".join(translated_list)
 
-
 # if __name__ == '__main__':
 #     update_redis_database()

@@ -154,3 +154,12 @@ def step_up_product(system_code: str):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_product_child(system_code: str, lang: str):
+    """
+    """
+    result = Product.get_product_child(system_code, lang)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}

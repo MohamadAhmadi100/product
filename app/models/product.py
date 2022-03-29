@@ -107,8 +107,9 @@ class Product(ABC):
                                 "route": brand.replace(" ", ""),
                                 "system_code": db_data_getter({"brand": brand, "model": None}).get(
                                     "system_code"),
-                                "active": (True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
-                                    "system_code") else False) if is_brand else False} for brand in result_brand]
+                                "active": (
+                                    True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
+                                        "system_code") else False) if is_brand else False} for brand in result_brand]
 
                 result = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}).skip(
                     skips).limit(per_page)
@@ -314,6 +315,34 @@ class Product(ABC):
         with MongoConnection() as mongo:
             mongo.collection.update_one({"products.system_code": system_code}, {"$inc": {"products.$.step": 1}})
         return True
+
+    @staticmethod
+    def get_product_child(system_code, lang):
+        with MongoConnection() as mongo:
+            db_result = mongo.collection.find_one({"products.system_code": system_code}, {"_id": 0, "name": True,
+                                                                                          "products": {"$elemMatch": {
+                                                                                              "system_code": system_code}}})
+            if db_result:
+                name = db_result.get("name")
+                product = db_result.get("products")[0]
+                with RedisConnection() as redis_db:
+                    for key, value in product['config'].items():
+                        label = redis_db.client.hget(value, lang) if key != "images" else None
+                        product['config'][key] = {
+                            "value": value,
+                            "attribute_label": redis_db.client.hget(key, lang),
+                            "label": RamStorageTranslater(value,
+                                                          lang).translate() if key == "storage" or key == "ram" else label
+                        }
+                        if key == "images":
+                            del product['config'][key]['label']
+                            del product['config'][key]['label']
+                return {
+                    "name": name,
+                    "product": product
+                }
+
+            return None
 
     @abstractmethod
     def system_code_is_unique(self) -> bool:
