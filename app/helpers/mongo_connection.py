@@ -23,6 +23,7 @@ class MongoConnection:
         self.kowsar_collection = self.db['kowsar']
         self.parent_col = self.db['kowsar-parent']
         self.custom_category = self.db['custom-category']
+        self.attributes_collection = self.db['attributes']
 
     def __enter__(self):
         return self
