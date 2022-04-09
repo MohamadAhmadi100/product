@@ -97,14 +97,6 @@ def delete_product(system_code: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-# def update_attribute_collection(attributes: list) -> dict:
-#     """
-#     Update the attribute collection in database.
-#     """
-#     attribute_setter(attributes)
-#     return {"success": True, "message": {"message": "attribute collection updated"}, "status_code": 200}
-
-
 def get_all_categories(system_code: str, page: int, per_page: int):
     """
     """

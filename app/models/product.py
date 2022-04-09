@@ -196,9 +196,22 @@ class Product(ABC):
                     "model": result['model'],
                     "subCategory": result['sub_category'],
                 }
-                result_attribute = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+
+                db_attribute = mongo.attributes_collection.find({}, {"_id": 0})
+                result_attribute = list()
+                for obj in db_attribute:
+                    if obj.get("set_to_nodes"):
+                        len_parent = len(obj.get("parent")) if obj.get("parent") else 0
+                        if system_code[:len_parent] == obj.get("parent"):
+                            result_attribute.append(obj)
+                    else:
+                        if obj.get("parent") == system_code:
+                            result_attribute.append(obj)
+
                 if result_attribute:
-                    out_data.update(result_attribute)
+                    out_data.update({
+                        "attributes": result_attribute
+                    })
                     return out_data, True
                 return "attribute not found", False
             return "product not found", False
