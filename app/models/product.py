@@ -190,6 +190,11 @@ class Product(ABC):
             if result:
                 out_data = {
                     "name": result['name'],
+                    "system_code": result['system_code'],
+                    "brand": result['brand'],
+                    "mainCategory": result['main_category'],
+                    "model": result['model'],
+                    "subCategory": result['sub_category'],
                 }
                 result_attribute = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 if result_attribute:
@@ -368,9 +373,10 @@ class Product(ABC):
 
 class CreateParent(Product):
 
-    def __init__(self, system_code, name, visible_in_site):
+    def __init__(self, system_code, name, url_name, visible_in_site):
         self.system_code = system_code
         self.name = name
+        self.url_name = url_name
         self.visible_in_site = visible_in_site
         self.main_category = None
         self.sub_category = None
