@@ -373,11 +373,10 @@ class Product(ABC):
 
 class CreateParent(Product):
 
-    def __init__(self, system_code, name, url_name, visible_in_site):
+    def __init__(self, system_code, name, url_name):
         self.system_code = system_code
         self.name = name
         self.url_name = url_name
-        self.visible_in_site = visible_in_site
         self.main_category = None
         self.sub_category = None
         self.brand = None
@@ -431,10 +430,9 @@ class CreateParent(Product):
 
 class CreateChild(Product):
 
-    def __init__(self, system_code, parent_system_code, visible_in_site):
+    def __init__(self, system_code, parent_system_code):
         self.system_code = system_code
         self.parent_system_code = parent_system_code
-        self.visible_in_site = visible_in_site
         self.step = 2
         self.config = None
         self.jalali_date = jalali_now()

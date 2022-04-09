@@ -12,12 +12,12 @@ def get_parent_configs(system_code: str):
     return {"success": False, "error": "parent configs not found", "status_code": 404}
 
 
-def create_parent(system_code: str, name: str, url_name: str, visible_in_site: bool) -> dict:
+def create_parent(system_code: str, name: str, url_name: str) -> dict:
     """
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    parent = CreateParent(system_code, name, url_name, visible_in_site)
+    parent = CreateParent(system_code, name, url_name)
     if parent.system_code_is_unique():
         message, success = parent.create()
         if success:
@@ -36,12 +36,12 @@ def suggest_product(system_code: str):
     return {"success": False, "error": "parent configs not found", "status_code": 404}
 
 
-def create_child(system_code: str, parent_system_code: str, visible_in_site: bool) -> dict:
+def create_child(system_code: str, parent_system_code: str) -> dict:
     """
     Create a product for sale in main collection in database.
     attributes will be validated before insert.
     """
-    child = CreateChild(system_code, parent_system_code, visible_in_site)
+    child = CreateChild(system_code, parent_system_code)
     if child.system_code_is_unique():
         message, success = child.create()
         if success:
