@@ -139,6 +139,22 @@ def get_product_list_back_office(
     return {"success": False, "error": "products not found", "status_code": 404}
 
 
+def edit_product(system_code: str, item: dict) -> dict:
+    """
+    """
+    result = None
+    if len(system_code) == 11:
+        result = CreateParent.edit_product(system_code, item)
+    elif len(system_code) == 12:
+        result = CreateChild.edit_product(system_code, item)
+    else:
+        return {"success": False, "error": "system code is not valid", "status_code": 400}
+
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": result, "status_code": 404}
+
+
 def step_up_product(system_code: str):
     """
     """

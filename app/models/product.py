@@ -440,6 +440,18 @@ class CreateParent(Product):
     def delete(self) -> tuple:
         pass
 
+    @staticmethod
+    def edit_product(system_code, data):
+        with MongoConnection() as mongo:
+            visible_in_site = data.get("visible_in_site")
+            result = mongo.collection.update_one({"system_code": system_code, "products.step": 5},
+                                                 {"$set": {"visible_in_site": visible_in_site}})
+            if result.modified_count:
+                return {"message": "product visibility updated successfully",
+                        "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}
+            return {"message": "product visibility update failed",
+                    "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
+
 
 class CreateChild(Product):
 
@@ -521,6 +533,18 @@ class CreateChild(Product):
             if result.modified_count:
                 return {"message": "product archived successfully", "label": "محصول با موفقیت حذف شد"}, True
             return {"message": "product failed to archive", "label": "حذف محصول با خطا مواجه شد"}, False
+
+    @staticmethod
+    def edit_product(system_code, data):
+        with MongoConnection() as mongo:
+            visible_in_site = data.get("visible_in_site")
+            result = mongo.collection.update_one({"products.system_code": system_code, "products.step": 5},
+                                                 {"$set": {"products.$.visible_in_site": visible_in_site}})
+            if result.modified_count:
+                return {"message": "product visibility updated successfully",
+                        "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}
+            return {"message": "product visibility update failed",
+                    "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
 
 
 class AddAtributes(Product):
