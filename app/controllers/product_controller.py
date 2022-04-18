@@ -151,8 +151,10 @@ def edit_product(system_code: str, item: dict) -> dict:
         return {"success": False, "error": "system code is not valid", "status_code": 400}
 
     if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": result, "status_code": 404}
+        return {"success": True, "message": {"message": "product visibility updated successfully",
+                                             "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}, "status_code": 200}
+    return {"success": False, "error": {"message": "product visibility update failed",
+                                        "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}, "status_code": 417}
 
 
 def step_up_product(system_code: str):

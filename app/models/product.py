@@ -541,10 +541,8 @@ class CreateChild(Product):
             result = mongo.collection.update_one({"products.system_code": system_code, "products.step": 5},
                                                  {"$set": {"products.$.visible_in_site": visible_in_site}})
             if result.modified_count:
-                return {"message": "product visibility updated successfully",
-                        "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}
-            return {"message": "product visibility update failed",
-                    "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
+                return True
+            return False
 
 
 class AddAtributes(Product):
