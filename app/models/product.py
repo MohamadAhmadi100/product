@@ -337,11 +337,14 @@ class Product(ABC):
     @staticmethod
     def get_product_child(system_code, lang):
         with MongoConnection() as mongo:
-            db_result = mongo.collection.find_one({"products.system_code": system_code}, {"_id": 0, "name": True,
+            db_result = mongo.collection.find_one({"products.system_code": system_code}, {"_id": 0,
+                                                                                          "system_code": 1,
+                                                                                          "name": 1,
                                                                                           "products": {"$elemMatch": {
                                                                                               "system_code": system_code}}})
             if db_result:
                 name = db_result.get("name")
+                parent_system_code = db_result.get("system_code")
                 product = db_result.get("products")[0]
                 with RedisConnection() as redis_db:
                     for key, value in product['config'].items():
@@ -357,6 +360,7 @@ class Product(ABC):
                             del product['config'][key]['label']
                 return {
                     "name": name,
+                    "parent_system_code": parent_system_code,
                     "product": product
                 }
 
