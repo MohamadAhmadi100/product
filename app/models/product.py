@@ -562,9 +562,14 @@ class AddAtributes(Product):
 
     def create(self) -> tuple:
         with MongoConnection() as mongo:
-            result = mongo.collection.update_one({"products.system_code": self.system_code},
-                                                 {"$set": {"products.$.attributes": self.attributes,
-                                                           "products.$.step": 3}})
+            stored_data = mongo.collection.find_one({"products.system_code": self.system_code, },
+                                                    {"_id": 0, "products": {
+                                                        "$elemMatch": {"system_code": self.system_code}}})
+            db_action = {"$set": {"products.$.attributes": self.attributes}}
+            if stored_data.get("products", [])[0].get("step") == 2:
+                db_action["$set"]["products.$.step"] = 3
+
+            result = mongo.collection.update_one({"products.system_code": self.system_code}, db_action)
             if result.modified_count:
                 return {"message": "attribute added successfully", "label": "صفت با موفقیت اضافه شد"}, True
             return {"error": "attribute add failed", "label": "فرایند افزودن صفت به مشکل برخورد"}, False
