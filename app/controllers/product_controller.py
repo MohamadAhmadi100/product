@@ -88,13 +88,21 @@ def delete_product(system_code: str) -> dict:
     """
     Delete a product by name in main collection in database.
     """
-    child = CreateChild(system_code, "", False)
-    if not child.system_code_is_unique():
-        message, success = child.delete()
-        if success:
-            return {"success": True, "message": message, "status_code": 200}
-        return {"success": False, "error": message, "status_code": 400}
-    return {"success": False, "error": "product not found", "status_code": 404}
+    if len(system_code) == 11:
+        parent = CreateParent(system_code, None, None)
+        if not parent.system_code_is_unique():
+            message, success = parent.delete()
+            if success:
+                return {"success": True, "message": message, "status_code": 200}
+            return {"success": False, "error": message, "status_code": 400}
+    else:
+        child = CreateChild(system_code, None)
+        if not child.system_code_is_unique():
+            message, success = child.delete()
+            if success:
+                return {"success": True, "message": message, "status_code": 200}
+            return {"success": False, "error": message, "status_code": 400}
+    return {"success": False, "error": "system code not found", "status_code": 404}
 
 
 def get_all_categories(system_code: str, page: int, per_page: int):

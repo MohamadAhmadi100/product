@@ -442,7 +442,13 @@ class CreateParent(Product):
         return {"error": "product creation failed", "label": "فرایند ساخت محصول به مشکل خورد"}, False
 
     def delete(self) -> tuple:
-        pass
+        with MongoConnection() as mongo:
+            result = mongo.collection.update_one({"system_code": self.system_code},
+                                                 {"$set": {"archived": True}})
+            if result.modified_count:
+                return {"message": "product archived successfully", "label": "محصول با موفقیت حذف شد"}, True
+            return {"message": "product failed to archive", "label": "حذف محصول با خطا مواجه شد"}, False
+
 
     @staticmethod
     def edit_product(system_code, data):
