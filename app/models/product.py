@@ -231,7 +231,9 @@ class Product(ABC):
             skip = (page - 1) * per_page
             limit = per_page
 
-            query = dict()
+            query = {
+                "archived": {"$ne": True},
+            }
             if brands:
                 query["brand"] = {"$in": brands}
             if warehouses:
@@ -255,7 +257,19 @@ class Product(ABC):
             if approved:
                 query["approved"] = approved
 
-            db_result = mongo.collection.find(query, {"_id": 0}).skip(skip).limit(limit)
+            query['products.$.archived'] = {'$ne': True}
+
+            db_result = list(mongo.collection.find(query, {"_id": 0}).skip(skip).limit(limit))
+
+            product_list = list()
+            for parent in db_result:
+                childs = list()
+                for child in parent.get("products", []):
+                    if not child.get("archived"):
+                        childs.append(child)
+                parent.update({"products": childs})
+                product_list.append(parent)
+
             return {
                 "filters": [
                     {
@@ -325,7 +339,7 @@ class Product(ABC):
                         "options": step_list
                     }
                 ],
-                "products": list(db_result)
+                "products": product_list
             }
 
     @staticmethod
@@ -448,7 +462,6 @@ class CreateParent(Product):
             if result.modified_count:
                 return {"message": "product archived successfully", "label": "محصول با موفقیت حذف شد"}, True
             return {"message": "product failed to archive", "label": "حذف محصول با خطا مواجه شد"}, False
-
 
     @staticmethod
     def edit_product(system_code, data):

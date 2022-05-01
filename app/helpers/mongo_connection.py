@@ -14,7 +14,6 @@ class Singleton(type):
 
 class MongoConnection:
     def __init__(self):
-        a = settings.MONGO_HOST
         self.client = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT,
                                           username=settings.MONGO_USER, password=settings.MONGO_PASS)
         self.db = self.client['db-product']
