@@ -12,25 +12,23 @@ from app.modules.translator import RamStorageTranslater
 class Product(ABC):
 
     @staticmethod
-    def get_all_categories(system_code, page, per_page):
+    def get_all_categories():
         with MongoConnection() as mongo:
-            if system_code == "00":
-                items = list(mongo.collection.find({}, {"system_code": {"$substr": ["$system_code", 0, 2]}, "_id": 0,
-                                                        "label": "$main_category"}))
-            elif len(system_code) == 2:
-                items = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}},
-                                              {"system_code": {"$substr": ["$system_code", 0, 4]}, "_id": 0,
-                                               "label": "$sub_category"})
-            elif len(system_code) == 4:
-                items = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}},
-                                              {"system_code": {"$substr": ["$system_code", 0, 6]}, "_id": 0,
-                                               "label": "$brand"})
-            elif len(system_code) == 6:
-                skip = (page - 1) * per_page
-                items = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}},
-                                              {"system_code": {"$substr": ["$system_code", 0, 9]}, "_id": 0,
-                                               "label": "$model"}).skip(skip).limit(per_page)
-            return [dict(t) for t in {tuple(d.items()) for d in items}]
+            result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
+                                                "brand": 1})
+
+            a = {}
+            for obj in result:
+                if not a.get(obj.get("main_category")):
+                    a[obj.get("main_category")] = {
+                        obj.get("sub_category"): [obj.get("brand")]
+                    }
+                elif not a.get(obj.get("main_category")).get(obj.get("sub_category")):
+                    a[obj.get("main_category")][obj.get("sub_category")] = [obj.get("brand")]
+                elif not obj.get("brand") in a.get(obj.get("main_category")).get(obj.get("sub_category")):
+                    a[obj.get("main_category")][obj.get("sub_category")].append(obj.get("brand"))
+
+            return a
 
     @staticmethod
     def get(system_code: str = None, page: int = 1, per_page: int = 10):

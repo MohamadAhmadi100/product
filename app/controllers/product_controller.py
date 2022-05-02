@@ -105,10 +105,10 @@ def delete_product(system_code: str) -> dict:
     return {"success": False, "error": "system code not found", "status_code": 404}
 
 
-def get_all_categories(system_code: str, page: int, per_page: int):
+def get_all_categories():
     """
     """
-    result = Product.get_all_categories(system_code, page, per_page)
+    result = Product.get_all_categories()
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "categories not found", "status_code": 404}
