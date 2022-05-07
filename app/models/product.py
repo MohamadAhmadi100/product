@@ -103,7 +103,7 @@ class Product(ABC):
                                                          {"system_code": {"$regex": f"^{str(system_code)[:2]}"}})
                 brands_dict = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
                                 "route": brand.replace(" ", ""),
-                                "system_code": db_data_getter({"brand": brand, "model": None}).get(
+                                "system_code": db_data_getter({"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
                                     "system_code"),
                                 "active": (
                                     True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
@@ -150,7 +150,7 @@ class Product(ABC):
                 result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
                 category_list_brand = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
                                         "route": brand.replace(" ", ""),
-                                        "system_code": db_data_getter({"brand": brand, "model": None}).get(
+                                        "system_code": db_data_getter({"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
                                             "system_code")} for brand in
                                        result_brand]
 
