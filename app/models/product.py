@@ -118,7 +118,11 @@ class Product(ABC):
                             colors = [color['config']['color'] for color in product['products'] if
                                       color.get("visible_in_site")]
                             product.update({"colors": colors})
+                            image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if child.get('attributes', {}).get('mainImage-pd')]
+                            image = image[0] if image else None
+                            product.update({"image": image})
                             del product['products']
+
                             product_list.append(product)
 
                 return {"brands": brands_dict, "products": product_list}
