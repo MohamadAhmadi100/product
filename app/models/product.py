@@ -244,10 +244,9 @@ class Product(ABC):
                 query["products.config.color"] = {"$in": colors}
             if quantity:
                 query["products.quantity"] = {"$gte": quantity[0], "$lte": quantity[1]}
-            if date:
+            if date[0]:
                 query["date"] = {}
-                if date[0]:
-                    query["date"]["$gt"] = date[0]
+                query["date"]["$gt"] = date[0]
                 if date[1]:
                     query["date"]["$lt"] = date[1]
 
