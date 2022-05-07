@@ -261,6 +261,7 @@ class Product(ABC):
 
             query['products.$.archived'] = {'$ne': True}
 
+            len_db = len(list(mongo.collection.find(query, {"_id": 1})))
             db_result = list(mongo.collection.find(query, {"_id": 0}).skip(skip).limit(limit))
 
             product_list = list()
@@ -341,6 +342,7 @@ class Product(ABC):
                         "options": step_list
                     }
                 ],
+                "result_len": len_db,
                 "products": product_list
             }
 
