@@ -66,8 +66,26 @@ push:
   only:
     - master
   tags:
-    - ci-jon
+    - stage-jon
   script:
+    - echo APP_NAME=$APP_NAME >> .env
+    - echo MONGO_HOST=$MONGO_HOST >> .env
+    - echo MONGO_PORT=$MONGO_PORT >> .env
+    - echo MONGO_USER=$MONGO_USER >> .env
+    - echo MONGO_PASS=$MONGO_PASS >> .env
+    - echo REDIS_HOST=$REDIS_HOST >> .env
+    - echo REDIS_PORT=$REDIS_PORT >> .env
+    - echo REDIS_USER=$REDIS_USER >> .env
+    - echo REDIS_PASS=$REDIS_PASS >> .env
+    - echo REDIS_DB=$REDIS_DB >> .env
+    - echo RABBIT_HOST=$RABBIT_HOST >> .env
+    - echo RABBIT_PORT=$RABBIT_PORT >> .env
+    - echo RABBIT_USER=$RABBIT_USER >> .env
+    - echo RABBIT_PASS=$RABBIT_PASS >> .env
+    - echo TOKEN=$TOKEN >> .env
+    - echo SENDER=$SENDER >> .env
+    - echo RECIPIENTS=$RECIPIENTS >> .env
+    - echo TEMPLATE=$TEMPLATE >> .env
     - docker login 200.100.100.219:80 -u registry -p $REGPASS
     - docker build -t product:0.0.1 . -t 200.100.100.219:80/backend/web-product:$CI_COMMIT_SHORT_SHA
     - docker push 200.100.100.219:80/backend/web-product:$CI_COMMIT_SHORT_SHA
@@ -77,7 +95,25 @@ master_deploy:
   only:
     - master
   tags:
-    - ci-jon
+    - stage-jon
   script:
+    - echo APP_NAME=$APP_NAME >> .env
+    - echo MONGO_HOST=$MONGO_HOST >> .env
+    - echo MONGO_PORT=$MONGO_PORT >> .env
+    - echo MONGO_USER=$MONGO_USER >> .env
+    - echo MONGO_PASS=$MONGO_PASS >> .env
+    - echo REDIS_HOST=$REDIS_HOST >> .env
+    - echo REDIS_PORT=$REDIS_PORT >> .env
+    - echo REDIS_USER=$REDIS_USER >> .env
+    - echo REDIS_PASS=$REDIS_PASS >> .env
+    - echo REDIS_DB=$REDIS_DB >> .env
+    - echo RABBIT_HOST=$RABBIT_HOST >> .env
+    - echo RABBIT_PORT=$RABBIT_PORT >> .env
+    - echo RABBIT_USER=$RABBIT_USER >> .env
+    - echo RABBIT_PASS=$RABBIT_PASS >> .env
+    - echo TOKEN=$TOKEN >> .env
+    - echo SENDER=$SENDER >> .env
+    - echo RECIPIENTS=$RECIPIENTS >> .env
+    - echo TEMPLATE=$TEMPLATE >> .env
     - docker login 200.100.100.219:80 -u registry -p $REGPASS
-    - docker run -p 8000:80 product:0.0.1
+    - docker-compose -f docker-compose.yaml up -d --build
