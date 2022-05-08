@@ -103,7 +103,8 @@ class Product(ABC):
                                                          {"system_code": {"$regex": f"^{str(system_code)[:2]}"}})
                 brands_dict = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
                                 "route": brand.replace(" ", ""),
-                                "system_code": db_data_getter({"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
+                                "system_code": db_data_getter(
+                                    {"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
                                     "system_code"),
                                 "active": (
                                     True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
@@ -118,7 +119,8 @@ class Product(ABC):
                             colors = [color['config']['color'] for color in product['products'] if
                                       color.get("visible_in_site")]
                             product.update({"colors": colors})
-                            image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if child.get('attributes', {}).get('mainImage-pd')]
+                            image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
+                                     child.get('attributes', {}).get('mainImage-pd')]
                             image = image[0] if image else None
                             product.update({"image": image})
                             del product['products']
@@ -154,7 +156,8 @@ class Product(ABC):
                 result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
                 category_list_brand = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
                                         "route": brand.replace(" ", ""),
-                                        "system_code": db_data_getter({"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
+                                        "system_code": db_data_getter(
+                                            {"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
                                             "system_code")} for brand in
                                        result_brand]
 
@@ -466,7 +469,9 @@ class CreateParent(Product):
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.collection.update_one({"system_code": self.system_code},
-                                                 {"$set": {"archived": True}})
+                                                 {"$set": {"archived": True,
+                                                           "visible_in_site": False,
+                                                           }})
             if result.modified_count:
                 return {"message": "product archived successfully", "label": "محصول با موفقیت حذف شد"}, True
             return {"message": "product failed to archive", "label": "حذف محصول با خطا مواجه شد"}, False
@@ -560,7 +565,8 @@ class CreateChild(Product):
     def delete(self) -> tuple:
         with MongoConnection() as mongo:
             result = mongo.collection.update_one({"products.system_code": self.system_code},
-                                                 {"$set": {"products.$.archived": True}})
+                                                 {"$set": {"products.$.archived": True,
+                                                           "products.$.visible_in_site": False}})
             if result.modified_count:
                 return {"message": "product archived successfully", "label": "محصول با موفقیت حذف شد"}, True
             return {"message": "product failed to archive", "label": "حذف محصول با خطا مواجه شد"}, False
