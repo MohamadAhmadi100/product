@@ -17,18 +17,54 @@ class Product(ABC):
             result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
                                                 "brand": 1})
 
-            a = {}
+            tree_data = []
             for obj in result:
-                if not a.get(obj.get("main_category")):
-                    a[obj.get("main_category")] = {
-                        obj.get("sub_category"): [obj.get("brand")]
-                    }
-                elif not a.get(obj.get("main_category")).get(obj.get("sub_category")):
-                    a[obj.get("main_category")][obj.get("sub_category")] = [obj.get("brand")]
-                elif not obj.get("brand") in a.get(obj.get("main_category")).get(obj.get("sub_category")):
-                    a[obj.get("main_category")][obj.get("sub_category")].append(obj.get("brand"))
+                stored_main = next((x for x in tree_data if x['name'] == obj.get("main_category")), None)
+                if stored_main:
+                    index_main = tree_data.index(stored_main)
+                    stored_sub = next(
+                        (x for x in tree_data[index_main]['children'] if x['name'] == obj.get("sub_category"))
+                        , None)
+                    if stored_sub:
+                        index_sub = tree_data[index_main]['children'].index(stored_sub)
+                        tree_data[index_main]['children'][index_sub]['children'].append(
+                            {
+                                'name': obj.get("brand"),
+                                "system_code": obj.get("system_code")[:6]
+                            }
+                        )
+                        continue
+                    tree_data[index_main]['children'].append(
+                        {
+                            'name': obj.get("sub_category"),
+                            "system_code": obj.get("system_code")[:4],
+                            'children': [
+                                {
+                                    'name': obj.get("brand"),
+                                    "system_code": obj.get("system_code")[:6]
+                                }
+                            ]
+                        }
+                    )
+                    continue
+                tree_data.append({
+                    'name': obj.get("main_category"),
+                    "system_code": obj.get("system_code")[:2],
+                    "children": [
+                        {
+                            'name': obj.get("sub_category"),
+                            "system_code": obj.get("system_code")[:4],
+                            "children": [
+                                {
+                                    'name': obj.get("brand"),
+                                    "system_code": obj.get("system_code")[:6]
+                                }
+                            ]
+                        }
+                    ]
+                })
 
-            return a
+            return tree_data
 
     @staticmethod
     def get(system_code: str = None, page: int = 1, per_page: int = 10):
