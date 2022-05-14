@@ -14,57 +14,64 @@ class Product(ABC):
     @staticmethod
     def get_all_categories():
         with MongoConnection() as mongo:
-            result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
-                                                "brand": 1})
+            with RedisConnection() as redis_db:
+                result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
+                                                    "brand": 1})
 
-            tree_data = []
-            for obj in result:
-                stored_main = next((x for x in tree_data if x['name'] == obj.get("main_category")), None)
-                if stored_main:
-                    index_main = tree_data.index(stored_main)
-                    stored_sub = next(
-                        (x for x in tree_data[index_main]['children'] if x['name'] == obj.get("sub_category"))
-                        , None)
-                    if stored_sub:
-                        index_sub = tree_data[index_main]['children'].index(stored_sub)
-                        tree_data[index_main]['children'][index_sub]['children'].append(
+                tree_data = []
+                for obj in result:
+                    stored_main = next((x for x in tree_data if x['name'] == obj.get("main_category")), None)
+                    if stored_main:
+                        index_main = tree_data.index(stored_main)
+                        stored_sub = next(
+                            (x for x in tree_data[index_main]['children'] if x['name'] == obj.get("sub_category"))
+                            , None)
+                        if stored_sub:
+                            index_sub = tree_data[index_main]['children'].index(stored_sub)
+                            tree_data[index_main]['children'][index_sub]['children'].append(
+                                {
+                                    'name': obj.get("brand"),
+                                    'title': redis_db.client.hget(obj.get("brand"), "fa_ir"),
+                                    "system_code": obj.get("system_code")[:6]
+                                }
+                            )
+                            continue
+                        tree_data[index_main]['children'].append(
                             {
-                                'name': obj.get("brand"),
-                                "system_code": obj.get("system_code")[:6]
+                                'name': obj.get("sub_category"),
+                                'title': redis_db.client.hget(obj.get("sub_category"), "fa_ir"),
+                                "system_code": obj.get("system_code")[:4],
+                                'children': [
+                                    {
+                                        'name': obj.get("brand"),
+                                        'title': redis_db.client.hget(obj.get("brand"), "fa_ir"),
+                                        "system_code": obj.get("system_code")[:6]
+                                    }
+                                ]
                             }
                         )
                         continue
-                    tree_data[index_main]['children'].append(
-                        {
-                            'name': obj.get("sub_category"),
-                            "system_code": obj.get("system_code")[:4],
-                            'children': [
-                                {
-                                    'name': obj.get("brand"),
-                                    "system_code": obj.get("system_code")[:6]
-                                }
-                            ]
-                        }
-                    )
-                    continue
-                tree_data.append({
-                    'name': obj.get("main_category"),
-                    "system_code": obj.get("system_code")[:2],
-                    "children": [
-                        {
-                            'name': obj.get("sub_category"),
-                            "system_code": obj.get("system_code")[:4],
-                            "children": [
-                                {
-                                    'name': obj.get("brand"),
-                                    "system_code": obj.get("system_code")[:6]
-                                }
-                            ]
-                        }
-                    ]
-                })
+                    tree_data.append({
+                        'name': obj.get("main_category"),
+                        'title': redis_db.client.hget(obj.get("main_category"), "fa_ir"),
+                        "system_code": obj.get("system_code")[:2],
+                        "children": [
+                            {
+                                'name': obj.get("sub_category"),
+                                'title': redis_db.client.hget(obj.get("sub_category"), "fa_ir"),
+                                "system_code": obj.get("system_code")[:4],
+                                "children": [
+                                    {
+                                        'name': obj.get("brand"),
+                                        'title': redis_db.client.hget(obj.get("brand"), "fa_ir"),
+                                        "system_code": obj.get("system_code")[:6]
+                                    }
+                                ]
+                            }
+                        ]
+                    })
 
-            return tree_data
+                return tree_data
 
     @staticmethod
     def get(system_code: str = None, page: int = 1, per_page: int = 10):
