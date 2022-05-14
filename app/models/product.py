@@ -28,6 +28,8 @@ class Product(ABC):
                             , None)
                         if stored_sub:
                             index_sub = tree_data[index_main]['children'].index(stored_sub)
+                            if next((x for x in tree_data[index_main]['children'][index_sub]['children'] if x['name'] == obj.get("brand")), None):
+                                continue
                             tree_data[index_main]['children'][index_sub]['children'].append(
                                 {
                                     'name': obj.get("brand"),
