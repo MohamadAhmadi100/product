@@ -28,7 +28,8 @@ class Product(ABC):
                             , None)
                         if stored_sub:
                             index_sub = tree_data[index_main]['children'].index(stored_sub)
-                            if next((x for x in tree_data[index_main]['children'][index_sub]['children'] if x['name'] == obj.get("brand")), None):
+                            if next((x for x in tree_data[index_main]['children'][index_sub]['children'] if
+                                     x['name'] == obj.get("brand")), None):
                                 continue
                             tree_data[index_main]['children'][index_sub]['children'].append(
                                 {
@@ -111,6 +112,31 @@ class Product(ABC):
                                     if key == "images":
                                         del product['config'][key]['label']
                                         del product['config'][key]['label']
+
+                                attributes_data = list(mongo.attributes_collection.find(
+                                    {}, {
+                                        "_id": 0,
+                                        "name": 1,
+                                        "ecommerce_use_in_filter": 1,
+                                        "ecommerce_use_in_search": 1,
+                                        "editable_in_ecommerce": 1,
+                                        "editable_in_portal": 1,
+                                        "label": 1,
+                                        "portal_use_in_filter": 1,
+                                        "portal_use_in_search": 1,
+                                        "show_in_ecommerce": 1,
+                                        "show_in_portal": 1,
+                                    }
+                                ))
+
+                                attributes_list = list()
+
+                                for key, value in product['attributes'].items():
+                                    stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
+                                    stored_data['value'] = value
+                                    attributes_list.append(stored_data)
+
+                                product['attributes'] = attributes_list
 
                                 visible_products.append(product)
 
