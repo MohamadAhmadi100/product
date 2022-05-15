@@ -40,6 +40,7 @@ class Product(ABC):
                                 'name': obj.get("brand"),
                                 'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                 'image': kowsar_data[2].get("image", None),
+                                'visible_in_site': kowsar_data[2].get("visible_in_site", True),
                                 "system_code": obj.get("system_code")[:6]
                             }
                         )
@@ -49,12 +50,14 @@ class Product(ABC):
                             'name': obj.get("sub_category"),
                             'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
                             'image': kowsar_data[1].get("image", None),
+                            'visible_in_site': kowsar_data[1].get("visible_in_site", True),
                             "system_code": obj.get("system_code")[:4],
                             'children': [
                                 {
                                     'name': obj.get("brand"),
                                     'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                     'image': kowsar_data[2].get("image", None),
+                                    'visible_in_site': kowsar_data[2].get("visible_in_site", True),
                                     "system_code": obj.get("system_code")[:6]
                                 }
                             ]
@@ -65,18 +68,21 @@ class Product(ABC):
                     'name': obj.get("main_category"),
                     'title': kowsar_data[0].get("main_category_label", obj.get("main_category")),
                     'image': kowsar_data[0].get("image", None),
+                    'visible_in_site': kowsar_data[0].get("visible_in_site", True),
                     "system_code": obj.get("system_code")[:2],
                     "children": [
                         {
                             'name': obj.get("sub_category"),
                             'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
                             'image': kowsar_data[1].get("image", None),
+                            'visible_in_site': kowsar_data[1].get("visible_in_site", True),
                             "system_code": obj.get("system_code")[:4],
                             "children": [
                                 {
                                     'name': obj.get("brand"),
                                     'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                     'image': kowsar_data[2].get("image", None),
+                                    'visible_in_site': kowsar_data[2].get("visible_in_site", True),
                                     "system_code": obj.get("system_code")[:6]
                                 }
                             ]
