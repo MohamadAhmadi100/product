@@ -1,72 +1,56 @@
-from app.models.custom_category import CustomCategory
-from app.models.product import Product
+from app.controllers import custom_category
+from unittest import mock
 
 
-def test_add_product(delete_product_from_custom_category):
-    data = {'attributes': {'image': '/src/default.jpg', 'year': 2020},
-            'brand': 'Mobile Xiaomi',
-            'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
-            'main_category': 'Device',
-            'model': 'Xiaomi Redmi 9c',
-            'sub_category': 'Mobile',
-            'system_code': '100104021006'}
-    product = Product(**data)
-    product.create()
-    category = CustomCategory(**{"name": "atish bazi"})
-    category.add(product.dict())
-    assert category.get_products() == [{'attributes': {'image': '/src/default.jpg', 'year': 2020},
-                                        'brand': 'Mobile Xiaomi',
-                                        'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
-                                        'main_category': 'Device',
-                                        'model': 'Xiaomi Redmi 9c',
-                                        'sub_category': 'Mobile',
-                                        'system_code': '100104021006'}]
+@mock.patch('app.models.custom_category.KowsarCategories.create')
+def test_create_custom_kowsar_category(mocked_obj):
+    mocked_obj.return_value = True
+    assert custom_category.create_custom_kowsar_category(
+        "10",
+        "test",
+        True,
+        "https://www.google.com",
+    ) == {"success": True, "message": "دسته بندی با موفقیت ایجاد شد", "status_code": 201}
+
+    assert custom_category.create_custom_kowsar_category(
+        "1001",
+        "test",
+        True,
+        "https://www.google.com",
+    ) == {"success": True, "message": "دسته بندی با موفقیت ایجاد شد", "status_code": 201}
+
+    assert custom_category.create_custom_kowsar_category(
+        "100101",
+        "test",
+        True,
+        "https://www.google.com",
+    ) == {"success": True, "message": "دسته بندی با موفقیت ایجاد شد", "status_code": 201}
+
+    assert custom_category.create_custom_kowsar_category(
+        "100101111111",
+        "test",
+        True,
+        "https://www.google.com",
+    ) == {"success": False, "error": "سیستم کد وارد شده صحیح نمیباشد", "status_code": 404}
+
+    mocked_obj.return_value = "Category already exists"
+
+    assert custom_category.create_custom_kowsar_category(
+        "100101",
+        "test",
+        True,
+        "https://www.google.com",
+    ) == {"success": False, "error": "دسته بندی این نام در سیستم موجود است", "status_code": 400}
+
+    mocked_obj.return_value = None
+
+    assert custom_category.create_custom_kowsar_category(
+        "100101",
+        "test",
+        True,
+        "https://www.google.com",
+    ) == {"success": False, "error": "خطایی در انجام عملیات رخ داد", "status_code": 400}
 
 
-def test_remove_product(add_product_to_custom_category):
-    category = CustomCategory(**{"name": "atish bazi"})
-    product = Product(**{'attributes': {'image': '/src/default.jpg', 'year': 2020},
-                         'brand': 'Mobile Xiaomi',
-                         'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
-                         'main_category': 'Device',
-                         'model': 'Xiaomi Redmi 9c',
-                         'sub_category': 'Mobile',
-                         'system_code': '100104021006'})
-    category.remove(product.dict())
-    assert category.get_products() == []
 
 
-def test_get_products(add_and_remove_product_from_category):
-    category = CustomCategory(**{"name": "atish bazi"})
-    assert category.get_products() == [{'attributes': {'image': '/src/default.jpg', 'year': 2020},
-                                        'brand': 'Mobile Xiaomi',
-                                        'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
-                                        'main_category': 'Device',
-                                        'model': 'Xiaomi Redmi 9c',
-                                        'sub_category': 'Mobile',
-                                        'system_code': '100104021006'}]
-
-
-def test_get_custom_categories():
-    category = CustomCategory(**{"name": "atish bazi"})
-    category.get_custom_categories()
-    assert category.get_custom_categories() == ['atish bazi']
-
-
-def test_update_product_from_custom_category(add_and_remove_product_from_category):
-    product = Product(**{'attributes': {'image': '/src/default.jpg', 'year': 2020},
-                         'brand': 'Mobile Xiaomi',
-                         'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
-                         'main_category': 'Device',
-                         'model': 'Xiaomi Redmi 9c',
-                         'sub_category': 'Mobile',
-                         'system_code': '100104021006'})
-    category = CustomCategory(**{"name": "atish bazi"})
-    category.update_product_from_custom_category(product.dict())
-    assert category.get_products() == [{'attributes': {'image': '/src/default.jpg', 'year': 2020},
-                                        'brand': 'Mobile Xiaomi',
-                                        'config': {'color': 'orange', 'guarantee': 'sherkati', 'storage': '64'},
-                                        'main_category': 'Device',
-                                        'model': 'Xiaomi Redmi 9c',
-                                        'sub_category': 'Mobile',
-                                        'system_code': '100104021006'}]

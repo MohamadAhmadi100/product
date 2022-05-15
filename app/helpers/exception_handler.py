@@ -4,7 +4,7 @@ from time import strftime, localtime
 
 import requests
 
-from config import settings
+from app.config import settings
 
 
 def telegram_message_sender(message: str, timeout: int = 10):
