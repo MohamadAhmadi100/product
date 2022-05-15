@@ -9,6 +9,9 @@ class KowsarCategories:
         self.image = image
 
     def create(self, category_label):
+        """
+        Do Database Insertion
+        """
         with MongoConnection() as mongo:
             result = mongo.kowsar_collection.update_many({'system_code': {"$regex": "^" + self.system_code}},
                                                          {'$set': {category_label: self.custom_name
