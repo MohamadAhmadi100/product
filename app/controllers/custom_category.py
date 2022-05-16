@@ -1,4 +1,4 @@
-from app.models.custom_category import KowsarCategories
+from app.models.custom_category import KowsarCategories, CustomCategories
 
 
 def create_custom_kowsar_category(system_code: str, custom_name: str, visible_in_site: bool, image: str):
@@ -21,3 +21,16 @@ def create_custom_kowsar_category(system_code: str, custom_name: str, visible_in
             return {"success": False, "error": "دسته بندی این نام در سیستم موجود است", "status_code": 400}
         return {"success": True, "message": "دسته بندی با موفقیت ایجاد شد", "status_code": 201}
     return {"success": False, "error": "خطایی در انجام عملیات رخ داد", "status_code": 400}
+
+
+def create_custom_category(name: str, products: list, label: str, visible_in_site: bool, image: str):
+    """
+    Create a custom custom category for products
+    """
+    custom_category = CustomCategories(name, products, label, visible_in_site, image)
+    if custom_category.is_unique():
+        result = custom_category.create()
+        if result:
+            return {"success": True, "message": "دسته بندی با موفقیت ایجاد شد", "status_code": 201}
+        return {"success": False, "error": "خطایی در انجام عملیات رخ داد", "status_code": 400}
+    return {"success": False, "error": "دسته بندی این نام در سیستم موجود است", "status_code": 400}
