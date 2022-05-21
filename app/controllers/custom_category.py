@@ -34,3 +34,11 @@ def create_custom_category(name: str, products: list, label: str, visible_in_sit
             return {"success": True, "message": "دسته بندی با موفقیت ایجاد شد", "status_code": 201}
         return {"success": False, "error": "خطایی در انجام عملیات رخ داد", "status_code": 400}
     return {"success": False, "error": "دسته بندی این نام در سیستم موجود است", "status_code": 400}
+
+
+def get_categories_products(system_code: str, page: int, per_page: int):
+    """
+    Get products of a category
+    """
+    result = KowsarCategories.get(system_code, page, per_page)
+    return {"success": True, "message": result, "status_code": 200}

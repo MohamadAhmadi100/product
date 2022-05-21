@@ -28,6 +28,41 @@ class KowsarCategories:
                 return "Category already exists"
             return None
 
+    @staticmethod
+    def get(system_code, page, per_page):
+        """
+        get all products by system code
+        """
+        skip = (page - 1) * per_page
+        limit = per_page
+        with MongoConnection() as mongo:
+            len_db = len(list(mongo.collection.find({"archived": {"$ne": True},
+                                                     "visible_in_site": True,
+                                                     "products.visible_in_site": True,
+                                                     "products.archived": {"$ne": True},
+                                                     "system_code": {"$regex": "^" + system_code}
+                                                     }, {"_id": 1})))
+            db_result = list(mongo.collection.find({"archived": {"$ne": True},
+                                                    "products.archived": {"$ne": True},
+                                                    "visible_in_site": True,
+                                                    "products.visible_in_site": True,
+                                                    "system_code": {"$regex": "^" + system_code}
+                                                    }, {"_id": 0}).skip(skip).limit(limit))
+
+            product_list = list()
+            for parent in db_result:
+                childs = list()
+                for child in parent.get("products", []):
+                    if not child.get("archived") and child.get("visible_in_site"):
+                        childs.append(child)
+                parent.update({"products": childs})
+                product_list.append(parent)
+
+            return {
+                "total": len_db,
+                "data": product_list
+            }
+
 
 class CustomCategories:
     def __init__(self, name, products, label, visible_in_site, image):
