@@ -22,7 +22,7 @@ class KowsarCategories:
                                                                 {'$set': {'visible_in_site': self.visible_in_site,
                                                                           'image': self.image
                                                                           }})
-            if result.modified_count > 0 and visible_result.modified_count > 0:
+            if result.modified_count > 0 or visible_result.modified_count > 0:
                 return True
             elif result.matched_count > 0 and visible_result.matched_count > 0:
                 return "Category already exists"
