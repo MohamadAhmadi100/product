@@ -92,3 +92,29 @@ class CustomCategories:
             if result.inserted_id:
                 return True
             return None
+
+    @staticmethod
+    def get(visible_in_site, page, per_page, created_at_from, created_at_to):
+        skip = (page - 1) * per_page
+        limit = per_page
+
+        query = {}
+        if visible_in_site is not None:
+            query["visible_in_site"] = visible_in_site
+
+        if created_at_from:
+            query["created_at"] = {"$gte": created_at_from}
+        if created_at_to:
+            if query.get("created_at"):
+                query["created_at"]["$lte"] = created_at_to
+            else:
+                query["created_at"] = {"$lte": created_at_to}
+
+        with MongoConnection() as mongo:
+            len_db = len(list(mongo.custom_category.find(query, {"_id": 1})))
+            db_result = list(mongo.custom_category.find(query, {"_id": 0}).skip(skip).limit(limit))
+
+        return {
+            "total": len_db,
+            "data": db_result
+        }
