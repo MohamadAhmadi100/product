@@ -38,7 +38,7 @@ def create_custom_category(name: str, products: list, label: str, visible_in_sit
 
 def get_categories_products(system_code: str, page: int, per_page: int):
     """
-    Get products of a category
+    Get products of a category by systemcode
     """
     result = KowsarCategories.get(system_code, page, per_page)
     return {"success": True, "message": result, "status_code": 200}
@@ -46,7 +46,7 @@ def get_categories_products(system_code: str, page: int, per_page: int):
 
 def get_custom_category_list(visible_in_site, page: int, per_page: int, created_at_from: str, created_at_to: str):
     """
-    Get custom categories
+    Get created custom categories
     """
     result = CustomCategories.get(visible_in_site, page, per_page, created_at_from, created_at_to)
     return {"success": True, "message": result, "status_code": 200}

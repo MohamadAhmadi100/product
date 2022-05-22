@@ -13,6 +13,8 @@ class Singleton(type):
 
 
 class RedisConnection(metaclass=Singleton):
+    client = None
+
     def __init__(self):
         self.client = redis.Redis(
             host=settings.REDIS_HOST,
@@ -21,7 +23,7 @@ class RedisConnection(metaclass=Singleton):
             password=settings.REDIS_PASS,
             decode_responses=True,
             db=settings.REDIS_DB
-        )
+        ) if not self.client else self.client
 
     def __enter__(self):
         return self

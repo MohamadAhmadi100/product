@@ -95,6 +95,9 @@ class CustomCategories:
 
     @staticmethod
     def get(visible_in_site, page, per_page, created_at_from, created_at_to):
+        """
+        get all products by system code from custom category database
+        """
         skip = (page - 1) * per_page
         limit = per_page
 
