@@ -50,3 +50,12 @@ def get_custom_category_list(visible_in_site, page: int, per_page: int, created_
     """
     result = CustomCategories.get(visible_in_site, page, per_page, created_at_from, created_at_to)
     return {"success": True, "message": result, "status_code": 200}
+
+
+def get_all_categories():
+    """
+    """
+    result = KowsarCategories.get_all_categories()
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "categories not found", "status_code": 404}

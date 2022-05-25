@@ -63,6 +63,87 @@ class KowsarCategories:
                 "data": product_list
             }
 
+    @staticmethod
+    def get_all_categories():
+        with MongoConnection() as mongo:
+            result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
+                                                "brand": 1})
+
+            tree_data = []
+            for obj in result:
+                kowsar_data = list(mongo.kowsar_collection.find({"system_code": {"$in": [obj.get("system_code")[:2],
+                                                                                         obj.get("system_code")[:4],
+                                                                                         obj.get("system_code")[:6],
+                                                                                         ]}}, {"_id": 0}).sort(
+                    "system_code", 1))
+                stored_main = next((x for x in tree_data if x['name'] == obj.get("main_category")), None)
+                if stored_main:
+                    index_main = tree_data.index(stored_main)
+                    stored_sub = next(
+                        (x for x in tree_data[index_main]['children'] if x['name'] == obj.get("sub_category"))
+                        , None)
+                    if stored_sub:
+                        index_sub = tree_data[index_main]['children'].index(stored_sub)
+                        if next((x for x in tree_data[index_main]['children'][index_sub]['children'] if
+                                 x['name'] == obj.get("brand")), None):
+                            continue
+                        tree_data[index_main]['children'][index_sub]['children'].append(
+                            {
+                                'name': obj.get("brand"),
+                                'title': kowsar_data[2].get("brand_label", obj.get("brand")),
+                                'image': kowsar_data[2].get("image", None),
+                                'visible_in_site': kowsar_data[2].get("visible_in_site", True),
+                                "system_code": obj.get("system_code")[:6]
+                            }
+                        )
+                        continue
+                    tree_data[index_main]['children'].append(
+                        {
+                            'name': obj.get("sub_category"),
+                            'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
+                            'image': kowsar_data[1].get("image", None),
+                            'visible_in_site': kowsar_data[1].get("visible_in_site", True),
+                            "system_code": obj.get("system_code")[:4],
+                            'children': [
+                                {
+                                    'name': obj.get("brand"),
+                                    'title': kowsar_data[2].get("brand_label", obj.get("brand")),
+                                    'image': kowsar_data[2].get("image", None),
+                                    'visible_in_site': kowsar_data[2].get("visible_in_site", True),
+                                    "system_code": obj.get("system_code")[:6]
+                                }
+                            ]
+                        }
+                    )
+                    continue
+                tree_data.append({
+                    'name': obj.get("main_category"),
+                    'title': kowsar_data[0].get("main_category_label", obj.get("main_category")),
+                    'image': kowsar_data[0].get("image", None),
+                    'visible_in_site': kowsar_data[0].get("visible_in_site", True),
+                    "system_code": obj.get("system_code")[:2],
+                    "children": [
+                        {
+                            'name': obj.get("sub_category"),
+                            'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
+                            'image': kowsar_data[1].get("image", None),
+                            'visible_in_site': kowsar_data[1].get("visible_in_site", True),
+                            "system_code": obj.get("system_code")[:4],
+                            "children": [
+                                {
+                                    'name': obj.get("brand"),
+                                    'title': kowsar_data[2].get("brand_label", obj.get("brand")),
+                                    'image': kowsar_data[2].get("image", None),
+                                    'visible_in_site': kowsar_data[2].get("visible_in_site", True),
+                                    "system_code": obj.get("system_code")[:6]
+                                }
+                            ]
+                        }
+                    ]
+                })
+
+            return tree_data
+
 
 class CustomCategories:
     def __init__(self, name, products, label, visible_in_site, image):
