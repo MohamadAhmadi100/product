@@ -228,15 +228,15 @@ class Product(ABC):
             return "product not found", False
 
     @staticmethod
-    def get_product_list_back_office(brands, warehouses, price, sellers, colors, quantity, date,
+    def get_product_list_back_office(brands, sellers, colors, date,
                                      guarantees, steps, visible_in_site, approved, available, page,
-                                     per_page):
-        with MongoConnection() as mongo:
-            colors_list = mongo.collection.distinct("products.config.color")
-            brands_list = mongo.collection.distinct("brand")
+                                     per_page, system_codes_list, lang):
+        with MongoConnection() as mongo, RedisConnection() as redis_db:
+            colors_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("products.config.color")]
+            brands_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("brand")]
             warehouses_list = list()
-            seller_list = mongo.collection.distinct("products.config.seller")
-            guarantee_list = mongo.collection.distinct("products.config.guarantee")
+            seller_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("products.config.seller")]
+            guarantee_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("products.config.guarantee")]
             step_list = mongo.collection.distinct("products.step")
 
             skip = (page - 1) * per_page
@@ -247,19 +247,14 @@ class Product(ABC):
             }
             if brands:
                 query["brand"] = {"$in": brands}
-            if warehouses:
-                query["warehouse"] = {"$in": warehouses}
-            if price:
-                query["products.price"] = {"$gte": price[0], "$lte": price[1]}
             if sellers:
                 query["products.config.seller"] = {"$in": sellers}
             if colors:
                 query["products.config.color"] = {"$in": colors}
-            if quantity:
-                query["products.quantity"] = {"$gte": quantity[0], "$lte": quantity[1]}
-            if date[0]:
+            if date:
                 query["date"] = {}
-                query["date"]["$gt"] = date[0]
+                if date[0]:
+                    query["date"]["$gt"] = date[0]
                 if date[1]:
                     query["date"]["$lt"] = date[1]
 
@@ -271,6 +266,8 @@ class Product(ABC):
                 query["visible_in_site"] = visible_in_site
             if approved:
                 query["approved"] = approved
+            if system_codes_list:
+                query["system_code"] = {"$in": system_codes_list}
 
             query['products.$.archived'] = {'$ne': True}
 
@@ -282,79 +279,84 @@ class Product(ABC):
                 childs = list()
                 for child in parent.get("products", []):
                     if not child.get("archived"):
+                        for key, value in child['config'].items():
+                            label = redis_db.client.hget(value, lang) if key != "images" else None
+                            child['config'][key] = RamStorageTranslater(value,
+                                                                        lang).translate() if key == "storage" or key == "ram" else label
+
                         childs.append(child)
                 parent.update({"products": childs})
                 product_list.append(parent)
-
+            filters = [
+                {
+                    "name": "brands",
+                    "label": "برند",
+                    "input_type": "multi_select",
+                    "options": brands_list
+                },
+                {
+                    "name": "colors",
+                    "label": "رنگ",
+                    "input_type": "multi_select",
+                    "options": colors_list
+                },
+                {
+                    "name": "price",
+                    "label": "قیمت",
+                    "input_type": "range",
+                },
+                {
+                    "name": "warehouse",
+                    "label": "انبار",
+                    "input_type": "multi_select",
+                    "options": warehouses_list
+                },
+                {
+                    "name": "sellers",
+                    "label": "فروشنده",
+                    "input_type": "multi_select",
+                    "options": seller_list
+                },
+                {
+                    "name": "quantity",
+                    "label": "تعداد",
+                    "input_type": "range",
+                },
+                {
+                    "name": "date",
+                    "label": "تاریخ",
+                    "input_type": "date",
+                },
+                {
+                    "name": "guarantees",
+                    "label": "گارانتی",
+                    "input_type": "multi_select",
+                    "options": guarantee_list
+                },
+                {
+                    "name": "visible_in_site",
+                    "label": "قابل نمایش",
+                    "input_type": "checkbox",
+                },
+                {
+                    "name": "approved",
+                    "label": "تایید شده",
+                    "input_type": "checkbox",
+                },
+                {
+                    "name": "available",
+                    "label": "موجود",
+                    "input_type": "checkbox",
+                },
+                {
+                    "name": "steps",
+                    "label": "مرحله",
+                    "input_type": "multi_select",
+                    "options": step_list
+                }
+            ]
             return {
-                "filters": [
-                    {
-                        "name": "brands",
-                        "label": "برند",
-                        "input_type": "multi_select",
-                        "options": brands_list
-                    },
-                    {
-                        "name": "colors",
-                        "label": "رنگ",
-                        "input_type": "multi_select",
-                        "options": colors_list
-                    },
-                    {
-                        "name": "price",
-                        "label": "قیمت",
-                        "input_type": "range",
-                    },
-                    {
-                        "name": "warehouse",
-                        "label": "انبار",
-                        "input_type": "multi_select",
-                        "options": warehouses_list
-                    },
-                    {
-                        "name": "sellers",
-                        "label": "فروشنده",
-                        "input_type": "multi_select",
-                        "options": seller_list
-                    },
-                    {
-                        "name": "quantity",
-                        "label": "تعداد",
-                        "input_type": "range",
-                    },
-                    {
-                        "name": "date",
-                        "label": "تاریخ",
-                        "input_type": "date",
-                    },
-                    {
-                        "name": "guarantees",
-                        "label": "گارانتی",
-                        "input_type": "multi_select",
-                        "options": guarantee_list
-                    },
-                    {
-                        "name": "visible_in_site",
-                        "label": "قابل نمایش",
-                        "input_type": "checkbox",
-                    },
-                    {
-                        "name": "approved",
-                        "label": "تایید شده",
-                        "input_type": "checkbox",
-                    },
-                    {
-                        "name": "available",
-                        "label": "موجود",
-                        "input_type": "checkbox",
-                    },
-                    {
-                        "name": "steps",
-                        "label": "مرحله",
-                        "input_type": "multi_select",
-                        "options": step_list
-                    }
-                ],
+                "filters": filters,
                 "result_len": len_db,
                 "products": product_list
             }

@@ -124,15 +124,15 @@ def get_category_list():
 
 
 def get_product_list_back_office(
-        brands, warehouses, price, sellers, colors, quantity,
+        brands, sellers, colors,
         date, guarantees, steps, visible_in_site,
-        approved, available, page, per_page
+        approved, available, page, per_page, system_codes_list, lang
 ):
     """
     """
-    result = Product.get_product_list_back_office(brands, warehouses, price, sellers, colors, quantity, date,
+    result = Product.get_product_list_back_office(brands, sellers, colors, date,
                                                   guarantees, steps, visible_in_site, approved, available, page,
-                                                  per_page)
+                                                  per_page, system_codes_list, lang)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}
