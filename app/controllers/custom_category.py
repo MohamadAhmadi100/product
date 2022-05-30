@@ -59,3 +59,13 @@ def get_all_categories():
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "categories not found", "status_code": 404}
+
+
+def delete_custom_category(name: str):
+    """
+    Delete a custom category
+    """
+    result = CustomCategories.delete(name)
+    if result:
+        return {"success": True, "message": "custom category deleted successfully", "status_code": 200}
+    return {"success": False, "error": "custom category not found", "status_code": 404}

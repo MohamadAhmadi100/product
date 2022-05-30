@@ -202,3 +202,14 @@ class CustomCategories:
             "total": len_db,
             "data": db_result
         }
+
+    @staticmethod
+    def delete(name):
+        """
+        Delete custom category by name
+        """
+        with MongoConnection() as mongo:
+            result = mongo.custom_category.delete_one({"name": name})
+            if result.deleted_count:
+                return True
+            return None
