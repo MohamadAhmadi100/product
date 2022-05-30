@@ -213,3 +213,29 @@ class CustomCategories:
             if result.deleted_count:
                 return True
             return None
+
+    @staticmethod
+    def edit(name, new_name, products, label, visible_in_site, image):
+        """
+        Edit custom category by name
+        """
+        set_dict = {}
+        if new_name:
+            set_dict["name"] = new_name
+        if products:
+            set_dict["products"] = products
+        if label:
+            set_dict["label"] = label
+        if visible_in_site is not None:
+            set_dict["visible_in_site"] = visible_in_site
+        if image:
+            set_dict["image"] = image
+        with MongoConnection() as mongo:
+            result = mongo.custom_category.update_one({"name": name}, {
+                "$set": set_dict
+            })
+            if result.modified_count:
+                if result.modified_count:
+                    return True, "ویرایش با موفقیت انجام شد"
+                return None, "ویرایش با مشکل مواجه شد"
+            return None, "دسته بندی مورد نظر یافت نشد"

@@ -69,3 +69,13 @@ def delete_custom_category(name: str):
     if result:
         return {"success": True, "message": "custom category deleted successfully", "status_code": 200}
     return {"success": False, "error": "custom category not found", "status_code": 404}
+
+
+def edit_custom_category(name: str, new_name: str, products: list, label: str, visible_in_site: bool, image: str):
+    """
+    editing custom category
+    """
+    result, message = CustomCategories.edit(name, new_name, products, label, visible_in_site, image)
+    if result:
+        return {"success": True, "message": message, "status_code": 200}
+    return {"success": False, "error": message, "status_code": 400}
