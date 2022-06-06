@@ -147,7 +147,8 @@ class Product(ABC):
                 category_list_Accessory = [{"name": category, "label": redis_db.client.hget(category, "fa_ir"),
                                             "route": category.replace(" ", ""),
                                             "system_code": db_data_getter(
-                                                {"sub_category": category, "brand": None}).get("system_code")
+                                                {"sub_category": category, "system_code": {"$regex": "^.{6}$"}}).get(
+                                                "system_code")
                                             } for
                                            category in result_Accessory]
 
@@ -232,11 +233,15 @@ class Product(ABC):
                                      guarantees, steps, visible_in_site, approved, available, page,
                                      per_page, system_codes_list, lang):
         with MongoConnection() as mongo, RedisConnection() as redis_db:
-            colors_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("products.config.color")]
-            brands_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("brand")]
+            colors_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
+                           mongo.collection.distinct("products.config.color")]
+            brands_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
+                           mongo.collection.distinct("brand")]
             warehouses_list = list()
-            seller_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("products.config.seller")]
-            guarantee_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in mongo.collection.distinct("products.config.guarantee")]
+            seller_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
+                           mongo.collection.distinct("products.config.seller")]
+            guarantee_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
+                              mongo.collection.distinct("products.config.guarantee")]
             step_list = mongo.collection.distinct("products.step")
 
             skip = (page - 1) * per_page
