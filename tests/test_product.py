@@ -249,6 +249,51 @@ class ProductTest(unittest.TestCase):
                                             new=fakeredis.FakeStrictRedis(decode_responses=True))
         with self.mongo_mock, self.redis_mock:
             self.update_kowsar_collection = update_kowsar_collection()
+            with MongoConnection() as mongo:
+                mongo.db.categories.insert_many([
+                    {
+                        "system_code": "10010100102",
+                        "name": "A260 - 8 GB - 1 GB - Mobile Sumsung",
+                        "url_name": "A260-8-GB-1-GB-Mobile-Sumsung",
+                        "main_category": "Device",
+                        "sub_category": "Mobile",
+                        "brand": "Mobile Sumsung",
+                        "model": "A260",
+                        "attributes": {
+                            "storage": "8 GB",
+                            "ram": "1 GB"
+                        },
+                        "jalali_date": "1401-03-01 05:08:33",
+                        "date": "2022-05-22 05:08:33"
+                    },
+                    {
+                        "system_code": "10010100201",
+                        "name": "A01 - 16 GB - Mobile Sumsung",
+                        "url_name": "A01-16-GB-Mobile-Sumsung",
+                        "main_category": "Device",
+                        "sub_category": "Mobile",
+                        "brand": "Mobile Sumsung",
+                        "model": "A01",
+                        "attributes": {
+                            "storage": "16 GB",
+                            "ram": None
+                        },
+                        "jalali_date": "1401-02-20 07:55:57",
+                        "date": "2022-05-10 07:55:57",
+                        "products": [{
+                            "system_code": "100101002001",
+                            "step": 2,
+                            "config": {
+                                "color": "black",
+                                "guarantee": "awat",
+                                "storage": "16 GB",
+                                "seller": "Awat"
+                            },
+                            "jalali_date": "1401-02-31 12:55:34",
+                            "date": "2022-05-21 12:55:34"
+                        }]
+                    }
+                ])
 
     def test_get_parent_configs(self):
         with self.mongo_mock, self.redis_mock:
@@ -282,11 +327,41 @@ class ProductTest(unittest.TestCase):
             self.assertEqual({"success": False, "error": "parent configs not found", "status_code": 404},
                              second_response)
 
-    def create_parents_func(self):
+    def test_create_parents(self):
         with self.mongo_mock, self.redis_mock:
-            self.create_parents_first_response = create_parent('10011000101', name="محصول تست", url_name="test")
-            self.create_parents_second_response = create_parent('10011000101', name="محصول تست", url_name="test")
-            self.create_parents_third_response = create_parent('99999999999999', name="محصول تست", url_name="test")
+            self.assertEqual(
+                create_parent('10011000101', name="محصول تست", url_name="test"),
+                {"success": True,
+                 "message": {"message": "product created successfully", "label": "محصول با موفقیت ساخته شد"},
+                 "status_code": 200}
+            )
+            self.assertEqual(
+                create_parent('10011000101', name="محصول تست", url_name="test"),
+                {"success": False, "error": "system code is not unique", "status_code": 400}
+            )
+            self.assertEqual(create_parent('99999999999999', name="محصول تست", url_name="test"),
+                             {'error': {'error': 'product not found in kowsar',
+                                        'label': 'محصول در کوثر یافت نشد'},
+                              'status_code': 400,
+                              'success': False})
+
+            class MockinsertOne:
+                inserted_id = None
+
+            with mock.patch("app.helpers.mongo_connection.MongoConnection.client.db-product.product.insert_one",
+                            return_value=MockinsertOne):
+                self.assertEqual(create_parent('10010100101', name="محصول تست", url_name="test"),
+                                 {"success": False,
+                                  "error": {"error": "product creation failed",
+                                            "label": "فرایند ساخت محصول به مشکل خورد"},
+                                  "status_code": 400})
+
+    def decorator_pass(self, func):
+        pass
+
+    @decorator_pass
+    def test_create_parent_with_decorator(self):
+        pass
 
     def test_suggest_product(self):
         with self.mongo_mock, self.redis_mock:

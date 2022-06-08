@@ -8,7 +8,7 @@ from app.helpers.mongo_connection import MongoConnection
 
 
 class KowsarGetter:
-    KALA_FILE_NAME = "Kala-1400-10-20.xls"
+    KALA_FILE_NAME = "کالا.xls"
     GRUHE_KALA_FILE_NAME = "گروه کالا.xls"
 
     def __init__(self):
@@ -182,7 +182,8 @@ class KowsarGetter:
             if system_code.startswith('1205'):  # power bank
                 new_conf['capacity'] = config
             elif config and new_conf.get('storage') is None:
-                new_conf['storage'] = str(list(map(int, re.findall(r'\d+', config)))[0]) + " GB"
+                if re.findall(r'\d+', config):
+                    new_conf['storage'] = str(list(map(int, re.findall(r'\d+', config)))[0]) + " GB"
             self.config_dict[system_code] = new_conf
 
     def add_seller(self, sellers):

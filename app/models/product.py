@@ -94,7 +94,7 @@ class Product(ABC):
             return None
 
     @staticmethod
-    def get_product_list_by_system_code(system_code, page, per_page):
+    def get_product_list_by_system_code(system_code, page, per_page, available_quantities):
         with MongoConnection() as mongo:
             def db_data_getter(query):
                 result = mongo.kowsar_collection.find_one(query, {"_id": 0})
@@ -116,7 +116,7 @@ class Product(ABC):
                                     True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
                                         "system_code") else False) if is_brand else False} for brand in result_brand]
 
-                result = mongo.collection.find({"system_code": {"$regex": f"^{system_code}"}}, {"_id": 0}).skip(
+                result = mongo.collection.find({"system_code": {"$in": list(available_quantities.keys())}}, {"_id": 0}).skip(
                     skips).limit(per_page)
                 product_list = list()
                 for product in result:
@@ -176,7 +176,7 @@ class Product(ABC):
                          "$elemMatch": {"visible_in_site": True},
                      },
                      "route": "$name"
-                     }).sort("date", -1).limit(20))
+                     }).sort("products.date", -1).limit(20))
                 for i in result_latest_product:
                     i['route'] = i['route'].replace(" ", "")
                 return {
