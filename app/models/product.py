@@ -136,7 +136,7 @@ class Product(ABC):
                 return {"brands": brands_dict, "products": product_list}
 
     @staticmethod
-    def get_category_list():
+    def get_category_list(available_quantities):
         with MongoConnection() as mongo:
             def db_data_getter(query):
                 result = mongo.kowsar_collection.find_one(query, {"_id": 0})
@@ -170,6 +170,7 @@ class Product(ABC):
 
                 result_latest_product = list(mongo.collection.find(
                     {"sub_category": "Mobile", "products": {"$ne": None}, "visible_in_site": True,
+                     "system_code": {"$in": list(available_quantities.keys())},
                      "products.visible_in_site": True},
                     {"_id": 0, "system_code": 1, "name": 1,
                      "products": {

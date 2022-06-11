@@ -114,10 +114,10 @@ def get_product_list_by_system_code(system_code: str, page: int, per_page: int, 
     return {"success": False, "error": "products not found", "status_code": 404}
 
 
-def get_category_list():
+def get_category_list(available_quantities: dict):
     """
     """
-    result = Product.get_category_list()
+    result = Product.get_category_list(available_quantities)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "categories not found", "status_code": 404}
