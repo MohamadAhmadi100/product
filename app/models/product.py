@@ -76,16 +76,20 @@ class Product(ABC):
                                 visible_products.append(product)
 
                         result['products'] = visible_products
+                        kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code[:9]}, {"_id": 0})
                         result.update({
                             "routes": {
                                 "route": result.get('main_category'),
-                                "label": redis_db.client.hget(result.get('main_category'), lang),
+                                "label": kowsar_data.get('main_category_label'),
+                                "system_code": system_code[:2],
                                 "child": {
                                     "route": result.get('sub_category'),
-                                    "label": redis_db.client.hget(result.get('sub_category'), lang),
+                                    "label": kowsar_data.get('sub_category_label'),
+                                    "system_code": system_code[:4],
                                     "child": {
                                         "route": result.get('brand'),
-                                        "label": redis_db.client.hget(result.get('brand'), lang),
+                                        "label": kowsar_data.get('brand_label'),
+                                        "system_code": system_code[:6]
                                     }
                                 }
                             }
@@ -100,40 +104,38 @@ class Product(ABC):
                 result = mongo.kowsar_collection.find_one(query, {"_id": 0})
                 return result if result else {}
 
-            with RedisConnection() as redis_db:
-                skips = per_page * (page - 1)
-                is_brand = False
-                if len(str(system_code)) == 6:
-                    is_brand = True
-                result_brand = mongo.collection.distinct("brand",
-                                                         {"system_code": {"$regex": f"^{str(system_code)[:2]}"}})
-                brands_dict = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
-                                "route": brand.replace(" ", ""),
-                                "system_code": db_data_getter(
-                                    {"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
-                                    "system_code"),
-                                "active": (
-                                    True if str(system_code) == db_data_getter({"brand": brand, "model": None}).get(
-                                        "system_code") else False) if is_brand else False} for brand in result_brand]
+            skips = per_page * (page - 1)
+            result_brand = mongo.collection.distinct("brand",
+                                                     {"system_code": {"$regex": f"^{str(system_code)[:2]}"},
+                                                      "visible_in_site": True})
+            brands_list = list()
+            for brand in result_brand:
+                brand_data = db_data_getter({"brand": brand, "system_code": {"$regex": "^.{6}$"}})
+                brands_list.append({"name": brand, "label": brand_data.get("brand_label"),
+                                    "route": brand.replace(" ", ""),
+                                    "system_code": brand_data.get(
+                                        "system_code"),
+                                    })
 
-                result = mongo.collection.find({"system_code": {"$in": list(available_quantities.keys())}}, {"_id": 0}).skip(
-                    skips).limit(per_page)
-                product_list = list()
-                for product in result:
-                    if product.get("visible_in_site"):
-                        if product.get('products'):
-                            colors = [color['config']['color'] for color in product['products'] if
-                                      color.get("visible_in_site")]
-                            product.update({"colors": colors})
-                            image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
-                                     child.get('attributes', {}).get('mainImage-pd')]
-                            image = image[0] if image else None
-                            product.update({"image": image})
-                            del product['products']
+            result = mongo.collection.find({"system_code": {"$in": list(available_quantities.keys())}},
+                                           {"_id": 0}).skip(skips).limit(per_page)
+            product_list = list()
+            for product in result:
+                if product.get("visible_in_site"):
+                    if product.get('products'):
+                        colors = [color['config']['color'] for color in product['products'] if
+                                  color.get("visible_in_site")]
+                        product.update({"colors": colors})
+                        image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
+                                 child.get('attributes', {}).get('mainImage-pd')]
+                        image = image[0] if image else None
+                        product.update({"image": image})
+                        del product['products']
 
+                        if colors:
                             product_list.append(product)
 
-                return {"brands": brands_dict, "products": product_list}
+            return {"brands": brands_list, "products": product_list}
 
     @staticmethod
     def get_category_list(available_quantities):
@@ -142,59 +144,82 @@ class Product(ABC):
                 result = mongo.kowsar_collection.find_one(query, {"_id": 0})
                 return result if result else {}
 
-            with RedisConnection() as redis_db:
-                result_Accessory = mongo.collection.distinct("sub_category", {"main_category": "Accessory"})
-                category_list_Accessory = [{"name": category, "label": redis_db.client.hget(category, "fa_ir"),
-                                            "route": category.replace(" ", ""),
-                                            "system_code": db_data_getter(
-                                                {"sub_category": category, "system_code": {"$regex": "^.{6}$"}}).get(
-                                                "system_code")
-                                            } for
-                                           category in result_Accessory]
+            result_Accessory = mongo.collection.distinct("sub_category",
+                                                         {"main_category": "Accessory", "visible_in_site": True})
+            category_list_Accessory = list()
+            for category in result_Accessory:
+                kowsar_data = db_data_getter({"sub_category": category, "system_code": {"$regex": "^.{6}$"}})
+                category_list_Accessory.append({"name": category, "label": kowsar_data.get("sub_category_label"),
+                                                "route": category.replace(" ", ""),
+                                                "system_code": kowsar_data.get("system_code"),
+                                                "image": kowsar_data.get("image"),
+                                                })
 
-                result_main_category = mongo.collection.distinct("main_category")
-                category_list_main_category = [
-                    {"name": category, "label": redis_db.client.hget(category, "fa_ir"),
+            result_main_category = mongo.collection.distinct("main_category", {"visible_in_site": True})
+            category_list_main_category = list()
+            for category in result_main_category:
+                kowsar_data = db_data_getter({"main_category": category, "system_code": {"$regex": "^.{2}$"}})
+                category_list_main_category.append(
+                    {"name": category, "label": kowsar_data.get("main_category_label"),
                      "route": category.replace(" ", ""),
-                     "system_code": db_data_getter({"main_category": category, "sub_category": None}).get(
-                         "system_code")}
-                    for category in result_main_category]
+                     "system_code": kowsar_data.get("system_code"),
+                     "image": kowsar_data.get("image")
+                     }
+                )
 
-                result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile"})
-                category_list_brand = [{"name": brand, "label": redis_db.client.hget(brand, "fa_ir"),
-                                        "route": brand.replace(" ", ""),
-                                        "system_code": db_data_getter(
-                                            {"brand": brand, "system_code": {"$regex": "^.{6}$"}}).get(
-                                            "system_code")} for brand in
-                                       result_brand]
+            result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile", "visible_in_site": True})
+            category_list_brand = list()
 
-                result_latest_product = list(mongo.collection.find(
-                    {"sub_category": "Mobile", "products": {"$ne": None}, "visible_in_site": True,
-                     "system_code": {"$in": list(available_quantities.keys())},
-                     "products.visible_in_site": True},
-                    {"_id": 0, "system_code": 1, "name": 1,
-                     "products": {
-                         "$elemMatch": {"visible_in_site": True},
-                     },
-                     "route": "$name"
-                     }).sort("products.date", -1).limit(20))
-                for i in result_latest_product:
-                    i['route'] = i['route'].replace(" ", "")
-                return {
-                    "categories": {
-                        "label": "دسته بندی",
-                        "items": category_list_main_category},
-                    "mobile": {
-                        "label": "برند های موبایل",
-                        "items": category_list_brand},
-                    "accessory": {
-                        "label": "دسته بندی لوازم جانبی",
-                        "items": category_list_Accessory},
-                    "product": {
-                        "label": "جدیدترین محصولات",
-                        "items": result_latest_product
-                    }
+            for brand in result_brand:
+                kowsar_data = db_data_getter({"brand": brand, "system_code": {"$regex": "^.{6}$"}})
+                category_list_brand.append(
+                    {"name": brand, "label": kowsar_data.get("brand_label"),
+                     "route": brand.replace(" ", ""),
+                     "system_code": kowsar_data.get("system_code"),
+                     "image": kowsar_data.get("image")
+                     })
+
+            result_latest_product = list(mongo.collection.find(
+                {"sub_category": "Mobile", "products": {"$ne": None}, "visible_in_site": True,
+                 "system_code": {"$in": list(available_quantities.keys())},
+                 "products.visible_in_site": True},
+                {"_id": 0, "system_code": 1, "name": 1,
+                 "products": {
+                     "$elemMatch": {"visible_in_site": True},
+                 },
+                 "route": "$name"
+                 }).sort("products.date", -1).limit(20))
+
+            product_list = list()
+            for product in result_latest_product:
+                product['route'] = product['route'].replace(" ", "")
+                colors = [color['config']['color'] for color in product['products'] if
+                          color.get("visible_in_site")]
+                product.update({"colors": colors})
+                image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
+                         child.get('attributes', {}).get('mainImage-pd')]
+                image = image[0] if image else None
+                product.update({"image": image})
+                del product['products']
+
+                product_list.append(product)
+
+            result_latest_product = product_list
+            return {
+                "categories": {
+                    "label": "دسته بندی",
+                    "items": category_list_main_category},
+                "mobile": {
+                    "label": "برند های موبایل",
+                    "items": category_list_brand},
+                "accessory": {
+                    "label": "دسته بندی لوازم جانبی",
+                    "items": category_list_Accessory},
+                "product": {
+                    "label": "جدیدترین محصولات",
+                    "items": result_latest_product
                 }
+            }
 
     @staticmethod
     def get_product_attributes(system_code):
