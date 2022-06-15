@@ -139,7 +139,7 @@ class KowsarGroup:
         #                            "Password": "Site@3333"
         #                        }).json()
         result = {
-            "HasError": True
+            "HasError": False
         }
         if not result.get("HasError", True):
             return True
