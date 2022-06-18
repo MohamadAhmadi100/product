@@ -66,6 +66,8 @@ class KowsarPart:
                     system_code = f"0{system_code}"
                 else:
                     system_code = f"{system_code}"
+            else:
+                system_code = "001"
 
             return system_code
 
@@ -133,11 +135,11 @@ class KowsarGroup:
             request_data['acc_FormalGrouping_NameMain'] = "گروهای کالا"
             request_data['acc_FormalAcc_Code'] = codes.get(accformal_name)
 
-        # result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPartGroup", json=request_data,
-        #                        headers={
-        #                            "UserName": "Site",
-        #                            "Password": "Site@3333"
-        #                        }).json()
+        result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPartGroup", json=request_data,
+                               headers={
+                                   "UserName": "Site",
+                                   "Password": "Site@3333"
+                               }).json()
         result = {
             "HasError": False
         }
