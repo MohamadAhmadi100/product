@@ -117,13 +117,13 @@ class Product(ABC):
                                         "system_code"),
                                     })
 
-            result = mongo.collection.find({"system_code": {"$in": list(available_quantities.keys())}},
+            result = mongo.collection.find({"system_code": {"$in": list(available_quantities.keys())}, "visible_in_site": True},
                                            {"_id": 0}).skip(skips).limit(per_page)
             product_list = list()
             for product in result:
                 if product.get("visible_in_site"):
                     if product.get('products'):
-                        colors = [color['config']['color'] for color in product['products'] if
+                        colors = [color.get('config', {}).get('color') for color in product['products'] if
                                   color.get("visible_in_site")]
                         product.update({"colors": colors})
                         image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
