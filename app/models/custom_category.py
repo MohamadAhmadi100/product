@@ -234,7 +234,7 @@ class CustomCategories:
             result = mongo.custom_category.update_one({"name": name}, {
                 "$set": set_dict
             })
-            if result.modified_count:
+            if result.matched_count:
                 if result.modified_count:
                     return True, "ویرایش با موفقیت انجام شد"
                 return None, "ویرایش با مشکل مواجه شد"
