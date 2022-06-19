@@ -66,7 +66,7 @@ class Product(ABC):
 
                                 attributes_list = list()
 
-                                for key, value in product['attributes'].items():
+                                for key, value in product.get("attributes", {}).items():
                                     stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
                                     stored_data['value'] = value
                                     attributes_list.append(stored_data)
