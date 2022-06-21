@@ -361,7 +361,7 @@ class KowsarGetter:
                       'silver', 'red', 'pink', 'bronze', 'purple', 'yellow', 'charcoal', 'brown', 'mix',
                       'aura glow',
                       'coral', 'boronz', 'dark nebula', 'olive', 'cyan', 'rose', 'dusk', 'military', 'sand',
-                      'dark night', 'bedone rang', 'ice', 'titanium', 'fjord'],
+                      'dark night', 'bedone rang', 'ice', 'titanium', 'fjord', "Peach", "Mint"],
             'guarantee': ['sherkati 01', 'sherkati', 'aban digi', 'abandigi', 'life time', 'awat', 'asli', 'nog',
                           'sazgar', 'nabeghe'],
             'ram': ['16gb', '12gb', '8gb', '6gb', '4gb', '3gb', '2gb', '1gb'],
