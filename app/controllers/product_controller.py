@@ -172,3 +172,12 @@ def get_product_child(system_code: str, lang: str):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_product_by_name(name: str, available_quantities: dict):
+    """
+    """
+    result = Product.get_product_by_name(name, available_quantities)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}

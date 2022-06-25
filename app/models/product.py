@@ -25,6 +25,32 @@ class Product(ABC):
             return list(result)
 
     @staticmethod
+    def get_product_by_name(name, available_quantities):
+        with MongoConnection() as mongo:
+            result = mongo.collection.find(
+                {"system_code": {"$in": list(available_quantities.keys())}, "visible_in_site": True,
+                 'name': re.compile(rf".*{name}.*")
+                 },
+                {"_id": 0})
+            product_list = list()
+            for product in result:
+                if product.get("visible_in_site"):
+                    if product.get('products'):
+                        colors = [color.get('config', {}).get('color') for color in product['products'] if
+                                  color.get("visible_in_site")]
+                        product.update({"colors": colors})
+                        image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
+                                 child.get('attributes', {}).get('mainImage-pd')]
+                        image = image[0] if image else None
+                        product.update({"image": image})
+                        del product['products']
+
+                        if colors:
+                            product_list.append(product)
+
+            return {"products": product_list}
+
+    @staticmethod
     def get_product_by_system_code(system_code, lang):
         """
         """
