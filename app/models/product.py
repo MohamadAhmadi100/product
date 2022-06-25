@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 
 from app.helpers.date_convertor import jalali_now, gregorian_now
@@ -132,7 +133,9 @@ class Product(ABC):
 
             skips = per_page * (page - 1)
             result_brand = mongo.collection.distinct("brand",
-                                                     {"system_code": {"$regex": f"^{str(system_code)[:2]}"},
+                                                     {"system_code": {"$regex": f"^{str(system_code)[:2]}",
+                                                                      "$in": list(available_quantities.keys())
+                                                                      },
                                                       "visible_in_site": True})
             brands_list = list()
             for brand in result_brand:
@@ -143,8 +146,9 @@ class Product(ABC):
                                         "system_code"),
                                     })
 
-            result = mongo.collection.find({"system_code": {"$in": list(available_quantities.keys())}, "visible_in_site": True},
-                                           {"_id": 0}).skip(skips).limit(per_page)
+            result = mongo.collection.find(
+                {"system_code": {"$in": list(available_quantities.keys())}, "visible_in_site": True},
+                {"_id": 0}).skip(skips).limit(per_page)
             product_list = list()
             for product in result:
                 if product.get("visible_in_site"):
@@ -171,7 +175,10 @@ class Product(ABC):
                 return result if result else {}
 
             result_Accessory = mongo.collection.distinct("sub_category",
-                                                         {"main_category": "Accessory", "visible_in_site": True})
+                                                         {"main_category": "Accessory", "visible_in_site": True,
+                                                          "system_code": {"$in": list(available_quantities.keys())}
+                                                          })
+
             category_list_Accessory = list()
             for category in result_Accessory:
                 kowsar_data = db_data_getter({"sub_category": category, "system_code": {"$regex": "^.{6}$"}})
@@ -181,7 +188,10 @@ class Product(ABC):
                                                 "image": kowsar_data.get("image"),
                                                 })
 
-            result_main_category = mongo.collection.distinct("main_category", {"visible_in_site": True})
+            result_main_category = mongo.collection.distinct("main_category", {"visible_in_site": True,
+                                                                               "system_code": {"$in": list(
+                                                                                   available_quantities.keys())
+                                                                               }})
             category_list_main_category = list()
             for category in result_main_category:
                 kowsar_data = db_data_getter({"main_category": category, "system_code": {"$regex": "^.{2}$"}})
@@ -193,7 +203,9 @@ class Product(ABC):
                      }
                 )
 
-            result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile", "visible_in_site": True})
+            result_brand = mongo.collection.distinct("brand", {"sub_category": "Mobile", "visible_in_site": True,
+                                                               "system_code": {"$in": list(available_quantities.keys())}
+                                                               })
             category_list_brand = list()
 
             for brand in result_brand:
