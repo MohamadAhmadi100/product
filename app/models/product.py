@@ -150,6 +150,9 @@ class Product(ABC):
             result = mongo.collection.find(
                 {"system_code": {"$in": system_code_list}, "visible_in_site": True},
                 {"_id": 0}).skip(skips).limit(per_page)
+            products_count = mongo.collection.count_documents(
+                {"system_code": {"$in": system_code_list}, "visible_in_site": True})
+
             product_list = list()
             for product in result:
                 if product.get("visible_in_site"):
@@ -166,7 +169,7 @@ class Product(ABC):
                         if colors:
                             product_list.append(product)
 
-            return {"brands": brands_list, "products": product_list}
+            return {"brands": brands_list, "products": product_list, "products_count": products_count}
 
     @staticmethod
     def get_category_list(available_quantities):

@@ -42,6 +42,8 @@ class KowsarGetter:
             elif len(group_code) == 4:  # sub_category
                 self.sub_category_dict[group_code] = group_name
             elif len(group_code) == 6:  # brand
+                group_name = group_name.replace(self.sub_category_dict[group_code[:4]] + " ", "")
+                group_name = group_name if not group_name == 'Sumsung' else 'Samsung'
                 self.brand_category_dict[group_code] = group_name
             elif len(group_code) == 9:  # model
                 self.model_dict[group_code] = group_name
@@ -388,12 +390,12 @@ class KowsarGetter:
             "nabeghe": "نابغه",
         }
         seller_sample = {
-            "sherkati 01": "Hamrah Gharb",
-            "sherkati": "TejaratKhane Haj Ghasem",
+            "sherkati 01": "Aasood",
+            "sherkati": "Aasood",
             "aban digi": "Aban Digi",
             "abandigi": "Aban Digi",
             "life time": "Aasood",
-            "awat": "Awat",
+            "awat": "Aasood",
             "asli": "Aasood",
             "nog": "Aasood",
             "sazgar": "Awat",
