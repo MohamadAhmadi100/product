@@ -27,6 +27,11 @@ class MongoConnection:
         self.custom_category = self.db['custom-category']
         self.attributes_collection = self.db['attributes']
 
+        self.master_server = pymongo.MongoClient(
+            "200.100.100.220", 27017, username='root', password='qweasdQWEASD'
+        )
+        self.warehouses_collection = self.master_server["msm"]["warehouse"]
+
     def __enter__(self):
         return self
 

@@ -125,11 +125,20 @@ class Product(ABC):
             return None
 
     @staticmethod
-    def get_product_list_by_system_code(system_code, page, per_page, available_quantities):
+    def get_product_list_by_system_code(system_code, page, per_page, available_quantities, allowed_storages):
         with MongoConnection() as mongo:
             def db_data_getter(query):
                 result = mongo.kowsar_collection.find_one(query, {"_id": 0})
                 return result if result else {}
+
+            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
+            storages_labels = list()
+            for allowed_storage in allowed_storages:
+                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
+                storages_labels.append({
+                    "storage_id": allowed_storage,
+                    "label": obj[0]['warehouse_name'] if obj else None
+                })
 
             skips = per_page * (page - 1)
             result_brand = mongo.collection.distinct("brand",
@@ -169,7 +178,8 @@ class Product(ABC):
                         if colors:
                             product_list.append(product)
 
-            return {"brands": brands_list, "products": product_list, "products_count": products_count}
+            return {"brands": brands_list, "products": product_list, "products_count": products_count,
+                    "storages_list": storages_labels}
 
     @staticmethod
     def get_category_list(available_quantities):

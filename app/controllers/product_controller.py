@@ -105,10 +105,12 @@ def delete_product(system_code: str) -> dict:
     return {"success": False, "error": "system code not found", "status_code": 404}
 
 
-def get_product_list_by_system_code(system_code: str, page: int, per_page: int, available_quantities: dict):
+def get_product_list_by_system_code(system_code: str, page: int, per_page: int, available_quantities: dict,
+                                    user_allowed_storages: list):
     """
     """
-    result = Product.get_product_list_by_system_code(system_code, page, per_page, available_quantities)
+    result = Product.get_product_list_by_system_code(system_code, page, per_page, available_quantities,
+                                                     user_allowed_storages)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}
