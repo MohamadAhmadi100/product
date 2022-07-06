@@ -26,8 +26,17 @@ class Product(ABC):
             return list(result)
 
     @staticmethod
-    def get_product_by_name(name, available_quantities):
+    def get_product_by_name(name, available_quantities, user_allowed_storages):
         with MongoConnection() as mongo:
+            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
+            storages_labels = list()
+            for allowed_storage in user_allowed_storages:
+                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
+                storages_labels.append({
+                    "storage_id": allowed_storage,
+                    "label": obj[0]['warehouse_name'] if obj else None
+                })
+
             result = mongo.collection.find(
                 {"system_code": {"$in": list(available_quantities.keys())}, "visible_in_site": True,
                  'name': re.compile(rf".*{name}.*")
@@ -49,7 +58,7 @@ class Product(ABC):
                         if colors:
                             product_list.append(product)
 
-            return {"products": product_list}
+            return {"products": product_list, "storages": storages_labels}
 
     @staticmethod
     def get_product_by_system_code(system_code, lang):

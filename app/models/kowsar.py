@@ -26,14 +26,10 @@ class KowsarPart:
             "gnr_Lookup_InternalIdSerialState": "2",
             "prt_Part_Sellable": "0"  # be 1 on production
         }
-        # result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data, headers={
-        #     "UserName": "Site",
-        #     "Password": "Site@3333"
-        # }).json()
-        result = {
-            "HasError": False,
-            "prt_Part_Code": system_code,
-        }
+        result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data, headers={
+            "UserName": "Site",
+            "Password": "Site@3333"
+        }).json()
         if not result.get("HasError", True):
             return True, result.get("prt_Part_Code")
         return False, None
@@ -140,9 +136,6 @@ class KowsarGroup:
                                    "UserName": "Site",
                                    "Password": "Site@3333"
                                }).json()
-        result = {
-            "HasError": False
-        }
         if not result.get("HasError", True):
             return True
         return False

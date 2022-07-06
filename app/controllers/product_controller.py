@@ -176,10 +176,10 @@ def get_product_child(system_code: str, lang: str):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_product_by_name(name: str, available_quantities: dict):
+def get_product_by_name(name: str, available_quantities: dict, user_allowed_storages):
     """
     """
-    result = Product.get_product_by_name(name, available_quantities)
+    result = Product.get_product_by_name(name, available_quantities, user_allowed_storages)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
