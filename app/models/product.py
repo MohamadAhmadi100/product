@@ -319,10 +319,16 @@ class Product(ABC):
     def get_product_list_back_office(brands, sellers, colors, date,
                                      guarantees, steps, visible_in_site, approved, available, page,
                                      per_page, system_codes_list, lang):
+
         with MongoConnection() as mongo, RedisConnection() as redis_db:
+            def db_data_getter(query):
+                result = mongo.kowsar_collection.find_one(query, {"_id": 0})
+                return result if result else {}
+
             colors_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
                            mongo.collection.distinct("products.config.color")]
-            brands_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
+            brands_list = [{"value": i, "label": db_data_getter({"brand": i, "system_code": {"$regex": "^.{6}$"}}).get(
+                "brand_label", i)} for i in
                            mongo.collection.distinct("brand")]
             warehouses_list = list()
             seller_list = [{"value": i, "label": redis_db.client.hget(i, lang)} for i in
