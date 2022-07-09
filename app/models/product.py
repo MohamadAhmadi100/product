@@ -39,7 +39,7 @@ class Product(ABC):
 
             result = mongo.collection.find(
                 {"system_code": {"$in": list(available_quantities.keys())}, "visible_in_site": True,
-                 'name': re.compile(rf".*{name}.*")
+                 'name': re.compile(rf"^.*{name}.*$(?i)")
                  },
                 {"_id": 0})
             product_list = list()
