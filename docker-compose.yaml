@@ -9,8 +9,6 @@ services:
 #            - MONGO_INITDB_ROOT_PASSWORD=123456789
         volumes:
             - mongodb-data-product:/data/db-product
-        networks:
-            - mongodb_network_product
         ports:
             - ${MONGO_PORT}:27017
         restart: unless-stopped
@@ -19,8 +17,6 @@ services:
         container_name: redis-db-product
         volumes:
             - redis-data-product:/data/redis-product
-        networks:
-            - redis_network_product
         ports:
             - ${REDIS_PORT}:6379
         restart: always
@@ -30,9 +26,3 @@ services:
 volumes:
     mongodb-data-product:
     redis-data-product:
-
-networks:
-    mongodb_network_product:
-        driver: bridge
-    redis_network_product:
-        driver: bridge
