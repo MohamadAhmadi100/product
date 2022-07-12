@@ -1,4 +1,5 @@
 from app.models.custom_category import KowsarCategories, CustomCategories
+from app.models.product import Product
 
 
 def create_custom_kowsar_category(system_code: str, custom_name: str, visible_in_site: bool, image: str):
@@ -49,6 +50,13 @@ def get_custom_category_list(visible_in_site, page: int, per_page: int, created_
     Get created custom categories
     """
     result = CustomCategories.get(visible_in_site, page, per_page, created_at_from, created_at_to)
+    if result:
+        for category in result['data']:
+            product_list = []
+            for system_code in category['products']:
+                product_detail = Product.get_product_child(system_code, "fa_ir")
+                product_list.append(product_detail.get("product"))
+            category['products'] = product_list
     return {"success": True, "message": result, "status_code": 200}
 
 

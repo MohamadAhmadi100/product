@@ -195,7 +195,7 @@ class CustomCategories:
                 query["created_at"] = {"$lte": created_at_to}
 
         with MongoConnection() as mongo:
-            len_db = len(list(mongo.custom_category.find(query, {"_id": 1})))
+            len_db = mongo.custom_category.count_documents(query)
             db_result = list(mongo.custom_category.find(query, {"_id": 0}).skip(skip).limit(limit))
 
         return {
