@@ -175,8 +175,8 @@ class Product(ABC):
             for product in result:
                 if product.get("visible_in_site"):
                     if product.get('products'):
-                        colors = [color.get('config', {}).get('color') for color in product['products'] if
-                                  color.get("visible_in_site")]
+                        colors = list({color.get('config', {}).get('color') for color in product['products'] if
+                                  color.get("visible_in_site")})
                         product.update({"colors": colors})
                         image = [child.get('attributes', {}).get('mainImage-pd') for child in product['products'] if
                                  child.get('attributes', {}).get('mainImage-pd')]
