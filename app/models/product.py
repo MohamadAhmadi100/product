@@ -162,6 +162,7 @@ class Product(ABC):
                                     "route": brand.replace(" ", ""),
                                     "system_code": brand_data.get(
                                         "system_code"),
+                                    "image": brand_data.get("image")
                                     })
 
             system_code_list = [i for i in list(available_quantities.keys()) if i[:len(system_code)] == system_code]
