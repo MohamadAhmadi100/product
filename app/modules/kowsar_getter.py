@@ -249,24 +249,30 @@ class KowsarGetter:
         """
         with MongoConnection() as client:
             if system_code == "00":
-                re = "^[1-9][0-9]$"
+                regex = "^[1-9][0-9]$"
                 label = "main_category"
             elif len(system_code) == 2:
                 label = "sub_category"
-                re = '^' + system_code + ".{2}$"
-            elif len(system_code) == 4:
-                label = "brand"
-                re = '^' + system_code + ".{2}$"
+                regex = '^' + system_code + ".{4}$"
             elif len(system_code) == 6:
-                label = "model"
-                re = '^' + system_code + ".{3}$"
+                label = "brand"
+                regex = '^' + system_code + ".{3}$"
             elif len(system_code) == 9:
-                label = "config"
-                re = '^' + system_code + ".{3}$"
+                label = "model"
+                regex = '^' + system_code + ".{4}$"
+            elif len(system_code) == 13:
+                label = "configs"
+                regex = '^' + system_code + ".{3}$"
+            elif len(system_code) == 16:
+                products = list(client.new_kowsar_collection.aggregate([
+                    {"$match": {'system_code': {'$regex': "^" + system_code + ".{9}$"}}},
+                    {"$project": {"_id": 0}}
+                ]))
+                return products
             else:
                 return None
-            products = list(client.kowsar_collection.aggregate([
-                {"$match": {'system_code': {'$regex': re}}},
+            products = list(client.new_kowsar_collection.aggregate([
+                {"$match": {'system_code': {'$regex': regex}}},
                 {"$project": {"_id": 0, "system_code": 1, "label": f"${label}"}}
             ]))
             return products
@@ -277,7 +283,7 @@ class KowsarGetter:
         return name or config of the system_code
         """
         with MongoConnection() as client:
-            data = client.kowsar_collection.find_one({'system_code': system_code}, {"_id": 0})
+            data = client.new_kowsar_collection.find_one({'system_code': system_code}, {"_id": 0})
             return data
 
     @exception_handler

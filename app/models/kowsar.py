@@ -4,10 +4,11 @@ from app.helpers.mongo_connection import MongoConnection
 
 
 class KowsarPart:
-    def __init__(self, model_code, config):
-        self.model_code = model_code
-        config = {k: v for k, v in config.items() if v}
-        self.config = config
+    def __init__(self, system_code, storage_ids, parent_system_code, guaranty):
+        self.system_code = system_code
+        self.storage_ids = storage_ids
+        self.parent_system_code = parent_system_code
+        self.guaranty = guaranty
 
     def create_kowsar_part(self, name, storage_ids, system_code):
         request_data = {
@@ -34,6 +35,13 @@ class KowsarPart:
             return True, result.get("prt_Part_Code")
         return False, None
 
+    def is_unique(self):
+        with MongoConnection() as mongo:
+            result = mongo.new_kowsar_collection.find_one({"system_code": self.system_code})
+        if result:
+            return False
+        return True
+
     def name_getter(self):
         name = "["
         config_len = self.config.__len__() - 1
@@ -46,35 +54,14 @@ class KowsarPart:
             count += 1
         return name
 
-    def system_code_getter(self, model_code):
+    def create_in_db(self, parent_data):
         with MongoConnection() as mongo:
-            regex = f"^{model_code}."
-            regex += "{3}"
-            system_codes = mongo.kowsar_collection.distinct("system_code",
-                                                            {"system_code": {"$regex": regex}})
-            if system_codes:
-                system_codes = [int(i[-3:]) for i in system_codes]
-                system_codes.sort()
-                system_code = system_codes[-1] + 1
-                if system_code < 10:
-                    system_code = f"00{system_code}"
-                elif system_code < 100:
-                    system_code = f"0{system_code}"
-                else:
-                    system_code = f"{system_code}"
-            else:
-                system_code = "001"
-
-            return system_code
-
-    def create_in_db(self, model_data, system_code):
-        with MongoConnection() as mongo:
-            del model_data["system_code"]
-            result = mongo.kowsar_collection.insert_one(
+            del parent_data["system_code"]
+            result = mongo.new_kowsar_collection.insert_one(
                 {
-                    "system_code": system_code,
-                    **model_data,
-                    "config": self.config
+                    "system_code": self.system_code,
+                    **parent_data,
+                    "guaranty": self.guaranty,
                 }
             )
         if result.inserted_id:
@@ -83,14 +70,15 @@ class KowsarPart:
 
 
 class KowsarGroup:
-    def __init__(self, system_code, name, parent_system_code):
+    def __init__(self, system_code, name, parent_system_code, configs):
         self.system_code = system_code
         self.name = name
         self.parent_system_code = parent_system_code
+        self.configs = configs
 
     def is_unique(self):
         with MongoConnection() as mongo:
-            result = mongo.kowsar_collection.find_one({"system_code": self.system_code})
+            result = mongo.new_kowsar_collection.find_one({"system_code": self.system_code})
             if result:
                 return False
             return True
@@ -101,6 +89,8 @@ class KowsarGroup:
             "prt_PartGroup_CodeParent": self.parent_system_code,
             "prt_PartGroup_Name": self.name,
         }
+        if not parent_data:
+            del request_data['prt_PartGroup_CodeParent']
         codes = {
             "mobile": "200000", "Tablet": "200001", "Notebook": "200002",
             "All in One": "200003", "PC": "200004", "Server": "200005",
@@ -124,10 +114,11 @@ class KowsarGroup:
             "Data Video Projector": "200057", "Telephone": "200058", "Fax": "200059",
             "Barcode Reader": "200060", "Cartridge": "200061", "Gaming": "200062", "Vacuum Cleaner": "200063"
         }
-        if len(self.system_code) == 9:
+
+        if len(self.system_code) == 13:
             request_data['SaveAsFormalAcc'] = True
             accformal_name = parent_data.get("sub_category") if parent_data.get(
-                "sub_category") != "Mobile" else "mobile"
+                "sub_category") not in ["Mobile", "t-mobile"] else "mobile"
             request_data['acc_FormalGrouping_NameMain'] = "گروهای کالا"
             request_data['acc_FormalAcc_Code'] = codes.get(accformal_name)
 
@@ -141,25 +132,65 @@ class KowsarGroup:
         return False
 
     def category_name_getter(self, parent_data):
-        if parent_data.get("image"):
-            del parent_data["image"]
-        if parent_data.get('visible_in_site'):
-            del parent_data["visible_in_site"]
+        if parent_data:
+            if parent_data.get("image"):
+                del parent_data["image"]
+            if parent_data.get('visible_in_site'):
+                del parent_data["visible_in_site"]
 
-        system_code_len = len(parent_data.get("system_code"))
-        if system_code_len == 2:
-            parent_data['sub_category'] = self.name
-        elif system_code_len == 4:
-            parent_data['brand'] = self.name
-        elif system_code_len == 6:
-            parent_data['model'] = self.name
+            parent_system_code_len = len(parent_data.get("system_code"))
+            if parent_system_code_len == 2:
+                parent_data['sub_category'] = self.name
+            elif parent_system_code_len == 6:
+                parent_data['brand'] = self.name
+            elif parent_system_code_len == 9:
+                parent_data['model'] = self.name
+            elif parent_system_code_len == 13:
+                parent_data['configs'] = self.configs
+            elif parent_system_code_len == 16:
+                parent_data['seller'] = self.name
+            elif parent_system_code_len == 19:
+                parent_data['color'] = self.name
+            elif parent_system_code_len == 22:
+                parent_data['guaranty'] = self.name
 
-        parent_data['system_code'] = self.system_code
-        return parent_data
+            parent_data['system_code'] = self.system_code
+            return parent_data
+        else:
+            return {
+                "system_code": self.system_code,
+                "main_category": self.name
+            }
 
     def create_in_db(self, data):
         with MongoConnection() as mongo:
-            result = mongo.kowsar_collection.insert_one(data)
+            result = mongo.new_kowsar_collection.insert_one(data)
         if result.inserted_id:
             return True
         return False
+
+
+class KowsarConfig:
+    @staticmethod
+    def is_unique(config_type, system_code):
+        with MongoConnection() as mongo:
+            result = mongo.kowsar_config.find_one(
+                {"config_type": config_type, "system_code": system_code}, {"_id": 1})
+            if result:
+                return False
+            return True
+
+    @staticmethod
+    def create_static_configs(config_type, system_code, name):
+        with MongoConnection() as mongo:
+            result = mongo.kowsar_config.insert_one(
+                {"config_type": config_type, "system_code": system_code, "name": name})
+        if result.inserted_id:
+            return True
+        return False
+
+    @staticmethod
+    def get_static_configs_by_config_type(config_type):
+        with MongoConnection() as mongo:
+            result = mongo.kowsar_config.find({"config_type": config_type}, {"_id": 0})
+            return list(result)
