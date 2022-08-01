@@ -77,7 +77,7 @@ dealership
 def add_to_reserve_dealership(referral_number, customer_id, customer_type, data):
     check_data, add_cardex_to_quantity = list(), list()
     for item in data.get("products"):
-        result = Reserve.add_to_reserve_dealership(item.get("systemCode"), item.get("storageId"), item.get("count"),
+        result = Reserve.add_to_reserve_dealership(item.get('system_code'), item.get('storage_id'), item.get("count"),
                                                    customer_type[0], item.get("name"), referral_number)
 
         data_for_check = (item, result.get("success"))
