@@ -5,38 +5,44 @@ order
 """
 
 
+
 def remove_from_reserve(order):
     order_model = Reserve(dict(order))
     add_cardex_to_msm, add_cardex_to_quantity = list(), list()
     for item in order_model.order_data:
         result = order_model.remove_reserve_cancel(item.get("system_code"), item.get("storage_id"), item.get("count"),
                                                    item.get("customer_type"), item.get("sku"), item.get("order_number"))
+        add_cardex_to_msm.append(result.get("msm"))
         add_cardex_to_quantity.append(result.get("quantity"))
         if result.get("success") is False:
             return result
     try:
         Reserve.cardex(order["customer"].get("id"), order["customer"].get("fullName"), order.get("orderNumber"),
                        add_cardex_to_quantity)
+        Reserve.msm_log(order["customer"].get("id"), order["customer"].get("fullName"), order.get("orderNumber"),
+                        add_cardex_to_msm)
         return {'success': True, 'message': 'done', 'status_code': 200}
     except:
         return {'success': False, 'message': 'log error', 'status_code': 409}
 
-
 def add_to_reserve(order):
     order_model = Reserve(dict(order))
-    check_data, add_cardex_to_quantity = list(), list()
+    check_data, add_cardex_to_msm, add_cardex_to_quantity = list(), list(), list()
     for item in order_model.order_data:
         result = order_model.add_to_reserve_order(item.get("system_code"), item.get("storage_id"), item.get("count"),
                                                   item.get("customer_type"), item.get("sku"), item.get("order_number"))
 
         data_for_check = (item, result.get("success"))
         check_data.append(data_for_check)
+        add_cardex_to_msm.append(result.get("msm"))
         add_cardex_to_quantity.append(result.get("quantity"))
     checked = all(elem[1] for elem in check_data)
     if checked:
         try:
             Reserve.cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
                            add_cardex_to_quantity)
+            Reserve.msm_log(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                            add_cardex_to_msm)
             return {'success': True, 'message': 'done', 'status_code': 200}
         except:
             return {'success': False, 'message': 'log error', 'status_code': 409}
@@ -52,7 +58,7 @@ def add_to_reserve(order):
 
 
 def remove_reserve_edit(edited_object, order_number, customer_id, customer_type, customer_name):
-    add_cardex_to_quantity = list()
+    add_cardex_to_msm, add_cardex_to_quantity = list(), list()
 
     for item in edited_object:
         result = Reserve.remove_reserve_edit_order(item.get("systemCode"), item.get("storageId"),
@@ -60,13 +66,16 @@ def remove_reserve_edit(edited_object, order_number, customer_id, customer_type,
                                                    customer_type, item.get("sku"), item.get("order_number"))
         if result.get("success") is False:
             return result
+        add_cardex_to_msm.append(result.get("msm"))
         add_cardex_to_quantity.append(result.get("quantity"))
 
     try:
         Reserve.cardex(customer_id, customer_name, order_number, add_cardex_to_quantity)
+        Reserve.msm_log(customer_id, customer_name, order_number, add_cardex_to_msm)
         return {'success': True, 'message': 'done', 'status_code': 200}
     except:
         return {'success': False, 'message': 'log error', 'status_code': 409}
+
 
 
 """
@@ -75,13 +84,14 @@ dealership
 
 
 def add_to_reserve_dealership(referral_number, customer_id, customer_type, data):
-    check_data, add_cardex_to_quantity = list(), list()
+    check_data, add_cardex_to_msm, add_cardex_to_quantity = list(), list(), list()
     for item in data.get("products"):
-        result = Reserve.add_to_reserve_dealership(item.get('system_code'), item.get('storage_id'), item.get("count"),
+        result = Reserve.add_to_reserve_dealership(item.get("system_code"), item.get("storage_id"), item.get("count"),
                                                    customer_type[0], item.get("name"), referral_number)
 
         data_for_check = (item, result.get("success"))
         check_data.append(data_for_check)
+        add_cardex_to_msm.append(result.get("msm"))
         add_cardex_to_quantity.append(result.get("quantity"))
     checked = all(elem[1] for elem in check_data)
     if checked:
@@ -89,6 +99,8 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
 
             Reserve.cardex(customer_id, None, referral_number,
                            add_cardex_to_quantity)
+            Reserve.msm_log(customer_id, None, referral_number,
+                            add_cardex_to_msm)
             return {'success': True, 'message': 'done', 'status_code': 200}
         except:
             return {'success': False, 'message': 'log error', 'status_code': 409}

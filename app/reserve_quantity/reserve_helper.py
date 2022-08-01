@@ -54,10 +54,10 @@ def dealership_add_reserve_quantity(system_code, storage_id, count, customer_typ
             qty=count,
             sku=sku,
             type="dealership",
-            oldQuantity=reserve['product'].get("quantity"),
-            newQuantity=reserve['product'].get("quantity"),
-            oldReserve=reserve['product'].get('reserved'),
-            newRreserve=int(reserve['product'].get('reserved')) + count
+            oldQuantity=reserve['storage_data'].get("quantity"),
+            newQuantity=reserve['storage_data'].get("quantity"),
+            oldReserve=reserve['storage_data'].get('reserved') - count,
+            newRreserve=reserve['storage_data'].get('reserved')
         )
         reserve['quantity_cardex_data'] = quantity_cardex_data
         return reserve
@@ -77,8 +77,8 @@ def dealership_add_reserve_msm(system_code, storage_id, count, order_number):
             type="dealership",
             oldQuantity=reserve['product'].get("quantity"),
             newQuantity=reserve['product'].get("quantity"),
-            oldReserve=reserve['product'].get("reserve"),
-            newRreserve=int(reserve['product'].get("reserve")) + count
+            oldReserve=reserve['product'].get("reserve") - count,
+            newRreserve=int(reserve['product'].get("reserve"))
         )
         reserve["msm_cardex_data"] = msm_cardex_data
         return reserve

@@ -18,7 +18,7 @@ class AddRemoveReserve:
                                 return {"success": True,
                                         "query": {"system_code": system_code},
                                         "replace_data": products,
-                                        "product": storage_dict}
+                                        "storage_data": storage_dict}
                             else:
                                 client.reserve_log_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
