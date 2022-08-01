@@ -7,6 +7,7 @@ from app.controllers.product_controller import *
 from app.controllers.kowsar_controller import *
 from app.controllers.attributes_controller import *
 from app.controllers.custom_category import *
+from app.controllers.reserve_controller import *
 
 from app.modules import terminal_log
 

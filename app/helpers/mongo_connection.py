@@ -29,10 +29,17 @@ class MongoConnection:
         self.parent_col = self.db['kowsar-parent']
         self.custom_category = self.db['custom-category']
         self.attributes_collection = self.db['attributes']
+        """
+        reserves
+        """
+        self.cardex_collection = self.db['cardex']
+        self.reserve_log_collection = self.db['reserve_log']
+
         self.master_server = pymongo.MongoClient(
             "200.100.100.220", 27017, username='root', password='qweasdQWEASD'
         )
         self.stocks_collection = self.master_server["msm"]["stocks"]
+        self.stocks_log_collection = self.master_server["msm"]["stock_logs"]
         self.warehouses_collection = self.master_server["msm"]["warehouse"]
 
         self.master_server = pymongo.MongoClient(
