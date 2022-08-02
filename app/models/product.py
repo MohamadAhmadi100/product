@@ -67,7 +67,7 @@ class Product:
 
                 result['attributes'] = attributes_list
 
-                kowsar_data = mongo.new_kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+                kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 result.update({
                     "routes": {
                         "route": result.get('main_category'),
@@ -93,7 +93,7 @@ class Product:
         with MongoConnection() as mongo:
             result = mongo.product.insert_many(self.products)
 
-            mongo.new_kowsar_collection.update_many(
+            mongo.kowsar_collection.update_many(
                 {"system_code": {"$in": [system_code.get("system_code") for system_code in self.products]}},
                 {"$set": {"created": True}}
             )

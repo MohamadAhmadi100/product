@@ -141,6 +141,13 @@ def get_product_by_system_code(system_code: str, lang: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
+def get_product_list_by_system_code(system_code, page, per_page):
+    result = Product.get_product_list_by_system_code(system_code, page, per_page)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
 def delete_product(system_code: str) -> dict:
     """
     Delete a product by name in main collection in database.
