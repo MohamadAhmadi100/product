@@ -48,6 +48,9 @@ class Reserve:
 
     @staticmethod
     def add_to_reserve_dealership(system_code, storage_id, count, customer_type, sku, order_number):
+        """
+        dealership add to reserve
+        """
         try:
             quantity_result = dealership_add_reserve_quantity(system_code, storage_id, count, customer_type, sku,
                                                               order_number)
