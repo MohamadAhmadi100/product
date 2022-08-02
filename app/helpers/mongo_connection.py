@@ -21,6 +21,7 @@ class MongoConnection:
                                           password=settings.MONGO_PASS) if not self.client else self.client
         self.db = self.client['db-product']
         self.product = self.db['product']
+
         self.archive = self.db['archive']
         self.kowsar_collection = self.db['kowsar']
         self.kowsar_config = self.db['kowsar_config']
@@ -30,6 +31,7 @@ class MongoConnection:
         """
         reserves
         """
+        self.warehouses = self.db['warehouse']
         self.cardex_collection = self.db['cardex']
         self.reserve_log_collection = self.db['reserve_log']
 

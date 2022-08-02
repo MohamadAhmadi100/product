@@ -7,13 +7,13 @@ class check_quantity:
         self.storage_id = product_object['storage_id']
         self.customer_type = product_object['customer_type']
 
-    def check_stocks(self):
-        with MongoConnection() as client:
-            msm_record = client.stocks_collection.find_one({"systemCode": self.system_code, "stockId": self.storage_id})
-            if msm_record is None:
-                return False
-            else:
-                return int(msm_record['quantity']) - int(msm_record['reserve'])
+    # def check_stocks(self):
+    #     with MongoConnection() as client:
+    #         msm_record = client.stocks_collection.find_one({"systemCode": self.system_code, "stockId": self.storage_id})
+    #         if msm_record is None:
+    #             return False
+    #         else:
+    #             return int(msm_record['quantity']) - int(msm_record['reserve'])
 
     def check_quantity(self):
         with MongoConnection() as client:

@@ -2,10 +2,9 @@ from typing import Union
 
 from app.helpers.mongo_connection import MongoConnection
 from app.modules.kowsar_getter import KowsarGetter
-
-
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
+
 
 class Product:
     def __init__(self, name, url_name, system_codes):
@@ -518,54 +517,54 @@ class Quantity:
     @staticmethod
     def get_quantity_list(products_list):
         """
-        get quantity from databases for check out
+        get quantity from databases for checkout
         """
         result = []
         checkout_pass = True
         for data in products_list:
             # check salable in stocks and quantity
             check_result = check_quantity(data)
-            msm_check = check_result.check_stocks()
+            # msm_check = check_result.check_stocks()
             product_quantity_check = check_result.check_quantity()
 
             # system code not found in sms stocks
-            if not msm_check or not product_quantity_check:
+            if not product_quantity_check:
                 checkout_pass = False
                 data['quantity_checkout'] = "system code not found"
                 result.append(data)
 
             else:
-                # if salable in msm_stocks and products quantity is equal
-                if msm_check == product_quantity_check:
-                    try:
-                        if data['count'] <= product_quantity_check:
-                            data['quantity_checkout'] = "pass"
-                            result.append(data)
-                        else:
-                            checkout_pass = False
-                            data['quantity_checkout'] = "edited"
-                            data['new_quantity'] = product_quantity_check
-                            result.append(data)
-                    except:
-                        checkout_pass = False
-                        data['quantity_checkout'] = "system code not found"
+                # # if salable in msm_stocks and products quantity is equal
+                # if msm_check == product_quantity_check:
+                #     try:
+                #         if data['count'] <= product_quantity_check:
+                #             data['quantity_checkout'] = "pass"
+                #             result.append(data)
+                #         else:
+                #             checkout_pass = False
+                #             data['quantity_checkout'] = "edited"
+                #             data['new_quantity'] = product_quantity_check
+                #             result.append(data)
+                #     except:
+                #         checkout_pass = False
+                #         data['quantity_checkout'] = "system code not found"
+                #         result.append(data)
+                #
+                # # if salable in msm_stocks and products quantity is not equal we chose products
+                # else:
+                try:
+                    if data['count'] <= product_quantity_check:
+                        data['quantity_checkout'] = "pass"
                         result.append(data)
-
-                # if salable in msm_stocks and products quantity is not equal we chose products
-                else:
-                    try:
-                        if data['count'] <= product_quantity_check:
-                            data['quantity_checkout'] = "pass"
-                            result.append(data)
-                        else:
-                            checkout_pass = False
-                            data['quantity_checkout'] = "edited"
-                            data['new_quantity'] = product_quantity_check
-                            result.append(data)
-                    except:
+                    else:
                         checkout_pass = False
-                        data['quantity_checkout'] = "system code not found"
+                        data['quantity_checkout'] = "edited"
+                        data['new_quantity'] = product_quantity_check
                         result.append(data)
+                except:
+                    checkout_pass = False
+                    data['quantity_checkout'] = "system code not found"
+                    result.append(data)
 
         if checkout_pass:
             return result, True
