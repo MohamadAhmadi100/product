@@ -16,13 +16,78 @@ class Product:
 
     def system_codes_are_unique(self):
         with MongoConnection() as mongo:
-            return mongo.product.count_documents({"system_codes": {"$in": self.system_codes}}) == 0
+            return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
     def system_code_exists(system_code):
         with MongoConnection() as mongo:
-            result = mongo.product.find_one({"system_codes": system_code})
+            result = mongo.product.find_one({"system_code": system_code})
             return True if result else False
+
+    @staticmethod
+    def edit_product(system_code, data):
+        with MongoConnection() as mongo:
+            visible_in_site = data.get("visible_in_site")
+            result = mongo.product.update_one({"system_code": system_code, "step": 4},
+                                              {"$set": {"visible_in_site": visible_in_site}})
+            if result.modified_count or result.matched_count:
+                return {"message": "product visibility updated successfully",
+                        "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}
+            return {"message": "product visibility update failed",
+                    "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
+
+    @staticmethod
+    def get_product_by_system_code(system_code, lang):
+        with MongoConnection() as mongo:
+            result = mongo.product.find_one({'system_code': system_code, "visible_in_site": True}, {"_id": 0})
+            if result:
+
+                attributes_data = list(mongo.attributes_collection.find(
+                    {}, {
+                        "_id": 0,
+                        "name": 1,
+                        "ecommerce_use_in_filter": 1,
+                        "ecommerce_use_in_search": 1,
+                        "editable_in_ecommerce": 1,
+                        "editable_in_portal": 1,
+                        "label": 1,
+                        "portal_use_in_filter": 1,
+                        "portal_use_in_search": 1,
+                        "show_in_ecommerce": 1,
+                        "show_in_portal": 1,
+                    }
+                ))
+
+                attributes_list = list()
+
+                for key, value in result.get("attributes", {}).items():
+                    stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
+                    stored_data['value'] = value
+                    attributes_list.append(stored_data)
+
+                result['attributes'] = attributes_list
+
+                kowsar_data = mongo.new_kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+                result.update({
+                    "routes": {
+                        "route": result.get('main_category'),
+                        "label": kowsar_data.get('main_category_label'),
+                        "system_code": system_code[:2],
+                        "child": {
+                            "route": result.get('sub_category'),
+                            "label": kowsar_data.get('sub_category_label'),
+                            "system_code": system_code[:6],
+                            "child": {
+                                "route": result.get('brand'),
+                                "label": kowsar_data.get('brand_label'),
+                                "system_code": system_code[:9]
+                            }
+                        }
+                    }
+                })
+
+                return result
+            return None
 
     def create(self):
         with MongoConnection() as mongo:
@@ -137,14 +202,69 @@ class Product:
             return False
 
     @staticmethod
-    def get_product_list_back_office():
+    def get_product_list_back_office(brands, warehouses, price_from, price_to, sellers, colors,
+                                     quantity_from, quantity_to, date_from, date_to, guarantees, steps,
+                                     visible_in_site, approved, available, page, per_page, lang):
         with MongoConnection() as mongo:
-            brands = mongo.product.distinct('brand')
-            colors = mongo.product.distinct('color')
-            sellers = mongo.product.distinct('seller')
-            guaranties = mongo.product.distinct('guaranty')
-            steps = mongo.product.distinct('step')
-            warehouses_list = list()
+            result = mongo.product.aggregate([
+                {
+                    '$unset': [
+                        '_id'
+                    ]
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 16
+                            ]
+                        },
+                        'name': {
+                            '$first': '$name'
+                        },
+                        'products': {
+                            '$push': '$$ROOT'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'products': 1,
+                        'name': 1,
+                        'system_code': '$_id'
+                    }
+                }
+            ])
+            distinct_aggr = mongo.product.aggregate([
+                {
+                    '$group': {
+                        '_id': None,
+                        'brands': {
+                            '$addToSet': '$brand'
+                        },
+                        'sellers': {
+                            '$addToSet': '$seller'
+                        },
+                        'colors': {
+                            '$addToSet': '$color'
+                        },
+                        'guaranties': {
+                            '$addToSet': '$guaranty'
+                        },
+                        'steps': {
+                            '$addToSet': '$step'
+                        }
+                    }
+                }
+            ]).next()
+            brands = distinct_aggr.get("brands", [])
+            sellers = distinct_aggr.get("sellers", [])
+            colors = distinct_aggr.get("colors", [])
+            guaranties = distinct_aggr.get("guaranties", [])
+            steps = distinct_aggr.get("steps", [])
+            warehouses_list = list(mongo.warehouses_collection.find({"isActive": True}, {"_id": 0,
+                                                                                         "storage_id": "$warehouse_id",
+                                                                                         "storage_label": "$warehouse_name",
+                                                                                         }))
             filters = [
                 {
                     "name": "brands",
@@ -213,34 +333,6 @@ class Product:
                     "options": steps
                 }
             ]
-            result = mongo.product.aggregate([
-                {
-                    '$unset': [
-                        '_id'
-                    ]
-                }, {
-                    '$group': {
-                        '_id': {
-                            '$substr': [
-                                '$system_code', 0, 16
-                            ]
-                        },
-                        'name': {
-                            '$first': '$name'
-                        },
-                        'products': {
-                            '$push': '$$ROOT'
-                        }
-                    }
-                }, {
-                    '$project': {
-                        '_id': 0,
-                        'products': 1,
-                        'name': 1,
-                        'system_code': '$_id'
-                    }
-                }
-            ])
             if result:
                 return {"filters": filters, "products": list(result)}
             return None

@@ -264,14 +264,14 @@ class KowsarGetter:
                 label = "configs"
                 regex = '^' + system_code + ".{3}$"
             elif len(system_code) == 16:
-                products = list(client.new_kowsar_collection.aggregate([
+                products = list(client.kowsar_collection.aggregate([
                     {"$match": {'system_code': {'$regex': "^" + system_code + ".{9}$"}}},
                     {"$project": {"_id": 0}}
                 ]))
                 return products
             else:
                 return None
-            products = list(client.new_kowsar_collection.aggregate([
+            products = list(client.kowsar_collection.aggregate([
                 {"$match": {'system_code': {'$regex': regex}}},
                 {"$project": {"_id": 0, "system_code": 1, "label": f"${label}"}}
             ]))
@@ -283,7 +283,7 @@ class KowsarGetter:
         return name or config of the system_code
         """
         with MongoConnection() as client:
-            data = client.new_kowsar_collection.find_one({'system_code': system_code}, {"_id": 0})
+            data = client.kowsar_collection.find_one({'system_code': system_code}, {"_id": 0})
             return data
 
     @exception_handler

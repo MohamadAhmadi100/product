@@ -106,13 +106,29 @@ def update_quantity(system_code: str, customer_type: str, storage_id: str, quant
     return {"success": False, "status_code": 404, "error": "quantity not found"}
 
 
-def get_product_list_back_office() -> dict:
+def get_product_list_back_office(brands: list, warehouses: list, price_from: int, price_to: int, sellers: list,
+                                 colors: list, quantity_from: int, quantity_to: int, date_from: str, date_to: str,
+                                 guarantees: list, steps: list, visible_in_site: bool, approved: bool, available: bool,
+                                 page: int, per_page: int, lang: str) -> dict:
     """
     """
-    result = Product.get_product_list_back_office()
+    result = Product.get_product_list_back_office(brands, warehouses, price_from, price_to, sellers, colors,
+                                                  quantity_from, quantity_to, date_from, date_to, guarantees, steps,
+                                                  visible_in_site, approved, available, page, per_page, lang)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}
+
+
+def edit_product(system_code: str, item: dict) -> dict:
+    """
+    """
+    if Product.system_code_exists(system_code):
+        result = Product.edit_product(system_code, item)
+        return {"success": True, "message": result, "status_code": 200}
+
+    return {"success": False, "error": {"message": "product not found",
+                                        "label": "محصول مورد نظر یافت نشد"}, "status_code": 404}
 
 
 def get_product_by_system_code(system_code: str, lang: str) -> dict:
@@ -179,24 +195,6 @@ def get_category_list(available_quantities: dict):
 #     if result:
 #         return {"success": True, "message": result, "status_code": 200}
 #     return {"success": False, "error": "products not found", "status_code": 404}
-
-
-def edit_product(system_code: str, item: dict) -> dict:
-    """
-    """
-    result = None
-    if len(system_code) == 11:
-        result = CreateParent.edit_product(system_code, item)
-    elif len(system_code) == 12:
-        result = CreateChild.edit_product(system_code, item)
-    else:
-        return {"success": False, "error": "system code is not valid", "status_code": 400}
-
-    if result:
-        return {"success": True, "message": {"message": "product visibility updated successfully",
-                                             "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}, "status_code": 200}
-    return {"success": False, "error": {"message": "product visibility update failed",
-                                        "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}, "status_code": 417}
 
 
 def step_up_product(system_code: str):

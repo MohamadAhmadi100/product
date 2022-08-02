@@ -20,12 +20,10 @@ class MongoConnection:
                                           username=settings.MONGO_USER,
                                           password=settings.MONGO_PASS) if not self.client else self.client
         self.db = self.client['db-product']
-        self.collection = self.db['product']
-        self.product = self.db['new_product']
+        self.product = self.db['product']
         self.archive = self.db['archive']
         self.kowsar_collection = self.db['kowsar']
         self.kowsar_config = self.db['kowsar_config']
-        self.new_kowsar_collection = self.db['new_kowsar']
         self.parent_col = self.db['kowsar-parent']
         self.custom_category = self.db['custom-category']
         self.attributes_collection = self.db['attributes']

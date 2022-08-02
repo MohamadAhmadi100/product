@@ -37,7 +37,7 @@ class KowsarPart:
 
     def is_unique(self):
         with MongoConnection() as mongo:
-            result = mongo.new_kowsar_collection.find_one({"system_code": self.system_code})
+            result = mongo.kowsar_collection.find_one({"system_code": self.system_code})
         if result:
             return False
         return True
@@ -57,7 +57,7 @@ class KowsarPart:
     def create_in_db(self, parent_data):
         with MongoConnection() as mongo:
             del parent_data["system_code"]
-            result = mongo.new_kowsar_collection.insert_one(
+            result = mongo.kowsar_collection.insert_one(
                 {
                     "system_code": self.system_code,
                     **parent_data,
@@ -78,7 +78,7 @@ class KowsarGroup:
 
     def is_unique(self):
         with MongoConnection() as mongo:
-            result = mongo.new_kowsar_collection.find_one({"system_code": self.system_code})
+            result = mongo.kowsar_collection.find_one({"system_code": self.system_code})
             if result:
                 return False
             return True
@@ -164,7 +164,7 @@ class KowsarGroup:
 
     def create_in_db(self, data):
         with MongoConnection() as mongo:
-            result = mongo.new_kowsar_collection.insert_one(data)
+            result = mongo.kowsar_collection.insert_one(data)
         if result.inserted_id:
             return True
         return False
