@@ -15,5 +15,7 @@ def cardex(**kwargs):
         "oldReserve": kwargs.get("oldReserve"),
         "newRreserve": kwargs.get("newRreserve"),
         "editDate": str(jdatetime.datetime.now()).split(".")[0],
+        "imeis": kwargs.get("imeis"),
+        "staffUser": kwargs.get("user"),
         "biFlag": False
     }
