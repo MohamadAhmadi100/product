@@ -43,7 +43,7 @@ class MongoConnection:
         self.stocks_collection = self.master_server["msm"]["stocks"]
         self.stocks_log_collection = self.master_server["msm"]["stock_logs"]
         self.warehouses_collection = self.master_server["msm"]["warehouse"]
-        self.master_product_collection = self.master_server["warehouse"]["product"]
+        self.master_product_collection = self.master_server["warehouse"]["products"]
 
         self.master_server = pymongo.MongoClient(
             "200.100.100.220", 27017, username='root', password='qweasdQWEASD'
