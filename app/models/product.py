@@ -491,10 +491,10 @@ class Product:
                     for attr in db_attribute:
                         attribute = attr.get("item")
                         for stored_attrs in result.get("attributes", []):
-                            if attribute.get("name") == stored_attrs.get("name"):
-                                attribute["value"] = stored_attrs.get("value")
+                            if attribute.get("name") == stored_attrs:
+                                attribute["value"] = result.get("attributes", {}).get(stored_attrs)
                                 break
-                        out_data['attributes'].append(attr.get("item"))
+                        out_data['attributes'].append(attribute)
                     return out_data, True
                 return "attribute not found", False
             return "product not found", False
