@@ -2,6 +2,7 @@ import jdatetime
 
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.warehouses import find_warehouse
+from app.reserve_quantity.imeis import articles
 
 
 class AddRemoveReserve:
@@ -191,7 +192,10 @@ class addRemoveQuantity:
                     {"systemCode": str(system_code), "stockId": str(storage_id),
                      "message": "product not found in add qty",
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
-                return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد", "status_code": 404}
+                return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد",
+                        "status_code": 404}
+
+
 
     @staticmethod
     def remove_quantity(system_code, storage_id, count, customer_type):
@@ -209,7 +213,7 @@ class addRemoveQuantity:
                             cardex_data['old_reserve'] = storage_dict["reserved"]
                             storage_dict["reserved"] -= count
                             cardex_data['new_reserve'] = storage_dict["reserved"]
-                            if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0 :
+                            if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0:
                                 return {"success": False, "error": "تعداد از موجودی بیشتر است",
                                         "status_code": 404}
                             client.product.update_one({"system_code": system_code}, {"$set": products})
@@ -222,3 +226,22 @@ class addRemoveQuantity:
                      "message": "product not found in remove qty",
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                 return {"success": False, "error": "سیستم کد مورد نظر وجود ندارد", "status_code": 404}
+#
+#
+# addRemoveQuantity.add_msm_stocks(
+#     {
+#         "system_code": "2000010010001001001001017",
+#         "name": "Samsung A01 Core (1GB 16GB 4G) Vietnam | ASD | Aawaat [Red]",
+#         "brand": "Samsung",
+#         "model": "A01 Core",
+#         "color": "Red",
+#         "seller": "ASD",
+#         "guaranty": "Aawaat",
+#         "count": 2,
+#         "unit_price": 1000000,
+#         "sell_price": 1200000,
+#         "description": "string",
+#         "imeis": ["2", "3"],
+#         "is_confirm": True
+#     }
+#     , "2", "محسن")

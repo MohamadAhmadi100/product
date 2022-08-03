@@ -1,5 +1,7 @@
 import jdatetime
 
+from app.helpers.mongo_connection import MongoConnection
+
 
 def cardex(**kwargs):
     return {
@@ -19,3 +21,4 @@ def cardex(**kwargs):
         "staffUser": kwargs.get("user"),
         "biFlag": False
     }
+

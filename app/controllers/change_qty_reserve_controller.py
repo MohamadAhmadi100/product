@@ -1,8 +1,7 @@
-from app.helpers.mongo_connection import MongoConnection
-from app.helpers.warehouses import warehouses, find_warehouse
+from app.helpers.warehouses import warehouses
 from app.reserve_quantity.add_remove_model import addRemoveQuantity
 from app.reserve_quantity.cardex import cardex
-from app.reserve_quantity.imeis import check_buying_imeis, add_imeis, add_product_details
+from app.reserve_quantity.imeis import *
 from app.reserve_quantity.route_actions import Reserve
 
 """
@@ -127,31 +126,36 @@ warehouse
 def warehouse_buying(product, dst_warehouse, referral_number, supplier_name, form_date, customer_type):
     check = check_buying_imeis(product)
     if check.get("success"):
-        product_result = addRemoveQuantity.add_quantity(product['system_code'], dst_warehouse, product['count'],
-                                                        customer_type, product['sell_price'])
-        if product_result.get("success"):
-            imei = add_imeis(product, dst_warehouse)
-            archive = add_product_details(product, referral_number, supplier_name, form_date, dst_warehouse)
-            if imei and archive:
-                cardex_detail = cardex(
-                    storage_id=dst_warehouse,
-                    system_code=product['system_code'],
-                    order_number=referral_number,
-                    qty=product['count'],
-                    sku=product['name'],
-                    type="buying form",
-                    imeis=product['imeis'],
-                    oldQuantity=product_result['cardex_data'].get("old_quantity"),
-                    newQuantity=product_result['cardex_data'].get("new_quantity"),
-                    oldReserve=product_result['cardex_data'].get('reserve'),
-                    newRreserve=product_result['cardex_data'].get('reserve')
-                )
-                with MongoConnection() as client:
-                    client.cardex_collection.insert_one(cardex_detail)
-                product_result.pop("cardex_data")
+        master_product = add_warehouse_product(product, referral_number, supplier_name, form_date, dst_warehouse)
+        if master_product.get("success"):
+            product_result = addRemoveQuantity.add_quantity(product['system_code'], dst_warehouse, product['count'],
+                                                            customer_type, product['sell_price'])
+            if product_result.get("success"):
+                add_msm_stocks(product, dst_warehouse, supplier_name)
+                imei = add_imeis(product, dst_warehouse)
+                archive = add_product_details(product, referral_number, supplier_name, form_date, dst_warehouse)
+                if imei and archive:
+                    cardex_detail = cardex(
+                        storage_id=dst_warehouse,
+                        system_code=product['system_code'],
+                        order_number=referral_number,
+                        qty=product['count'],
+                        sku=product['name'],
+                        type="buying form",
+                        imeis=product['imeis'],
+                        oldQuantity=product_result['cardex_data'].get("old_quantity"),
+                        newQuantity=product_result['cardex_data'].get("new_quantity"),
+                        oldReserve=product_result['cardex_data'].get('reserve'),
+                        newRreserve=product_result['cardex_data'].get('reserve')
+                    )
+                    with MongoConnection() as client:
+                        client.cardex_collection.insert_one(cardex_detail)
+                    product_result.pop("cardex_data")
+                    return product_result
+            else:
                 return product_result
         else:
-            return product_result
+            return master_product
     else:
         return check
 
