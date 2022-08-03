@@ -141,8 +141,8 @@ def get_product_by_system_code(system_code: str, lang: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_product_list_by_system_code(system_code, page, per_page):
-    result = Product.get_product_list_by_system_code(system_code, page, per_page)
+def get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type):
+    result = Product.get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
@@ -167,17 +167,6 @@ def delete_product(system_code: str) -> dict:
                 return {"success": True, "message": message, "status_code": 200}
             return {"success": False, "error": message, "status_code": 400}
     return {"success": False, "error": "system code not found", "status_code": 404}
-
-
-def get_product_list_by_system_code(system_code: str, page: int, per_page: int, available_quantities: dict,
-                                    user_allowed_storages: list):
-    """
-    """
-    result = Product.get_product_list_by_system_code(system_code, page, per_page, available_quantities,
-                                                     user_allowed_storages)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "products not found", "status_code": 404}
 
 
 def get_category_list(available_quantities: dict):
