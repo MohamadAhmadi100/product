@@ -32,6 +32,8 @@ class MongoConnection:
         reserves
         """
         self.warehouses = self.db['warehouse']
+        self.imeis = self.db['imeis']
+        self.product_archive = self.db['archive']
         self.cardex_collection = self.db['cardex']
         self.reserve_log_collection = self.db['reserve_log']
 
