@@ -191,7 +191,7 @@ class addRemoveQuantity:
                     {"systemCode": str(system_code), "stockId": str(storage_id),
                      "message": "product not found in add qty",
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
-                return {"success": False, "error": "سیستم کد مورد نظر وجود ندارد", "status_code": 404}
+                return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد", "status_code": 404}
 
     @staticmethod
     def remove_quantity(system_code, storage_id, count, customer_type):
