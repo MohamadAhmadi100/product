@@ -151,7 +151,7 @@ def add_warehouse_product(product, referral_number, supplier, form_date, dst_war
         count = client.master_product_collection.count_documents(
             {"refferalNumber": referral_number, "partNumber": product['system_code']})
         if count > 0:
-            return {"success": False, 'error': "فرم خرید قبلا ثبت شده."}
+            return {"success": False, 'error': "فرم خرید قبلا ثبت شده.","status_code":400}
         client.master_product_collection.insert_one({
             "refferalNumber": referral_number,
             "partNumber": product['system_code'],
