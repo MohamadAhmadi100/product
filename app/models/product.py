@@ -44,7 +44,8 @@ class Product:
                     '$match': {
                         'system_code': {
                             '$regex': f'^{system_code}'
-                        }
+                        },
+                        "visible_in_site": True
                     }
                 }, {
                     '$project': {
@@ -96,8 +97,7 @@ class Product:
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        'root_obj.visible_in_site': True
+                        }
                     }
                 }, {
                     '$group': {
@@ -167,7 +167,7 @@ class Product:
                 }, {
                     '$project': {
                         'system_code': 1,
-                        'storage': '$zz.k',
+                        'storage_id': '$zz.k',
                         'customer_type': 1,
                         'qty': {
                             '$subtract': [
@@ -292,7 +292,7 @@ class Product:
                 }
             ]
             if user_allowed_storages:
-                 pipe_lines[6]["$match"]['storage_id'] = {"$in": user_allowed_storages}
+                pipe_lines[6]["$match"]['storage_id'] = {"$in": user_allowed_storages}
             result = mongo.product.aggregate(pipe_lines + [{
                 '$skip': skips
             }, {
@@ -301,7 +301,7 @@ class Product:
             count_aggregate = mongo.product.aggregate(pipe_lines + [{
                 '$count': 'count'
             }])
-            count_aggregate = count_aggregate.next() if count_aggregate.alive else {}
+            products_count = count_aggregate.next().get("count", 0) if count_aggregate.alive else 0
 
             product_list = list()
             for res in result:
@@ -326,8 +326,6 @@ class Product:
                 del res['prices']
 
                 product_list.append(res)
-
-            products_count = count_aggregate.get("count") if count_aggregate else 0
 
             return {"brands": brands_list, "products": product_list, "products_count": products_count,
                     "storages_list": storages_labels}
