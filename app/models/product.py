@@ -24,27 +24,15 @@ class Product:
             return True if result else False
 
     @staticmethod
-    def get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type):
+    def get_product_page(system_code, user_allowed_storages, customer_type, lang):
         with MongoConnection() as mongo:
-            def db_data_getter(query):
-                result = mongo.kowsar_collection.find_one(query, {"_id": 0})
-                return result if result else {}
-
-            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
-            storages_labels = list()
-            for allowed_storage in user_allowed_storages:
-                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
-                storages_labels.append({
-                    "storage_id": allowed_storage,
-                    "label": obj[0]['warehouse_name'] if obj else None
-                })
-            skips = per_page * (page - 1)
-            brands_pipe_line = [
+            result = mongo.product.aggregate([
                 {
                     '$match': {
                         'system_code': {
                             '$regex': f'^{system_code}'
-                        }
+                        },
+                        'visible_in_site': True
                     }
                 }, {
                     '$project': {
@@ -97,7 +85,258 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'root_obj.visible_in_site': True
+                        "storage_id": {"$in": user_allowed_storages}
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$_id',
+                        'item': {
+                            '$addToSet': '$root_obj'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'item': {
+                            '$first': '$item'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'item': {
+                            'system_code': 1,
+                            'attributes': 1,
+                            'color': 1,
+                            'guaranty': 1,
+                            'name': 1,
+                            'seller': 1
+                        },
+                        'warehouse_details': {
+                            '$filter': {
+                                'input': {
+                                    '$objectToArray': f'$item.warehouse_details.{customer_type}.storages'
+                                },
+                                'as': 'storage_item',
+                                'cond': {
+                                    '$in': [
+                                        '$$storage_item.k', user_allowed_storages
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    '$unwind': '$warehouse_details'
+                }, {
+                    '$project': {
+                        'item': 1,
+                        'warehouse_details.v': {
+                            'storage_id': 1,
+                            'regular': 1,
+                            'special': 1,
+                            'special_from_date': 1,
+                            'special_to_date': 1,
+                            'min_qty': 1,
+                            'max_qty': {
+                                '$cond': [
+                                    {
+                                        '$gt': [
+                                            '$warehouse_details.v.quantity', '$warehouse_details.v.max_qty'
+                                        ]
+                                    }, '$warehouse_details.v.max_qty', '$warehouse_details.v.quantity'
+                                ]
+                            },
+                            'warehouse_state': 1,
+                            'warehouse_city': 1,
+                            'warehouse_state_id': 1,
+                            'warehouse_city_id': 1,
+                            'warehouse_label': 1
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$item.system_code',
+                        'item': {
+                            '$addToSet': '$item'
+                        },
+                        'a': {
+                            '$addToSet': '$warehouse_details.v'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'item': {
+                            '$first': '$item'
+                        },
+                        'a': 1
+                    }
+                }, {
+                    '$project': {
+                        'item': {
+                            'system_code': 1,
+                            'attributes': 1,
+                            'color': 1,
+                            'guaranty': 1,
+                            'name': 1,
+                            'seller': 1,
+                            'warehouse_details': '$a'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 16
+                            ]
+                        },
+                        'products': {
+                            '$addToSet': '$item'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'products': 1,
+                        'name': {
+                            '$first': '$products'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'name': '$name.name',
+                        'products': 1
+                    }
+                }
+            ])
+            product_result = result.next() if result.alive else {}
+            if product_result:
+                product_result["name"] = product_result['name'].split(" | ")[0]
+
+                attributes_data = list(mongo.attributes_collection.find(
+                    {}, {
+                        "_id": 0,
+                        "name": 1,
+                        "ecommerce_use_in_filter": 1,
+                        "ecommerce_use_in_search": 1,
+                        "editable_in_ecommerce": 1,
+                        "editable_in_portal": 1,
+                        "label": 1,
+                        "portal_use_in_filter": 1,
+                        "portal_use_in_search": 1,
+                        "show_in_ecommerce": 1,
+                        "show_in_portal": 1,
+                    }
+                ))
+                for product in product_result['products']:
+                    attributes_list = list()
+
+                    for key, value in product.get("attributes", {}).items():
+                        stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
+                        stored_data['value'] = value
+                        attributes_list.append(stored_data)
+
+                    product['attributes'] = attributes_list
+                    product['color'] = {"value": product['color'], "label": product['color']}
+                    product['guaranty'] = {"value": product['guaranty'], "label": product['guaranty']}
+                    product['seller'] = {"value": product['seller'], "label": product['seller']}
+
+                kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+                product_result.update({
+                    "routes": {
+                        "route": kowsar_data.get('main_category'),
+                        "label": kowsar_data.get('main_category_label'),
+                        "system_code": system_code[:2],
+                        "child": {
+                            "route": kowsar_data.get('sub_category'),
+                            "label": kowsar_data.get('sub_category_label'),
+                            "system_code": system_code[:6],
+                            "child": {
+                                "route": kowsar_data.get('brand'),
+                                "label": kowsar_data.get('brand_label'),
+                                "system_code": system_code[:9]
+                            }
+                        }
+                    }
+                })
+
+                return product_result
+            return False
+
+    @staticmethod
+    def get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type):
+        with MongoConnection() as mongo:
+            def db_data_getter(query):
+                result = mongo.kowsar_collection.find_one(query, {"_id": 0})
+                return result if result else {}
+
+            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
+            storages_labels = list()
+            for allowed_storage in user_allowed_storages:
+                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
+                storages_labels.append({
+                    "storage_id": allowed_storage,
+                    "label": obj[0]['warehouse_name'] if obj else None
+                })
+            skips = per_page * (page - 1)
+            brands_pipe_line = [
+                {
+                    '$match': {
+                        'system_code': {
+                            '$regex': f'^{system_code[:6]}'
+                        },
+                        "visible_in_site": True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        }
                     }
                 }, {
                     '$group': {
@@ -112,7 +351,6 @@ class Product:
                         'item': {
                             '$first': '$item'
                         },
-                        'prices': 1
                     }
                 }, {
                     '$group': {
@@ -167,7 +405,7 @@ class Product:
                 }, {
                     '$project': {
                         'system_code': 1,
-                        'storage': '$zz.k',
+                        'storage_id': '$zz.k',
                         'customer_type': 1,
                         'qty': {
                             '$subtract': [
@@ -292,7 +530,7 @@ class Product:
                 }
             ]
             if user_allowed_storages:
-                 pipe_lines[6]["$match"]['storage_id'] = {"$in": user_allowed_storages}
+                pipe_lines[6]["$match"]['storage_id'] = {"$in": user_allowed_storages}
             result = mongo.product.aggregate(pipe_lines + [{
                 '$skip': skips
             }, {
@@ -301,12 +539,13 @@ class Product:
             count_aggregate = mongo.product.aggregate(pipe_lines + [{
                 '$count': 'count'
             }])
-            count_aggregate = count_aggregate.next() if count_aggregate.alive else {}
+            products_count = count_aggregate.next().get("count", 0) if count_aggregate.alive else 0
 
             product_list = list()
             for res in result:
                 res['images'].remove(None)
                 res['image'] = res['images'][0] if res['images'] else None
+                res['name'] = res['name'].split(" | ")[0]
                 del res['images']
                 prices_list = list()
                 if user_allowed_storages:
@@ -326,8 +565,6 @@ class Product:
                 del res['prices']
 
                 product_list.append(res)
-
-            products_count = count_aggregate.get("count") if count_aggregate else 0
 
             return {"brands": brands_list, "products": product_list, "products_count": products_count,
                     "storages_list": storages_labels}
