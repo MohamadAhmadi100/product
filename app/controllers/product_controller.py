@@ -148,73 +148,49 @@ def get_product_list_by_system_code(system_code, page, per_page, user_allowed_st
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def delete_product(system_code: str) -> dict:
+def get_product_page(system_code: str, user_allowed_storages: list, customer_type: str, lang: str) -> dict:
     """
-    Delete a product by name in main collection in database.
+    Get a product by system_code in main collection in database.
     """
-    if len(system_code) == 11:
-        parent = CreateParent(system_code, None, None)
-        if not parent.system_code_is_unique():
-            message, success = parent.delete()
-            if success:
-                return {"success": True, "message": message, "status_code": 200}
-            return {"success": False, "error": message, "status_code": 400}
-    else:
-        child = CreateChild(system_code, None)
-        if not child.system_code_is_unique():
-            message, success = child.delete()
-            if success:
-                return {"success": True, "message": message, "status_code": 200}
-            return {"success": False, "error": message, "status_code": 400}
-    return {"success": False, "error": "system code not found", "status_code": 404}
-
-
-def get_category_list(available_quantities: dict):
-    """
-    """
-    result = Product.get_category_list(available_quantities)
+    result = Product.get_product_page(system_code, user_allowed_storages, customer_type, lang)
     if result:
         return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "categories not found", "status_code": 404}
+    return {"success": False, "error": "product not found", "status_code": 404}
 
-
-# def get_product_list_back_office(
-#         brands, sellers, colors,
-#         date, guarantees, steps, visible_in_site,
-#         approved, available, page, per_page, system_codes_list, lang
-# ):
+# def delete_product(system_code: str) -> dict:
+#     """
+#     Delete a product by name in main collection in database.
+#     """
+#     if len(system_code) == 11:
+#         parent = CreateParent(system_code, None, None)
+#         if not parent.system_code_is_unique():
+#             message, success = parent.delete()
+#             if success:
+#                 return {"success": True, "message": message, "status_code": 200}
+#             return {"success": False, "error": message, "status_code": 400}
+#     else:
+#         child = CreateChild(system_code, None)
+#         if not child.system_code_is_unique():
+#             message, success = child.delete()
+#             if success:
+#                 return {"success": True, "message": message, "status_code": 200}
+#             return {"success": False, "error": message, "status_code": 400}
+#     return {"success": False, "error": "system code not found", "status_code": 404}
+#
+#
+# def get_category_list(available_quantities: dict):
 #     """
 #     """
-#     result = Product.get_product_list_back_office(brands, sellers, colors, date,
-#                                                   guarantees, steps, visible_in_site, approved, available, page,
-#                                                   per_page, system_codes_list, lang)
+#     result = Product.get_category_list(available_quantities)
 #     if result:
 #         return {"success": True, "message": result, "status_code": 200}
-#     return {"success": False, "error": "products not found", "status_code": 404}
-
-
-def step_up_product(system_code: str):
-    """
-    """
-    result = Product.step_up_product(system_code)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "product not found", "status_code": 404}
-
-
-def get_product_child(system_code: str, lang: str):
-    """
-    """
-    result = Product.get_product_child(system_code, lang)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "product not found", "status_code": 404}
-
-
-def get_product_by_name(name: str, available_quantities: dict, user_allowed_storages):
-    """
-    """
-    result = Product.get_product_by_name(name, available_quantities, user_allowed_storages)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "product not found", "status_code": 404}
+#     return {"success": False, "error": "categories not found", "status_code": 404}
+#
+#
+# def get_product_by_name(name: str, available_quantities: dict, user_allowed_storages):
+#     """
+#     """
+#     result = Product.get_product_by_name(name, available_quantities, user_allowed_storages)
+#     if result:
+#         return {"success": True, "message": result, "status_code": 200}
+#     return {"success": False, "error": "product not found", "status_code": 404}
