@@ -4,6 +4,7 @@ from app.helpers.mongo_connection import MongoConnection
 from app.modules.kowsar_getter import KowsarGetter
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
+import jdatetime
 
 
 class Product:
@@ -132,10 +133,6 @@ class Product:
                         'item': 1,
                         'warehouse_details.v': {
                             'storage_id': 1,
-                            'regular': 1,
-                            'special': 1,
-                            'special_from_date': 1,
-                            'special_to_date': 1,
                             'min_qty': 1,
                             'max_qty': {
                                 '$cond': [
@@ -144,6 +141,26 @@ class Product:
                                             '$warehouse_details.v.quantity', '$warehouse_details.v.max_qty'
                                         ]
                                     }, '$warehouse_details.v.max_qty', '$warehouse_details.v.quantity'
+                                ]
+                            },
+                            'price': '$warehouse_details.v.regular',
+                            'special_price': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {
+                                                '$gt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$warehouse_details.v.special_from_date'
+                                                ]
+                                            }, {
+                                                '$lt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$warehouse_details.v.special_to_date'
+                                                ]
+                                            }
+                                        ]
+                                    }, '$warehouse_details.v.special', None
                                 ]
                             },
                             'warehouse_state': 1,
