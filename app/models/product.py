@@ -631,9 +631,9 @@ class Product:
                 result['brand'] = {"value": result['brand'], "label": result['brand']}
                 result['color'] = {"value": result['color'], "label": result['color']}
                 result['guaranty'] = {"value": result['guaranty'], "label": result['guaranty']}
-                result['mainCategory'] = {"value": result['mainCategory'], "label": result['mainCategory']}
+                result['main_category'] = {"value": result['main_category'], "label": result['main_category']}
                 result['seller'] = {"value": result['seller'], "label": result['seller']}
-                result['subCategory'] = {"value": result['subCategory'], "label": result['subCategory']}
+                result['sub_category'] = {"value": result['sub_category'], "label": result['sub_category']}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 result.update({
