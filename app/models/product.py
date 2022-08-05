@@ -1263,66 +1263,168 @@ class Product:
                                      visible_in_site, approved, available, page, per_page, lang):
         with MongoConnection() as mongo:
             skip = (page - 1) * per_page
-            result = mongo.product.aggregate([
+            pipe_lines = [
                 {
-                    '$unset': [
-                        '_id'
-                    ]
-                }, {
-                    '$group': {
-                        '_id': {
-                            '$substr': [
-                                '$system_code', 0, 16
-                            ]
-                        },
-                        'name': {
-                            '$first': '$name'
-                        },
-                        'products': {
-                            '$push': '$$ROOT'
-                        }
+                    '$facet': {
+                        'list': [
+                            {
+                                '$match': {}
+                            }, {
+                                '$project': {
+                                    'system_code': 1,
+                                    'keys': {
+                                        '$objectToArray': '$warehouse_details'
+                                    },
+                                    'root_obj': '$$ROOT'
+                                }
+                            }, {
+                                '$unwind': '$keys'
+                            }, {
+                                '$project': {
+                                    'system_code': 1,
+                                    'customer_type': '$keys.k',
+                                    'zz': {
+                                        '$objectToArray': '$keys.v.storages'
+                                    },
+                                    'root_obj': 1
+                                }
+                            }, {
+                                '$unwind': '$zz'
+                            }, {
+                                '$project': {
+                                    'system_code': 1,
+                                    'storage_id': '$zz.k',
+                                    'customer_type': 1,
+                                    'quantity': '$zz.v.quantity',
+                                    'price': {
+                                        'storage_id': '$zz.k',
+                                        'regular': '$zz.v.regular',
+                                        'special': '$zz.v.special'
+                                    },
+                                    'root_obj': 1
+                                }
+                            }, {
+                                '$match': {}
+                            }, {
+                                '$group': {
+                                    '_id': '$_id',
+                                    'item': {
+                                        '$addToSet': '$root_obj'
+                                    }
+                                }
+                            }, {
+                                '$project': {
+                                    '_id': 0,
+                                    'item': {
+                                        '$first': '$item'
+                                    }
+                                }
+                            }, {
+                                '$group': {
+                                    '_id': {
+                                        '$substr': [
+                                            '$item.system_code', 0, 16
+                                        ]
+                                    },
+                                    'name': {
+                                        '$first': '$item.name'
+                                    },
+                                    'products': {
+                                        '$push': '$item'
+                                    }
+                                }
+                            }, {
+                                '$project': {
+                                    '_id': 0,
+                                    'products': 1,
+                                    'name': {
+                                        '$first': {
+                                            '$split': [
+                                                '$name', ' | '
+                                            ]
+                                        }
+                                    },
+                                    'system_code': '$_id'
+                                }
+                            }, {
+                                '$project': {
+                                    'products._id': 0
+                                }
+                            }, {
+                                '$skip': skip
+                            }, {
+                                '$limit': per_page
+                            }
+                        ],
+                        'filters': [
+                            {
+                                '$group': {
+                                    '_id': None,
+                                    'brands': {
+                                        '$addToSet': '$brand'
+                                    },
+                                    'sellers': {
+                                        '$addToSet': '$seller'
+                                    },
+                                    'colors': {
+                                        '$addToSet': '$color'
+                                    },
+                                    'guaranties': {
+                                        '$addToSet': '$guaranty'
+                                    },
+                                    'steps': {
+                                        '$addToSet': '$step'
+                                    }
+                                }
+                            }
+                        ]
                     }
-                }, {
-                    '$project': {
-                        '_id': 0,
-                        'products': 1,
-                        'name': 1,
-                        'system_code': '$_id'
-                    }
-                }, {
-                    "$skip": skip
-                },
-                {
-                    "$limit": per_page
                 }
-            ])
-            distinct_aggr = mongo.product.aggregate([
-                {
-                    '$group': {
-                        '_id': None,
-                        'brands': {
-                            '$addToSet': '$brand'
-                        },
-                        'sellers': {
-                            '$addToSet': '$seller'
-                        },
-                        'colors': {
-                            '$addToSet': '$color'
-                        },
-                        'guaranties': {
-                            '$addToSet': '$guaranty'
-                        },
-                        'steps': {
-                            '$addToSet': '$step'
-                        }
-                    }
-                }
-            ]).next()
-            brands = distinct_aggr.get("brands", [])
-            sellers = distinct_aggr.get("sellers", [])
-            colors = distinct_aggr.get("colors", [])
-            guaranties = distinct_aggr.get("guaranties", [])
-            steps = distinct_aggr.get("steps", [])
+            ]
+            if brands:
+                pipe_lines[0]['$facet']['list'][0]['$match']['brand'] = {'$in': brands}
+            if sellers:
+                pipe_lines[0]['$facet']['list'][0]['$match']['seller'] = {'$in': sellers}
+            if colors:
+                pipe_lines[0]['$facet']['list'][0]['$match']['color'] = {'$in': colors}
+            if guarantees:
+                pipe_lines[0]['$facet']['list'][0]['$match']['guaranty'] = {'$in': guarantees}
+            if steps:
+                pipe_lines[0]['$facet']['list'][0]['$match']['step'] = {'$in': steps}
+            if visible_in_site:
+                pipe_lines[0]['$facet']['list'][0]['$match']['visible_in_site'] = visible_in_site
+            if date_from or date_to:
+                pipe_lines[0]['$facet']['list'][0]['$match']['date'] = {}
+                if date_to:
+                    pipe_lines[0]['$facet']['list'][0]['$match']['date']['$lte'] = date_to
+                if date_from:
+                    pipe_lines[0]['$facet']['list'][0]['$match']['date']['$gte'] = date_from
+            if price_from or price_to:
+                pipe_lines[0]['$facet']['list'][6]['$match']['price.regular'] = {}
+                if price_to:
+                    pipe_lines[0]['$facet']['list'][6]['$match']['price.regular']['$lte'] = price_to
+                if price_from:
+                    pipe_lines[0]['$facet']['list'][6]['$match']['price.regular']['$gte'] = price_from
+            if quantity_to or quantity_from:
+                pipe_lines[0]['$facet']['list'][6]['$match']['quantity'] = {}
+                if quantity_to:
+                    pipe_lines[0]['$facet']['list'][6]['$match']['quantity']['$lte'] = quantity_to
+                if quantity_from:
+                    pipe_lines[0]['$facet']['list'][6]['$match']['quantity']['$gte'] = quantity_from
+            if warehouses:
+                pipe_lines[0]['$facet']['list'][6]['$match']['storage_id'] = {'$in': warehouses}
+
+            result = mongo.product.aggregate(pipe_lines)
+
+            result = result.next() if result else {}
+
+            brands = result.get("filters", [{}])[0].get("brands", [])
+            sellers = result.get("filters", [{}])[0].get("sellers", [])
+            colors = result.get("filters", [{}])[0].get("colors", [])
+            guaranties = result.get("filters", [{}])[0].get("guaranties", [])
+            steps = result.get("filters", [{}])[0].get("steps", [])
+
+            products_list = result.get("list", [])
             warehouses_list = list(mongo.warehouses_collection.find({"isActive": True}, {"_id": 0,
                                                                                          "storage_id": "$warehouse_id",
                                                                                          "storage_label": "$warehouse_name",
@@ -1396,7 +1498,7 @@ class Product:
                 }
             ]
             if result:
-                return {"filters": filters, "products": list(result)}
+                return {"filters": filters, "products": products_list}
             return None
 
 
