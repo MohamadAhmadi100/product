@@ -20,7 +20,7 @@ class AddRemoveReserve:
                                 return {"success": True,
                                         "query": {"system_code": system_code},
                                         "replace_data": products,
-                                        "storage_data": storage_dict}
+                                        "product": storage_dict}
                             else:
                                 client.reserve_log_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
@@ -226,22 +226,3 @@ class addRemoveQuantity:
                      "message": "product not found in remove qty",
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                 return {"success": False, "error": "سیستم کد مورد نظر وجود ندارد", "status_code": 404}
-#
-#
-# addRemoveQuantity.add_msm_stocks(
-#     {
-#         "system_code": "2000010010001001001001017",
-#         "name": "Samsung A01 Core (1GB 16GB 4G) Vietnam | ASD | Aawaat [Red]",
-#         "brand": "Samsung",
-#         "model": "A01 Core",
-#         "color": "Red",
-#         "seller": "ASD",
-#         "guaranty": "Aawaat",
-#         "count": 2,
-#         "unit_price": 1000000,
-#         "sell_price": 1200000,
-#         "description": "string",
-#         "imeis": ["2", "3"],
-#         "is_confirm": True
-#     }
-#     , "2", "محسن")
