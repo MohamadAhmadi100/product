@@ -45,11 +45,6 @@ class MongoConnection:
         self.warehouses_collection = self.master_server["msm"]["warehouse"]
         self.master_product_collection = self.master_server["warehouse"]["products"]
 
-        self.master_server = pymongo.MongoClient(
-            "200.100.100.220", 27017, username='root', password='qweasdQWEASD'
-        )
-        self.warehouses_collection = self.master_server["msm"]["warehouse"]
-
     def __enter__(self):
         return self
 

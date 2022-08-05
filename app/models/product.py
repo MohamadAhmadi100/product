@@ -1,3 +1,4 @@
+import re
 from typing import Union
 
 from app.helpers.mongo_connection import MongoConnection
@@ -23,6 +24,202 @@ class Product:
         with MongoConnection() as mongo:
             result = mongo.product.find_one({"system_code": system_code})
             return True if result else False
+
+    @staticmethod
+    def get_product_by_name(name, user_allowed_storages, customer_type):
+        with MongoConnection() as mongo:
+            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
+            storages_labels = list()
+            for allowed_storage in user_allowed_storages:
+                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
+                storages_labels.append({
+                    "storage_id": allowed_storage,
+                    "label": obj[0]['warehouse_name'] if obj else None
+                })
+            pipe_lines = [
+                {
+                    '$match': {
+                        'name': {
+                            '$regex': re.compile(rf"{name}(?i)")
+                        },
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'price': {
+                            'storage_id': '$zz.k',
+                            'regular': '$zz.v.regular',
+                            'special': '$zz.v.special'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        },
+                        "storage_id": {"$in": user_allowed_storages}
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$_id',
+                        'item': {
+                            '$addToSet': '$root_obj'
+                        },
+                        'prices': {
+                            '$addToSet': '$price'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'item': {
+                            '$first': '$item'
+                        },
+                        'prices': 1
+                    }
+                }, {
+                    '$project': {
+                        'system_code': '$item.system_code',
+                        'name': '$item.name',
+                        'color': '$item.color',
+                        'attributes': '$item.attributes',
+                        'prices': 1
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 16
+                            ]
+                        },
+                        'name': {
+                            '$first': '$name'
+                        },
+                        'products': {
+                            '$push': '$$ROOT'
+                        },
+                        'prices': {
+                            '$push': {
+                                'system_code': '$system_code',
+                                'prices': '$prices'
+                            }
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'products': 1,
+                        'name': 1,
+                        'system_code': '$_id',
+                        'color': {
+                            '$setIntersection': {
+                                '$reduce': {
+                                    'input': '$products',
+                                    'initialValue': [],
+                                    'in': {
+                                        '$concatArrays': [
+                                            '$$value', [
+                                                '$$this.color'
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        'images': {
+                            '$setIntersection': {
+                                '$reduce': {
+                                    'input': '$products',
+                                    'initialValue': [],
+                                    'in': {
+                                        '$concatArrays': [
+                                            '$$value', [
+                                                '$$this.attributes.mainImage-pd'
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        'prices': 1
+                    }
+                }, {
+                    '$project': {
+                        'products': 0
+                    }
+                }
+            ]
+            result = mongo.product.aggregate(pipe_lines + [{"$limit": 50}])
+
+            product_list = list()
+            for res in result:
+                res['images'].remove(None)
+                res['image'] = res['images'][0] if res['images'] else None
+                res['name'] = res['name'].split(" | ")[0]
+                del res['images']
+                prices_list = list()
+                if user_allowed_storages:
+                    for sys_code in res['prices']:
+                        for price in sys_code['prices']:
+                            if price['storage_id'] in user_allowed_storages:
+                                prices_list.append(price)
+                else:
+                    for sys_code in res['prices']:
+                        for price in sys_code['prices']:
+                            prices_list.append(price)
+
+                prices_list.sort(key=lambda x: x["regular"])
+                price, special_price = prices_list[0]["regular"], prices_list[0].get("special")
+                res['price'] = price
+                res['special_price'] = special_price
+                del res['prices']
+
+                product_list.append(res)
+
+            return {"products": product_list, "storages_list": storages_labels}
 
     @staticmethod
     def get_category_list(user_allowed_storages, customer_type):
@@ -309,7 +506,8 @@ class Product:
                         "brand_label") else mobile_brand.get('brand')
                     mobile_brand['image'] = kowsar_data.get("image")
 
-                return {"categories": categories, "mobile_brands": mobile_brands, "latest_samsungs": latest_samsungs_list}
+                return {"categories": categories, "mobile_brands": mobile_brands,
+                        "latest_samsungs": latest_samsungs_list}
             return False
 
     @staticmethod
@@ -641,7 +839,8 @@ class Product:
                         },
                         'min': {
                             '$gte': 0
-                        }
+                        },
+                        "storage_id": {"$in": user_allowed_storages}
                     }
                 }, {
                     '$group': {
@@ -666,8 +865,6 @@ class Product:
                     }
                 }
             ]
-            if user_allowed_storages:
-                brands_pipe_line[6]["$match"]['storage_id'] = {"$in": user_allowed_storages}
             brands_list_db = mongo.product.aggregate(brands_pipe_line)
             brands_list_db = brands_list_db.next().get("brands") if brands_list_db.alive else []
             brands_list = list()
@@ -743,6 +940,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
+                        "storage_id": {"$in": user_allowed_storages}
                     }
                 }, {
                     '$group': {
@@ -834,8 +1032,6 @@ class Product:
                     }
                 }
             ]
-            if user_allowed_storages:
-                pipe_lines[6]["$match"]['storage_id'] = {"$in": user_allowed_storages}
             result = mongo.product.aggregate(pipe_lines + [{
                 '$skip': skips
             }, {
@@ -1093,7 +1289,7 @@ class Product:
                         'name': 1,
                         'system_code': '$_id'
                     }
-                },{
+                }, {
                     "$skip": skip
                 },
                 {
