@@ -396,7 +396,8 @@ class Product:
                     '$match': {
                         'system_code': {
                             '$regex': f'^{system_code}'
-                        }
+                        },
+                        "visible_in_site": True
                     }
                 }, {
                     '$project': {
@@ -454,7 +455,6 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'root_obj.visible_in_site': True
                     }
                 }, {
                     '$group': {
@@ -566,13 +566,13 @@ class Product:
                 del res['images']
                 prices_list = list()
                 if user_allowed_storages:
-                    for sysy in res['prices']:
-                        for price in sysy['prices']:
+                    for sys_code in res['prices']:
+                        for price in sys_code['prices']:
                             if price['storage_id'] in user_allowed_storages:
                                 prices_list.append(price)
                 else:
-                    for sysy in res['prices']:
-                        for price in sysy['prices']:
+                    for sys_code in res['prices']:
+                        for price in sys_code['prices']:
                             prices_list.append(price)
 
                 prices_list.sort(key=lambda x: x["regular"])
@@ -695,6 +695,10 @@ class Product:
                     "mainCategory": result.get("main_category"),
                     "model": result.get("model"),
                     "subCategory": result.get("sub_category"),
+                    "configs": " ".join(result.get("configs", {}).values()),
+                    "seller": result.get("seller"),
+                    "color": result.get("color"),
+                    "guaranty": result.get("guaranty"),
                     "attributes": list()
                 }
 

@@ -263,6 +263,15 @@ class KowsarGetter:
             elif len(system_code) == 13:
                 label = "configs"
                 regex = '^' + system_code + ".{3}$"
+                products = list(client.kowsar_collection.aggregate([
+                    {"$match": {'system_code': {'$regex': regex}}},
+                    {"$project": {"_id": 0, "system_code": 1, "label": f"${label}"}}
+                ]))
+                if products:
+                    for product in products:
+                        product['label'] = " ".join(product['label'].values())
+                    return products
+                return []
             elif len(system_code) == 16:
                 products = list(client.kowsar_collection.aggregate([
                     {"$match": {'system_code': {'$regex': "^" + system_code + ".{9}$"}}},
