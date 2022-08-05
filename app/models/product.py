@@ -4,6 +4,7 @@ from app.helpers.mongo_connection import MongoConnection
 from app.modules.kowsar_getter import KowsarGetter
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
+import jdatetime
 
 
 class Product:
@@ -132,10 +133,6 @@ class Product:
                         'item': 1,
                         'warehouse_details.v': {
                             'storage_id': 1,
-                            'regular': 1,
-                            'special': 1,
-                            'special_from_date': 1,
-                            'special_to_date': 1,
                             'min_qty': 1,
                             'max_qty': {
                                 '$cond': [
@@ -144,6 +141,26 @@ class Product:
                                             '$warehouse_details.v.quantity', '$warehouse_details.v.max_qty'
                                         ]
                                     }, '$warehouse_details.v.max_qty', '$warehouse_details.v.quantity'
+                                ]
+                            },
+                            'price': '$warehouse_details.v.regular',
+                            'special_price': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {
+                                                '$gt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$warehouse_details.v.special_from_date'
+                                                ]
+                                            }, {
+                                                '$lt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$warehouse_details.v.special_to_date'
+                                                ]
+                                            }
+                                        ]
+                                    }, '$warehouse_details.v.special', None
                                 ]
                             },
                             'warehouse_state': 1,
@@ -379,7 +396,8 @@ class Product:
                     '$match': {
                         'system_code': {
                             '$regex': f'^{system_code}'
-                        }
+                        },
+                        "visible_in_site": True
                     }
                 }, {
                     '$project': {
@@ -437,7 +455,6 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'root_obj.visible_in_site': True
                     }
                 }, {
                     '$group': {
@@ -549,13 +566,13 @@ class Product:
                 del res['images']
                 prices_list = list()
                 if user_allowed_storages:
-                    for sysy in res['prices']:
-                        for price in sysy['prices']:
+                    for sys_code in res['prices']:
+                        for price in sys_code['prices']:
                             if price['storage_id'] in user_allowed_storages:
                                 prices_list.append(price)
                 else:
-                    for sysy in res['prices']:
-                        for price in sysy['prices']:
+                    for sys_code in res['prices']:
+                        for price in sys_code['prices']:
                             prices_list.append(price)
 
                 prices_list.sort(key=lambda x: x["regular"])
@@ -614,9 +631,9 @@ class Product:
                 result['brand'] = {"value": result['brand'], "label": result['brand']}
                 result['color'] = {"value": result['color'], "label": result['color']}
                 result['guaranty'] = {"value": result['guaranty'], "label": result['guaranty']}
-                result['mainCategory'] = {"value": result['mainCategory'], "label": result['mainCategory']}
+                result['main_category'] = {"value": result['main_category'], "label": result['main_category']}
                 result['seller'] = {"value": result['seller'], "label": result['seller']}
-                result['subCategory'] = {"value": result['subCategory'], "label": result['subCategory']}
+                result['sub_category'] = {"value": result['sub_category'], "label": result['sub_category']}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 result.update({
@@ -678,6 +695,10 @@ class Product:
                     "mainCategory": result.get("main_category"),
                     "model": result.get("model"),
                     "subCategory": result.get("sub_category"),
+                    "configs": " ".join(result.get("configs", {}).values()),
+                    "seller": result.get("seller"),
+                    "color": result.get("color"),
+                    "guaranty": result.get("guaranty"),
                     "attributes": list()
                 }
 
