@@ -25,6 +25,294 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def get_category_list(user_allowed_storages, customer_type):
+        with MongoConnection() as mongo:
+            result = mongo.product.aggregate([
+                {
+                    '$match': {
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'price': {
+                            'storage_id': '$zz.k',
+                            'regular': '$zz.v.regular',
+                            'special': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {
+                                                '$gt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_from_date'
+                                                ]
+                                            }, {
+                                                '$lt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_to_date'
+                                                ]
+                                            }
+                                        ]
+                                    }, '$zz.v.special', None
+                                ]
+                            }
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        },
+                        "storage_id": {"$in": user_allowed_storages}
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$_id',
+                        'item': {
+                            '$addToSet': '$root_obj'
+                        },
+                        'prices': {
+                            '$addToSet': '$price'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'item': {
+                            '$first': '$item'
+                        },
+                        'prices': 1
+                    }
+                }, {
+                    '$facet': {
+                        'categories': [
+                            {
+                                '$match': {
+                                    'item.sub_category': {
+                                        '$in': [
+                                            'Mobile', 'Tablet'
+                                        ]
+                                    }
+                                }
+                            }, {
+                                '$project': {
+                                    'item.system_code': {
+                                        '$substr': [
+                                            '$item.system_code', 0, 6
+                                        ]
+                                    },
+                                    'item.sub_category': 1
+                                }
+                            }, {
+                                '$group': {
+                                    '_id': None,
+                                    'categories': {
+                                        '$addToSet': '$item'
+                                    }
+                                }
+                            }
+                        ],
+                        'brands': [
+                            {
+                                '$match': {
+                                    'item.sub_category': 'Mobile'
+                                }
+                            }, {
+                                '$project': {
+                                    'item.system_code': {
+                                        '$substr': [
+                                            '$item.system_code', 0, 9
+                                        ]
+                                    },
+                                    'item.brand': 1
+                                }
+                            }, {
+                                '$group': {
+                                    '_id': None,
+                                    'brands': {
+                                        '$addToSet': '$item'
+                                    }
+                                }
+                            }
+                        ],
+                        'latest_samsungs': [
+                            {
+                                '$match': {
+                                    'item.brand': 'Samsung'
+                                }
+                            }, {
+                                '$sort': {
+                                    'date': 1
+                                }
+                            }, {
+                                '$project': {
+                                    'system_code': '$item.system_code',
+                                    'name': '$item.name',
+                                    'color': '$item.color',
+                                    'attributes': '$item.attributes',
+                                    'prices': 1
+                                }
+                            }, {
+                                '$group': {
+                                    '_id': {
+                                        '$substr': [
+                                            '$system_code', 0, 16
+                                        ]
+                                    },
+                                    'name': {
+                                        '$first': '$name'
+                                    },
+                                    'products': {
+                                        '$push': '$$ROOT'
+                                    },
+                                    'prices': {
+                                        '$push': {
+                                            'system_code': '$system_code',
+                                            'prices': '$prices'
+                                        }
+                                    }
+                                }
+                            }, {
+                                '$project': {
+                                    '_id': 0,
+                                    'products': 1,
+                                    'name': 1,
+                                    'system_code': '$_id',
+                                    'color': {
+                                        '$setIntersection': {
+                                            '$reduce': {
+                                                'input': '$products',
+                                                'initialValue': [],
+                                                'in': {
+                                                    '$concatArrays': [
+                                                        '$$value', [
+                                                            '$$this.color'
+                                                        ]
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    'images': {
+                                        '$setIntersection': {
+                                            '$reduce': {
+                                                'input': '$products',
+                                                'initialValue': [],
+                                                'in': {
+                                                    '$concatArrays': [
+                                                        '$$value', [
+                                                            '$$this.attributes.mainImage-pd'
+                                                        ]
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    'prices': 1
+                                }
+                            }, {
+                                '$project': {
+                                    'products': 0
+                                }
+                            }, {
+                                '$limit': 10
+                            }
+                        ]
+                    }
+                }
+            ])
+            result = result.next() if result.alive else None
+            if result:
+                categories = result.get("categories")[0].get("categories") if result.get("categories") else []
+                mobile_brands = result.get("brands")[0].get("brands") if result.get("brands") else []
+                latest_samsungs = result.get("latest_samsungs") if result.get("latest_samsungs") else []
+
+                latest_samsungs_list = list()
+                for res in latest_samsungs:
+                    res['images'].remove(None)
+                    res['image'] = res['images'][0] if res['images'] else None
+                    res['name'] = res['name'].split(" | ")[0]
+                    del res['images']
+                    prices_list = list()
+                    if user_allowed_storages:
+                        for sys_code in res['prices']:
+                            for price in sys_code['prices']:
+                                if price['storage_id'] in user_allowed_storages:
+                                    prices_list.append(price)
+                    else:
+                        for sys_code in res['prices']:
+                            for price in sys_code['prices']:
+                                prices_list.append(price)
+
+                    prices_list.sort(key=lambda x: x["regular"])
+                    price, special_price = prices_list[0]["regular"], prices_list[0].get("special")
+                    res['price'] = price
+                    res['special_price'] = special_price
+                    del res['prices']
+
+                    latest_samsungs_list.append(res)
+
+                for category in categories:
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": category.get('system_code')})
+                    kowsar_data = kowsar_data if kowsar_data else {}
+                    category['label'] = kowsar_data.get('sub_category_label') if kowsar_data.get(
+                        "sub_category_label") else category.get('sub_category')
+                    category['image'] = kowsar_data.get("image")
+
+                for mobile_brand in mobile_brands:
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": mobile_brand.get('system_code')})
+                    kowsar_data = kowsar_data if kowsar_data else {}
+                    mobile_brand['label'] = kowsar_data.get('brand_label') if kowsar_data.get(
+                        "brand_label") else mobile_brand.get('brand')
+                    mobile_brand['image'] = kowsar_data.get("image")
+
+                return {"categories": categories, "mobile_brands": mobile_brands, "latest_samsungs": latest_samsungs_list}
+            return False
+
+    @staticmethod
     def get_product_page(system_code, user_allowed_storages, customer_type, lang):
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
@@ -778,6 +1066,7 @@ class Product:
                                      quantity_from, quantity_to, date_from, date_to, guarantees, steps,
                                      visible_in_site, approved, available, page, per_page, lang):
         with MongoConnection() as mongo:
+            skip = (page - 1) * per_page
             result = mongo.product.aggregate([
                 {
                     '$unset': [
@@ -804,6 +1093,11 @@ class Product:
                         'name': 1,
                         'system_code': '$_id'
                     }
+                },{
+                    "$skip": skip
+                },
+                {
+                    "$limit": per_page
                 }
             ])
             distinct_aggr = mongo.product.aggregate([
