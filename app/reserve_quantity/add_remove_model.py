@@ -165,7 +165,7 @@ class addRemoveQuantity:
                                         "cardex_data": cardex_data}
                     else:
                         cardex_data['old_quantity'] = 0
-                        storage_dict["quantity"] += count
+                        cardex_data["qty"] = count
                         cardex_data['new_quantity'] = count
                         cardex_data['reserve'] = 0
                         warehouse_detail = find_warehouse(storage_id)
