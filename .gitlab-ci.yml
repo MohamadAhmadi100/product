@@ -9,7 +9,7 @@ build:
   only:
     - dev
   tags:
-    - Api-gw
+    - api-gw
   script:
     - ls
     - echo APP_NAME=$APP_NAME >> .env
@@ -38,7 +38,7 @@ dev_deploy:
   only:
     - dev
   tags:
-    - Api-gw
+    - api-gw
   script:
     - echo APP_NAME=$APP_NAME >> .env
     - echo MONGO_HOST=$MONGO_HOST >> .env
