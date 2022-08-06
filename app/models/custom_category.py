@@ -66,14 +66,36 @@ class KowsarCategories:
     @staticmethod
     def get_all_categories():
         with MongoConnection() as mongo:
-            result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
-                                                "brand": 1})
+            result = mongo.product.aggregate([
+                {
+                    '$project': {
+                        'item': {
+                            'main_category': '$main_category',
+                            'sub_category': '$sub_category',
+                            'system_code': {
+                                '$substr': [
+                                    '$system_code', 0, 9
+                                ]
+                            },
+                            'brand': '$brand'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': None,
+                        'item': {
+                            '$addToSet': '$item'
+                        }
+                    }
+                }
+            ])
+            result = result.next().get("item") if result.alive else []
 
             tree_data = []
             for obj in result:
                 kowsar_data = list(mongo.kowsar_collection.find({"system_code": {"$in": [obj.get("system_code")[:2],
-                                                                                         obj.get("system_code")[:4],
                                                                                          obj.get("system_code")[:6],
+                                                                                         obj.get("system_code")[:9],
                                                                                          ]}}, {"_id": 0}).sort(
                     "system_code", 1))
                 stored_main = next((x for x in tree_data if x['name'] == obj.get("main_category")), None)
@@ -103,14 +125,14 @@ class KowsarCategories:
                             'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
                             'image': kowsar_data[1].get("image", None),
                             'visible_in_site': kowsar_data[1].get("visible_in_site", True),
-                            "system_code": obj.get("system_code")[:4],
+                            "system_code": obj.get("system_code")[:6],
                             'children': [
                                 {
                                     'name': obj.get("brand"),
                                     'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                     'image': kowsar_data[2].get("image", None),
                                     'visible_in_site': kowsar_data[2].get("visible_in_site", True),
-                                    "system_code": obj.get("system_code")[:6]
+                                    "system_code": obj.get("system_code")[:9]
                                 }
                             ]
                         }
@@ -128,14 +150,14 @@ class KowsarCategories:
                             'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
                             'image': kowsar_data[1].get("image", None),
                             'visible_in_site': kowsar_data[1].get("visible_in_site", True),
-                            "system_code": obj.get("system_code")[:4],
+                            "system_code": obj.get("system_code")[:6],
                             "children": [
                                 {
                                     'name': obj.get("brand"),
                                     'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                     'image': kowsar_data[2].get("image", None),
                                     'visible_in_site': kowsar_data[2].get("visible_in_site", True),
-                                    "system_code": obj.get("system_code")[:6]
+                                    "system_code": obj.get("system_code")[:9]
                                 }
                             ]
                         }

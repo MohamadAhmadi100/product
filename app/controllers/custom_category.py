@@ -9,9 +9,9 @@ def create_custom_kowsar_category(system_code: str, custom_name: str, visible_in
     custom_category = KowsarCategories(system_code, custom_name, visible_in_site, image)
     if len(system_code) == 2:
         category_label = "main_category_label"
-    elif len(system_code) == 4:
-        category_label = "sub_category_label"
     elif len(system_code) == 6:
+        category_label = "sub_category_label"
+    elif len(system_code) == 9:
         category_label = "brand_label"
     else:
         return {"success": False, "error": "سیستم کد وارد شده صحیح نمیباشد", "status_code": 404}
