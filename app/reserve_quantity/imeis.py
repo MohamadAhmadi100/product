@@ -111,8 +111,8 @@ def add_msm_stocks(product, storage_id, supplier_name):
             )
             client.stocks_log_collection.insert_one(cardex_detail)
             client.stocks_collection.update_one({"systemCode": product['system_code'], "stockId": storage_id},
-                                                {"$inc": {"quantity": product['count']}},
-                                                {"$push": {"imeis": {"$each": product['imeis']}}}
+                                                {"$inc": {"quantity": product['count']},
+                                                "$push": {"imeis": {"$each": product['imeis']}}}
                                                 )
         else:
             cardex_detail = cardex(
@@ -174,9 +174,3 @@ def add_warehouse_product(product, referral_number, supplier, form_date, dst_war
         })
         return {"success": True}
 
-
-print(product_imeis(
-    {'system_code': '2000010010002002001017001', 'name': 'Samsung A022 (3GB 32GB 4G) India | ASD | Aawaat [Red]',
-     'brand': 'Samsung', 'model': 'A022', 'color': 'Red', 'seller': 'ASD', 'guaranty': 'Aawaat', 'count': 5,
-     'unit_price': 1234567, 'sell_price': 2345678, 'description': 'string', 'imeis': ['10', '11', '12', '13', '14'],
-     'is_confirm': False}))
