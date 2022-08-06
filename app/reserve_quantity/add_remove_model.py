@@ -178,11 +178,11 @@ class addRemoveQuantity:
                                 "quantity": count,
                                 "min_qty": 1,
                                 "max_qty": 1,
-                                "warehouse_state": warehouse_detail.get('state'),
-                                "warehouse_city": warehouse_detail.get('city'),
-                                "warehouse_state_id": str(warehouse_detail.get('state_id')),
-                                "warehouse_city_id": warehouse_detail.get('city_id'),
-                                "warehouse_label": warehouse_detail.get('warehouse_name')
+                                "warehouse_state": warehouse_detail['warehouses'].get('state'),
+                                "warehouse_city": warehouse_detail['warehouses'].get('city'),
+                                "warehouse_state_id": str(warehouse_detail['warehouses'].get('state_id')),
+                                "warehouse_city_id": warehouse_detail['warehouses'].get('city_id'),
+                                "warehouse_label": warehouse_detail['warehouses'].get('warehouse_name')
                             }
                             }})
                         return {"success": True, "message": "عملیات مورد نظر با موفقیت انجام شد", "status_code": 200,
