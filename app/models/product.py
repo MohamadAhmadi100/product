@@ -1610,6 +1610,11 @@ class Quantity:
                         for storage_keys, storage_value in storage_data.items():
                             db_query.update(
                                 {f"warehouse_details.{key}.storages.{storage_id}.{storage_keys}": storage_value})
+                        db_query.update(
+                            {f"warehouse_details.{key}.storages.{storage_id}.reserved": {
+                                "$cond": [{"$ne": [f"$warehouse_details.{key}.storages.{storage_id}.reserved", None]},
+                                          0, f"$warehouse_details.{key}.storages.{storage_id}.reserved"]}})
+
                 else:
                     db_query.update({
                         f"warehouse_details.{key}.type": key
