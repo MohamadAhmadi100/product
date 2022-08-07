@@ -1572,6 +1572,16 @@ class Price:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.special_to_date": special_to_date
                 })
+            warehouses = list(client.warehouses_collection.find({}, {"_id": 0}))
+            obj = [i for i in warehouses if str(i['warehouse_id']) == storage_id]
+            update_data.update(
+                {f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_state": obj[0].get("state"),
+                 "warehouse_city": obj[0].get("city"),
+                 f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_state_id": obj[0].get("state_id"),
+                 f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_city_id": obj[0].get("city_id"),
+                 f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_label": obj[0].get(
+                     "warehouse_name"),
+                 })
 
             update_data.update({
                 "step": {"$cond": [{"$eq": ["$step", 2]}, 3, "$step"]}
