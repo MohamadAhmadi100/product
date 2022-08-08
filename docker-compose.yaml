@@ -22,6 +22,8 @@ services:
         restart: always
     api:
         build: .
+        environment:
+        - TZ=Asia/Tehran
 
 volumes:
     mongodb-data-product:

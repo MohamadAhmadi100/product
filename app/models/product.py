@@ -196,7 +196,8 @@ class Product:
 
             product_list = list()
             for res in result:
-                res['images'].remove(None)
+                if None in res['images']:
+                    res['images'].remove(None)
                 res['image'] = res['images'][0] if res['images'] else None
                 res['name'] = res['name'].split(" | ")[0]
                 del res['images']
@@ -469,7 +470,8 @@ class Product:
 
                 latest_samsungs_list = list()
                 for res in latest_samsungs:
-                    res['images'].remove(None)
+                    if None in res['images']:
+                        res['images'].remove(None)
                     res['image'] = res['images'][0] if res['images'] else None
                     res['name'] = res['name'].split(" | ")[0]
                     del res['images']
@@ -1044,7 +1046,8 @@ class Product:
 
             product_list = list()
             for res in result:
-                res['images'].remove(None)
+                if None in res['images']:
+                    res['images'].remove(None)
                 res['image'] = res['images'][0] if res['images'] else None
                 res['name'] = res['name'].split(" | ")[0]
                 del res['images']
@@ -1424,6 +1427,9 @@ class Product:
             guaranties = result.get("filters", [{}])[0].get("guaranties", [])
             steps = result.get("filters", [{}])[0].get("steps", [])
 
+            total_products = mongo.product.aggregate(pipe_lines[0]['$facet']['list'][:-2] + [{"$count": "count"}])
+            total_products = total_products.next().get("count", 0) if total_products.alive else 0
+
             products_list = result.get("list", [])
             warehouses_list = list(mongo.warehouses_collection.find({"isActive": True}, {"_id": 0,
                                                                                          "storage_id": "$warehouse_id",
@@ -1498,7 +1504,7 @@ class Product:
                 }
             ]
             if result:
-                return {"filters": filters, "products": products_list}
+                return {"filters": filters, "products": products_list, "total_products": total_products}
             return None
 
 
@@ -1571,6 +1577,16 @@ class Price:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.special_to_date": special_to_date
                 })
+            warehouses = list(client.warehouses_collection.find({}, {"_id": 0}))
+            obj = [i for i in warehouses if str(i['warehouse_id']) == storage_id]
+            update_data.update(
+                {f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_state": obj[0].get("state"),
+                 "warehouse_city": obj[0].get("city"),
+                 f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_state_id": obj[0].get("state_id"),
+                 f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_city_id": obj[0].get("city_id"),
+                 f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_label": obj[0].get(
+                     "warehouse_name"),
+                 })
 
             update_data.update({
                 "step": {"$cond": [{"$eq": ["$step", 2]}, 3, "$step"]}
@@ -1599,6 +1615,11 @@ class Quantity:
                         for storage_keys, storage_value in storage_data.items():
                             db_query.update(
                                 {f"warehouse_details.{key}.storages.{storage_id}.{storage_keys}": storage_value})
+                        db_query.update(
+                            {f"warehouse_details.{key}.storages.{storage_id}.reserved": {
+                                "$cond": [{"$ne": [f"$warehouse_details.{key}.storages.{storage_id}.reserved", None]},
+                                          0, f"$warehouse_details.{key}.storages.{storage_id}.reserved"]}})
+
                 else:
                     db_query.update({
                         f"warehouse_details.{key}.type": key

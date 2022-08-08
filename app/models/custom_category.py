@@ -29,51 +29,38 @@ class KowsarCategories:
             return None
 
     @staticmethod
-    def get(system_code, page, per_page):
-        """
-        get all products by system code
-        """
-        skip = (page - 1) * per_page
-        limit = per_page
-        with MongoConnection() as mongo:
-            len_db = len(list(mongo.collection.find({"archived": {"$ne": True},
-                                                     "visible_in_site": True,
-                                                     "products.visible_in_site": True,
-                                                     "products.archived": {"$ne": True},
-                                                     "system_code": {"$regex": "^" + system_code}
-                                                     }, {"_id": 1})))
-            db_result = list(mongo.collection.find({"archived": {"$ne": True},
-                                                    "products.archived": {"$ne": True},
-                                                    "visible_in_site": True,
-                                                    "products.visible_in_site": True,
-                                                    "system_code": {"$regex": "^" + system_code}
-                                                    }, {"_id": 0}).skip(skip).limit(limit))
-
-            product_list = list()
-            for parent in db_result:
-                childs = list()
-                for child in parent.get("products", []):
-                    if not child.get("archived") and child.get("visible_in_site"):
-                        childs.append(child)
-                parent.update({"products": childs})
-                product_list.append(parent)
-
-            return {
-                "total": len_db,
-                "data": product_list
-            }
-
-    @staticmethod
     def get_all_categories():
         with MongoConnection() as mongo:
-            result = mongo.collection.find({}, {"_id": 0, "main_category": 1, "sub_category": 1, "system_code": 1,
-                                                "brand": 1})
+            result = mongo.product.aggregate([
+                {
+                    '$project': {
+                        'item': {
+                            'main_category': '$main_category',
+                            'sub_category': '$sub_category',
+                            'system_code': {
+                                '$substr': [
+                                    '$system_code', 0, 9
+                                ]
+                            },
+                            'brand': '$brand'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': None,
+                        'item': {
+                            '$addToSet': '$item'
+                        }
+                    }
+                }
+            ])
+            result = result.next().get("item") if result.alive else []
 
             tree_data = []
             for obj in result:
                 kowsar_data = list(mongo.kowsar_collection.find({"system_code": {"$in": [obj.get("system_code")[:2],
-                                                                                         obj.get("system_code")[:4],
                                                                                          obj.get("system_code")[:6],
+                                                                                         obj.get("system_code")[:9],
                                                                                          ]}}, {"_id": 0}).sort(
                     "system_code", 1))
                 stored_main = next((x for x in tree_data if x['name'] == obj.get("main_category")), None)
@@ -93,7 +80,7 @@ class KowsarCategories:
                                 'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                 'image': kowsar_data[2].get("image", None),
                                 'visible_in_site': kowsar_data[2].get("visible_in_site", True),
-                                "system_code": obj.get("system_code")[:6]
+                                "system_code": obj.get("system_code")[:9]
                             }
                         )
                         continue
@@ -103,14 +90,14 @@ class KowsarCategories:
                             'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
                             'image': kowsar_data[1].get("image", None),
                             'visible_in_site': kowsar_data[1].get("visible_in_site", True),
-                            "system_code": obj.get("system_code")[:4],
+                            "system_code": obj.get("system_code")[:6],
                             'children': [
                                 {
                                     'name': obj.get("brand"),
                                     'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                     'image': kowsar_data[2].get("image", None),
                                     'visible_in_site': kowsar_data[2].get("visible_in_site", True),
-                                    "system_code": obj.get("system_code")[:6]
+                                    "system_code": obj.get("system_code")[:9]
                                 }
                             ]
                         }
@@ -128,14 +115,14 @@ class KowsarCategories:
                             'title': kowsar_data[1].get("sub_category_label", obj.get("sub_category")),
                             'image': kowsar_data[1].get("image", None),
                             'visible_in_site': kowsar_data[1].get("visible_in_site", True),
-                            "system_code": obj.get("system_code")[:4],
+                            "system_code": obj.get("system_code")[:6],
                             "children": [
                                 {
                                     'name': obj.get("brand"),
                                     'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                     'image': kowsar_data[2].get("image", None),
                                     'visible_in_site': kowsar_data[2].get("visible_in_site", True),
-                                    "system_code": obj.get("system_code")[:6]
+                                    "system_code": obj.get("system_code")[:9]
                                 }
                             ]
                         }
@@ -144,12 +131,45 @@ class KowsarCategories:
 
             return tree_data
 
+    @staticmethod
+    def get_products_by_category(system_code, page, per_page):
+        with MongoConnection() as mongo:
+            pipe_line = [
+                {
+                    '$match': {
+                        'system_code': {"$regex": f"^{system_code}"}
+                    },
+                },
+                {"$project": {
+                    "_id": 0
+                }
+                },
+                {
+                    '$facet': {
+                        'count': [
+                            {
+                                '$count': 'count'
+                            }
+                        ],
+                        'data': [
+                            {
+                                '$skip': (page - 1) * per_page
+                            }, {
+                                '$limit': per_page
+                            }
+                        ]
+                    }
+                }
+            ]
+            result = mongo.product.aggregate(pipe_line)
+            result = result.next() if result.alive else {}
+            return {"count": result.get("count")[0].get("count", 0), "data": result.get("data")}
+
 
 class CustomCategories:
-    def __init__(self, name, products, label, visible_in_site, image):
+    def __init__(self, name, products, visible_in_site, image):
         self.name = name
         self.products = products
-        self.label = label
         self.visible_in_site = visible_in_site
         self.image = image
         self.created_at = jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -186,22 +206,25 @@ class CustomCategories:
         if visible_in_site is not None:
             query["visible_in_site"] = visible_in_site
 
-        if created_at_from:
-            query["created_at"] = {"$gte": created_at_from}
-        if created_at_to:
-            if query.get("created_at"):
+        if created_at_from or created_at_to:
+            query["created_at"] = {}
+            if created_at_to:
                 query["created_at"]["$lte"] = created_at_to
-            else:
-                query["created_at"] = {"$lte": created_at_to}
+            if created_at_from:
+                query["created_at"]["$gte"] = created_at_from
 
         with MongoConnection() as mongo:
             len_db = mongo.custom_category.count_documents(query)
             db_result = list(mongo.custom_category.find(query, {"_id": 0}).skip(skip).limit(limit))
+            if len_db > 0:
+                for category in db_result:
+                    category['products'] = list(mongo.product.find({"system_code": {"$in": category['products']}},
+                                                                   {"_id": 0}))
 
-        return {
-            "total": len_db,
-            "data": db_result
-        }
+            return {
+                "total": len_db,
+                "data": db_result
+            }
 
     @staticmethod
     def delete(name):
@@ -215,7 +238,7 @@ class CustomCategories:
             return None
 
     @staticmethod
-    def edit(name, new_name, products, label, visible_in_site, image):
+    def edit(name, new_name, products, visible_in_site, image):
         """
         Edit custom category by name
         """
@@ -224,8 +247,6 @@ class CustomCategories:
             set_dict["name"] = new_name
         if products:
             set_dict["products"] = products
-        if label:
-            set_dict["label"] = label
         if visible_in_site is not None:
             set_dict["visible_in_site"] = visible_in_site
         if image:
