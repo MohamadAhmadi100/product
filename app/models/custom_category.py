@@ -80,7 +80,7 @@ class KowsarCategories:
                                 'title': kowsar_data[2].get("brand_label", obj.get("brand")),
                                 'image': kowsar_data[2].get("image", None),
                                 'visible_in_site': kowsar_data[2].get("visible_in_site", True),
-                                "system_code": obj.get("system_code")[:6]
+                                "system_code": obj.get("system_code")[:9]
                             }
                         )
                         continue
