@@ -1427,6 +1427,9 @@ class Product:
             guaranties = result.get("filters", [{}])[0].get("guaranties", [])
             steps = result.get("filters", [{}])[0].get("steps", [])
 
+            total_products = mongo.product.aggregate(pipe_lines[0]['$facet']['list'][:-2] + [{"$count": "count"}])
+            total_products = total_products.next().get("count", 0) if total_products.alive else 0
+
             products_list = result.get("list", [])
             warehouses_list = list(mongo.warehouses_collection.find({"isActive": True}, {"_id": 0,
                                                                                          "storage_id": "$warehouse_id",
@@ -1501,7 +1504,7 @@ class Product:
                 }
             ]
             if result:
-                return {"filters": filters, "products": products_list}
+                return {"filters": filters, "products": products_list, "total_products": total_products}
             return None
 
 
