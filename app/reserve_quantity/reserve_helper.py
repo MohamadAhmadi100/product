@@ -120,8 +120,8 @@ def remove_from_quantity_cancel_order(system_code, storage_id, count, customer_t
             type="cancel orders",
             oldQuantity=reserve['product'].get("quantity"),
             newQuantity=reserve['product'].get("quantity"),
-            oldReserve=reserve['product'].get('reserved'),
-            newRreserve=int(reserve['product'].get('reserved')) + count
+            oldReserve=reserve['product'].get('reserved') + count,
+            newRreserve=int(reserve['product'].get('reserved'))
         )
         reserve['quantity_cardex_data'] = quantity_cardex_data
         return reserve
