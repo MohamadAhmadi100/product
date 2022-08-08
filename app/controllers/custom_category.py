@@ -72,3 +72,13 @@ def edit_custom_category(name: str, new_name: str, products: list, visible_in_si
     if result:
         return {"success": True, "message": message, "status_code": 200}
     return {"success": False, "error": message, "status_code": 400}
+
+
+def get_categories_products(system_code: str, page: int, per_page: int):
+    """
+    Get products of a category
+    """
+    result = KowsarCategories.get_products_by_category(system_code, page, per_page)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "products not found", "status_code": 404}

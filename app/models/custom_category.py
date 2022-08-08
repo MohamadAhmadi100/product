@@ -131,6 +131,40 @@ class KowsarCategories:
 
             return tree_data
 
+    @staticmethod
+    def get_products_by_category(system_code, page, per_page):
+        with MongoConnection() as mongo:
+            pipe_line = [
+                {
+                    '$match': {
+                        'system_code': {"$regex": f"^{system_code}"}
+                    },
+                },
+                {"$project": {
+                    "_id": 0
+                }
+                },
+                {
+                    '$facet': {
+                        'count': [
+                            {
+                                '$count': 'count'
+                            }
+                        ],
+                        'data': [
+                            {
+                                '$skip': (page - 1) * per_page
+                            }, {
+                                '$limit': per_page
+                            }
+                        ]
+                    }
+                }
+            ]
+            result = mongo.product.aggregate(pipe_line)
+            result = result.next() if result.alive else {}
+            return {"count": result.get("count")[0].get("count", 0), "data": result.get("data")}
+
 
 class CustomCategories:
     def __init__(self, name, products, visible_in_site, image):
