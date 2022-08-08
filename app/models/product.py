@@ -1045,7 +1045,8 @@ class Product:
 
             product_list = list()
             for res in result:
-                res['images'].remove(None)
+                if None in res['images']:
+                    res['images'].remove(None)
                 res['image'] = res['images'][0] if res['images'] else None
                 res['name'] = res['name'].split(" | ")[0]
                 del res['images']
