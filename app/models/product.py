@@ -865,6 +865,10 @@ class Product:
                             '$addToSet': '$item.brand'
                         }
                     }
+                }, {
+                    "$sort": {
+                        "system_code": 1
+                    }
                 }
             ]
             brands_list_db = mongo.product.aggregate(brands_pipe_line)
@@ -1353,7 +1357,13 @@ class Product:
                                 '$project': {
                                     'products._id': 0
                                 }
-                            }, {
+                            },
+                            {
+                                "$sort": {
+                                    "system_code": 1
+                                }
+                            },
+                            {
                                 '$skip': skip
                             }, {
                                 '$limit': per_page
