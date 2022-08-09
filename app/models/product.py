@@ -873,9 +873,9 @@ class Product:
             for brand in brands_list_db:
                 brand_data = db_data_getter({"brand": brand, "system_code": {"$regex": "^.{9}$"}})
                 brands_list.append({"name": brand, "label": brand_data.get("brand_label"),
+                                    "image": brand_data.get("image"),
                                     "route": brand.replace(" ", ""),
-                                    "system_code": brand_data.get(
-                                        "system_code"),
+                                    "system_code": brand_data.get("system_code"),
                                     })
 
             pipe_lines = [
