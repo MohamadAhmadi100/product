@@ -1094,7 +1094,6 @@ class Product:
         with MongoConnection() as mongo:
             result = mongo.product.find_one({'system_code': system_code, "visible_in_site": True}, {"_id": 0})
             if result:
-
                 attributes_data = list(mongo.attributes_collection.find(
                     {}, {
                         "_id": 0,
@@ -1571,7 +1570,7 @@ class Price:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.regular": regular
                 })
-            if special:
+            if special is not None:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.special": special
                 })
