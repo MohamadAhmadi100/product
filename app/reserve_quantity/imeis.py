@@ -32,9 +32,10 @@ def add_imeis(product, storage_id):
     with MongoConnection() as client:
         count = client.imeis.count_documents(
             {"system_code": product['system_code'], "storage_id": storage_id})
+        change_imeis_to_object = product_imeis(product)
         if count > 0:
             client.imeis.update_one({"system_code": product['system_code'], "storage_id": storage_id},
-                                    {"$push": {"imeis": {"$each": product['imeis']}}})
+                                    {"$push": {"imeis": {"$each": change_imeis_to_object}}})
             return {"success": True}
         else:
             warehouse = find_warehouse(int(storage_id))
@@ -49,7 +50,7 @@ def add_imeis(product, storage_id):
                 "seller": product['seller'],
                 "stock_label": warehouse['warehouses'].get('warehouse_name'),
                 "storage_id": str(warehouse['warehouses'].get('warehouse_id')),
-                "imeis": product_imeis(product)
+                "imeis": change_imeis_to_object
             })
             return {"success": True}
 
@@ -96,6 +97,7 @@ def add_msm_stocks(product, storage_id, supplier_name):
     with MongoConnection() as client:
         count = client.stocks_collection.count_documents(
             {"systemCode": product['system_code'], "stockId": storage_id})
+        change_imei_to_msm_object = articles(product)
         if count > 0:
             stocks = client.stocks_collection.find_one({"systemCode": product['system_code'], "stockId": storage_id})
             cardex_detail = cardex(
@@ -113,7 +115,7 @@ def add_msm_stocks(product, storage_id, supplier_name):
             client.stocks_log_collection.insert_one(cardex_detail)
             client.stocks_collection.update_one({"systemCode": product['system_code'], "stockId": storage_id},
                                                 {"$inc": {"quantity": product['count']},
-                                                 "$push": {"imeis": {"$each": product['imeis']}}}
+                                                 "$push": {"imeis": {"$each": change_imei_to_msm_object}}}
                                                 )
         else:
             cardex_detail = cardex(
@@ -143,7 +145,7 @@ def add_msm_stocks(product, storage_id, supplier_name):
                 "seller": product['seller'],
                 "guaranty": product['guaranty'],
                 "packName": 'new product',
-                "imeis": articles(product, storage_id)
+                "imeis": change_imei_to_msm_object
             })
 
 
