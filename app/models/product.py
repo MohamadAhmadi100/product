@@ -865,6 +865,10 @@ class Product:
                             '$addToSet': '$item.brand'
                         }
                     }
+                }, {
+                    "$sort": {
+                        "system_code": 1
+                    }
                 }
             ]
             brands_list_db = mongo.product.aggregate(brands_pipe_line)
@@ -873,9 +877,9 @@ class Product:
             for brand in brands_list_db:
                 brand_data = db_data_getter({"brand": brand, "system_code": {"$regex": "^.{9}$"}})
                 brands_list.append({"name": brand, "label": brand_data.get("brand_label"),
+                                    "image": brand_data.get("image"),
                                     "route": brand.replace(" ", ""),
-                                    "system_code": brand_data.get(
-                                        "system_code"),
+                                    "system_code": brand_data.get("system_code"),
                                     })
 
             pipe_lines = [
@@ -1090,7 +1094,6 @@ class Product:
         with MongoConnection() as mongo:
             result = mongo.product.find_one({'system_code': system_code, "visible_in_site": True}, {"_id": 0})
             if result:
-
                 attributes_data = list(mongo.attributes_collection.find(
                     {}, {
                         "_id": 0,
@@ -1353,7 +1356,13 @@ class Product:
                                 '$project': {
                                     'products._id': 0
                                 }
-                            }, {
+                            },
+                            {
+                                "$sort": {
+                                    "system_code": 1
+                                }
+                            },
+                            {
                                 '$skip': skip
                             }, {
                                 '$limit': per_page
@@ -1561,7 +1570,7 @@ class Price:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.regular": regular
                 })
-            if special:
+            if special is not None:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.special": special
                 })
