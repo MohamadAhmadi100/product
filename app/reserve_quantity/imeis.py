@@ -97,7 +97,7 @@ def add_msm_stocks(product, storage_id, supplier_name):
     with MongoConnection() as client:
         count = client.stocks_collection.count_documents(
             {"systemCode": product['system_code'], "stockId": storage_id})
-        change_imei_to_msm_object = articles(product)
+        change_imei_to_msm_object = articles(product,storage_id)
         if count > 0:
             stocks = client.stocks_collection.find_one({"systemCode": product['system_code'], "stockId": storage_id})
             cardex_detail = cardex(
