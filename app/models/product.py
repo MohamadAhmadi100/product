@@ -2,6 +2,7 @@ import re
 from typing import Union
 
 from app.helpers.mongo_connection import MongoConnection
+from app.helpers.redis_connection import RedisConnection
 from app.modules.kowsar_getter import KowsarGetter
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
@@ -732,18 +733,19 @@ class Product:
                         "show_in_portal": 1,
                     }
                 ))
-                for product in product_result['products']:
-                    attributes_list = list()
+                with RedisConnection() as redis:
+                    for product in product_result['products']:
+                        attributes_list = list()
 
-                    for key, value in product.get("attributes", {}).items():
-                        stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
-                        stored_data['value'] = value
-                        attributes_list.append(stored_data)
+                        for key, value in product.get("attributes", {}).items():
+                            stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
+                            stored_data['value'] = value
+                            attributes_list.append(stored_data)
 
-                    product['attributes'] = attributes_list
-                    product['color'] = {"value": product['color'], "label": product['color']}
-                    product['guaranty'] = {"value": product['guaranty'], "label": product['guaranty']}
-                    product['seller'] = {"value": product['seller'], "label": product['seller']}
+                        product['attributes'] = attributes_list
+                        product['color'] = {"value": product['color'], "label": redis.client.hget(product['color'], lang)}
+                        product['guaranty'] = {"value": product['guaranty'], "label": product['guaranty']}
+                        product['seller'] = {"value": product['seller'], "label": product['seller']}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 product_result.update({
