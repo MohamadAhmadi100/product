@@ -87,7 +87,7 @@ class AddRemoveReserve:
                                         "replace_data": products,
                                         "product": storage_dict}
                             else:
-                                client.reserve_log_collection.insert_one(
+                                client.reservlog_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
                                      "old_reserve": storage_dict["reserved"],
                                      "new_reserve": storage_dict["reserved"] - count,
@@ -110,7 +110,7 @@ class AddRemoveReserve:
                         {"systemCode": str(system_code), "stockId": str(storage_id)},
                         {"_id": False})
 
-                    if (int(product["reserve"]) + count) <= int(product["quantity"]):
+                    if (int(product["reserve"]) - count) >= 0:
                         update_data = {"$set": {"reserve": int(product["reserve"]) - count}}
                         query_data = {"systemCode": str(product["systemCode"]), "stockId": str(product["stockId"])}
 
