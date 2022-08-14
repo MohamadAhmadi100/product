@@ -579,6 +579,7 @@ class Product:
                 }, {
                     '$group': {
                         '_id': '$_id',
+                        "storage_ids": {"$addToSet": "$storage_id"},
                         'item': {
                             '$addToSet': '$root_obj'
                         }
@@ -586,6 +587,7 @@ class Product:
                 }, {
                     '$project': {
                         '_id': 0,
+                        "storage_ids": 1,
                         'item': {
                             '$first': '$item'
                         }
@@ -607,9 +609,7 @@ class Product:
                                 },
                                 'as': 'storage_item',
                                 'cond': {
-                                    '$in': [
-                                        '$$storage_item.k', user_allowed_storages
-                                    ]
+                                    '$in': ['$$storage_item.k', "$storage_ids"]
                                 }
                             }
                         }
