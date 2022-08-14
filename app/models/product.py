@@ -744,8 +744,8 @@ class Product:
 
                         product['attributes'] = attributes_list
                         product['color'] = {"value": product['color'], "label": redis.client.hget(product['color'], lang)}
-                        product['guaranty'] = {"value": product['guaranty'], "label": product['guaranty']}
-                        product['seller'] = {"value": product['seller'], "label": product['seller']}
+                        product['guaranty'] = {"value": product['guaranty'], "label": redis.client.hget(product['guaranty'], lang)}
+                        product['seller'] = {"value": product['seller'], "label": redis.client.hget(product['seller'], lang)}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 product_result.update({
