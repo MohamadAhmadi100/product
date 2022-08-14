@@ -1,12 +1,13 @@
 import re
 from typing import Union
 
+import jdatetime
+
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.redis_connection import RedisConnection
 from app.modules.kowsar_getter import KowsarGetter
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
-import jdatetime
 
 
 class Product:
@@ -743,9 +744,12 @@ class Product:
                             attributes_list.append(stored_data)
 
                         product['attributes'] = attributes_list
-                        product['color'] = {"value": product['color'], "label": redis.client.hget(product['color'], lang)}
-                        product['guaranty'] = {"value": product['guaranty'], "label": redis.client.hget(product['guaranty'], lang)}
-                        product['seller'] = {"value": product['seller'], "label": redis.client.hget(product['seller'], lang)}
+                        product['color'] = {"value": product['color'],
+                                            "label": redis.client.hget(product['color'], lang)}
+                        product['guaranty'] = {"value": product['guaranty'],
+                                               "label": redis.client.hget(product['guaranty'], lang)}
+                        product['seller'] = {"value": product['seller'],
+                                             "label": redis.client.hget(product['seller'], lang)}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 product_result.update({
@@ -1723,7 +1727,9 @@ class Quantity:
             check_result = check_quantity(data)
             # msm_check = check_result.check_stocks()
             product_quantity_check = check_result.check_quantity()
-
+            price_check_result = check_result.check_price()
+            if data['price'] != price_check_result:
+                data['new_price'] = price_check_result
             # system code not found in sms stocks
             if not product_quantity_check:
                 checkout_pass = False
@@ -1757,6 +1763,7 @@ class Quantity:
                         checkout_pass = False
                         data['quantity_checkout'] = "edited"
                         data['new_quantity'] = product_quantity_check
+
                         result.append(data)
                 except:
                     checkout_pass = False

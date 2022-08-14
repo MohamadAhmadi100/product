@@ -26,3 +26,13 @@ class check_quantity:
                           quantity['warehouse_details'].get(self.customer_type)['storages'].get(self.storage_id)[
                               'reserved']
                 return salable
+
+    def check_price(self):
+        with MongoConnection() as client:
+            quantity = client.product.find_one({'system_code': self.system_code})
+            if quantity is None:
+                return False
+            else:
+                new_price = quantity['warehouse_details'].get(self.customer_type)['storages'].get(self.storage_id)[
+                    'regular']
+                return new_price
