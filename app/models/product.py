@@ -795,7 +795,7 @@ class Product:
                         'system_code': {
                             '$regex': f'^{system_code[:6]}'
                         },
-                        "visible_in_site": True
+                        'visible_in_site': True
                     }
                 }, {
                     '$project': {
@@ -862,29 +862,49 @@ class Product:
                         '_id': 0,
                         'item': {
                             '$first': '$item'
-                        },
-                    }
-                }, {
-                    '$group': {
-                        '_id': None,
-                        'brands': {
-                            '$addToSet': '$item.brand'
                         }
                     }
                 }, {
-                    "$sort": {
-                        "name": 1
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$item.system_code', 0, 16
+                            ]
+                        },
+                        'items': {
+                            '$addToSet': '$item'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'item': {
+                            '$first': '$items'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$item.brand',
+                        'count': {
+                            '$sum': 1
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'brand': '$_id',
+                        '_id': 0,
+                        'count': 1
                     }
                 }
             ]
             brands_list_db = mongo.product.aggregate(brands_pipe_line)
-            brands_list_db = brands_list_db.next().get("brands") if brands_list_db.alive else []
+            brands_list_db = brands_list_db if brands_list_db.alive else []
             brands_list = list()
             for brand in brands_list_db:
-                brand_data = db_data_getter({"brand": brand, "system_code": {"$regex": "^.{9}$"}})
-                brands_list.append({"name": brand, "label": brand_data.get("brand_label"),
+                brand_data = db_data_getter({"brand": brand.get("brand"), "system_code": {"$regex": "^.{9}$"}})
+                brands_list.append({"name": brand.get("brand"), "label": brand_data.get("brand_label"),
                                     "image": brand_data.get("image"),
-                                    "route": brand.replace(" ", ""),
+                                    "route": brand.get("brand").replace(" ", ""),
+                                    "count": brand.get("count"),
                                     "system_code": brand_data.get("system_code"),
                                     })
 
