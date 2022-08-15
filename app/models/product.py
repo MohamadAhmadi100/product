@@ -873,7 +873,7 @@ class Product:
                     }
                 }, {
                     "$sort": {
-                        "system_code": 1
+                        "name": 1
                     }
                 }
             ]
