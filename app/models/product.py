@@ -1042,6 +1042,10 @@ class Product:
                     '$project': {
                         'products': 0
                     }
+                }, {
+                    "$sort": {
+                        "name": 1
+                    }
                 }
             ]
             result = mongo.product.aggregate(pipe_lines + [{
