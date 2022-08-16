@@ -32,7 +32,7 @@ class Reserve:
             quantity_result = add_reserve_quantity_order(system_code, storage_id, count, customer_type, sku,
                                                          order_number)
             msm_result = add_reserve_msm_order(system_code, storage_id, count, order_number)
-            if quantity_result.get("success") and msm_result.get("success"):
+            if quantity_result.get("success"):
                 with MongoConnection() as client:
                     client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
                     client.product.replace_one(quantity_result.get("query"), quantity_result.get("replace_data"))
