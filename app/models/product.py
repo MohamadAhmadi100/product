@@ -28,14 +28,12 @@ class Product:
             return True if result else False
 
     @staticmethod
-    def search_product_child(name, storages, customer_type):
+    def search_product_child(name, system_code, storages, customer_type):
+
         with MongoConnection() as mongo:
             pipe_lines = [
                 {
                     '$match': {
-                        'name': {
-                            '$regex': re.compile(fr"{name}(?i)")
-                        },
                         'visible_in_site': True
                     }
                 }, {
@@ -119,6 +117,11 @@ class Product:
                     }
                 }
             ]
+            if not system_code:
+                pipe_lines[0]['$match']['name'] = {'$regex': re.compile(fr"{name}(?i)")}
+            else:
+                pipe_lines[0]['$match']['system_code'] = system_code
+
             result = mongo.product.aggregate(pipe_lines)
             return list(result)
 
@@ -1006,6 +1009,8 @@ class Product:
                                     "count": brand.get("count"),
                                     "system_code": brand_data.get("system_code"),
                                     })
+
+            brands_list = sorted(brands_list, key=lambda x: x['system_code'], reverse=False)
 
             pipe_lines = [
                 {

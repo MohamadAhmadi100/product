@@ -51,7 +51,7 @@ def get_product_backoffice(system_code: str):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def set_product_price(system_code: str, customer_type: float):
+def set_product_price(system_code: str, customer_type: dict):
     price = Price(system_code, customer_type)
     if price.system_code_exists():
         result = price.set_product_price()
@@ -177,11 +177,11 @@ def get_category_list(user_allowed_storages: list, customer_type: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def search_product_child(name: str, storages: list, customer_type: str) -> dict:
+def search_product_child(name: str, system_code: str, storages: list, customer_type: str) -> dict:
     """
     Get a product by system_code in main collection in database.
     """
-    result = Product.search_product_child(name, storages, customer_type)
+    result = Product.search_product_child(name, system_code, storages, customer_type)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
