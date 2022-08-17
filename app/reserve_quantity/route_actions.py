@@ -31,13 +31,13 @@ class Reserve:
         try:
             quantity_result = add_reserve_quantity_order(system_code, storage_id, count, customer_type, sku,
                                                          order_number)
-            msm_result = add_reserve_msm_order(system_code, storage_id, count, order_number)
+            # msm_result = add_reserve_msm_order(system_code, storage_id, count, order_number)
             if quantity_result.get("success"):
                 with MongoConnection() as client:
-                    client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
+                    # client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
                     client.product.replace_one(quantity_result.get("query"), quantity_result.get("replace_data"))
                 return {"success": True, "message": "done", "status_code": 200,
-                        "msm": msm_result.get("msm_cardex_data"),
+                        # "msm": msm_result.get("msm_cardex_data"),
                         "quantity": quantity_result.get("quantity_cardex_data")}
             else:
                 return {"success": False, "error": f"{system_code}"}
@@ -75,14 +75,14 @@ class Reserve:
         try:
             quantity_result = remove_from_quantity_cancel_order(system_code, storage_id, count, customer_type, sku,
                                                                 order_number)
-            msm_result = remove_from_msm_cancel_order(system_code, storage_id, count, order_number)
-            if quantity_result.get("success") and msm_result.get("success"):
+            # msm_result = remove_from_msm_cancel_order(system_code, storage_id, count, order_number)
+            if quantity_result.get("success"):
                 with MongoConnection() as client:
-                    client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
+                    # client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
                     client.product.replace_one(quantity_result.get("query"),
                                                quantity_result.get("replace_data"))
                 return {"success": True, "message": "done", "status_code": 200,
-                        "msm": msm_result.get("msm_cardex_data"),
+                        # "msm": msm_result.get("msm_cardex_data"),
                         "quantity": quantity_result.get("quantity_cardex_data")}
         except TypeError:
             return {"success": False, "error": f"{system_code}"}
@@ -124,4 +124,3 @@ class Reserve:
             return {"success": False, "error": f"{system_code}"}
         except:
             return {"success": False, "error": f"{system_code}"}
-

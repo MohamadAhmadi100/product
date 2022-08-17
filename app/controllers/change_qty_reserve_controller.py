@@ -1,6 +1,5 @@
 from app.helpers.warehouses import warehouses
 from app.reserve_quantity.add_remove_model import addRemoveQuantity
-from app.reserve_quantity.cardex import cardex
 from app.reserve_quantity.imeis import *
 from app.reserve_quantity.route_actions import Reserve
 
@@ -15,15 +14,15 @@ def remove_from_reserve(order):
     for item in order_model.order_data:
         result = order_model.remove_reserve_cancel(item.get("system_code"), item.get("storage_id"), item.get("count"),
                                                    item.get("customer_type"), item.get("sku"), item.get("order_number"))
-        add_cardex_to_msm.append(result.get("msm"))
+        # add_cardex_to_msm.append(result.get("msm"))
         add_cardex_to_quantity.append(result.get("quantity"))
         if result.get("success") is False:
             return result
     try:
         Reserve.cardex(order["customer"].get("id"), order["customer"].get("fullName"), order.get("orderNumber"),
                        add_cardex_to_quantity)
-        Reserve.msm_log(order["customer"].get("id"), order["customer"].get("fullName"), order.get("orderNumber"),
-                        add_cardex_to_msm)
+        # Reserve.msm_log(order["customer"].get("id"), order["customer"].get("fullName"), order.get("orderNumber"),
+        #                 add_cardex_to_msm)
         return {'success': True, 'message': 'done', 'status_code': 200}
     except:
         return {'success': False, 'message': 'log error', 'status_code': 409}
@@ -38,15 +37,15 @@ def add_to_reserve(order):
 
         data_for_check = (item, result.get("success"))
         check_data.append(data_for_check)
-        add_cardex_to_msm.append(result.get("msm"))
+        # add_cardex_to_msm.append(result.get("msm"))
         add_cardex_to_quantity.append(result.get("quantity"))
     checked = all(elem[1] for elem in check_data)
     if checked:
         try:
             Reserve.cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
                            add_cardex_to_quantity)
-            Reserve.msm_log(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
-                            add_cardex_to_msm)
+            # Reserve.msm_log(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+            #                 add_cardex_to_msm)
             return {'success': True, 'message': 'done', 'status_code': 200}
         except:
             return {'success': False, 'message': 'log error', 'status_code': 409}

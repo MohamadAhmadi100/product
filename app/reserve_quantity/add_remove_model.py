@@ -2,7 +2,6 @@ import jdatetime
 
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.warehouses import find_warehouse
-from app.reserve_quantity.imeis import articles
 
 
 class AddRemoveReserve:
@@ -22,6 +21,7 @@ class AddRemoveReserve:
                                         "replace_data": products,
                                         "product": storage_dict}
                             else:
+                                # storage_dict["reserved"] += count
                                 client.reserve_log_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
                                      "old_reserve": storage_dict["reserved"],
@@ -194,8 +194,6 @@ class addRemoveQuantity:
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                 return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد",
                         "status_code": 404}
-
-
 
     @staticmethod
     def remove_quantity(system_code, storage_id, count, customer_type):
