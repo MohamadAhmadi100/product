@@ -569,6 +569,7 @@ class Product:
             result = result.next() if result.alive else None
             if result:
                 categories = result.get("categories")[0].get("categories") if result.get("categories") else []
+                categories = sorted(categories, key=lambda x: x['system_code'], reverse=False)
                 mobile_brands = result.get("brands")[0].get("brands") if result.get("brands") else []
                 latest_samsungs = result.get("latest_samsungs") if result.get("latest_samsungs") else []
 
