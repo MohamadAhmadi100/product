@@ -353,6 +353,10 @@ class Product:
                                         '$addToSet': '$item'
                                     }
                                 }
+                            }, {
+                                '$sort': {
+                                    'categories.system_code': 1
+                                }
                             }
                         ],
                         'brands': [
