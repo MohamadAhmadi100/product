@@ -28,6 +28,101 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def search_product_child(name, storages, customer_type):
+        with MongoConnection() as mongo:
+            pipe_lines = [
+                {
+                    '$match': {
+                        'name': {
+                            '$regex': re.compile(fr"{name}(?i)")
+                        },
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        },
+                        'storage_id': {
+                            '$in': storages
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$_id',
+                        'item': {
+                            '$addToSet': '$root_obj'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'item': {
+                            '$first': '$item'
+                        }
+                    }
+                },
+                {
+                    '$project': {
+                        'item._id': 0
+                    }
+                }
+                , {
+                    '$replaceRoot': {
+                        'newRoot': '$item'
+                    }
+                }
+            ]
+            result = mongo.product.aggregate(pipe_lines)
+            return list(result)
+
+    @staticmethod
     def get_product_by_name(name, user_allowed_storages, customer_type):
         with MongoConnection() as mongo:
             warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))

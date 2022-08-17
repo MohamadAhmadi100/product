@@ -176,6 +176,16 @@ def get_category_list(user_allowed_storages: list, customer_type: str) -> dict:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
 
+
+def search_product_child(name: str, storages: list, customer_type: str) -> dict:
+    """
+    Get a product by system_code in main collection in database.
+    """
+    result = Product.search_product_child(name, storages, customer_type)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
 # def delete_product(system_code: str) -> dict:
 #     """
 #     Delete a product by name in main collection in database.
