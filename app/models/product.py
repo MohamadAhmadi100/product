@@ -34,7 +34,7 @@ class Product:
             pipe_lines = [
                 {
                     '$match': {
-                        'visible_in_site': True
+                        'step': 4
                     }
                 }, {
                     '$project': {
