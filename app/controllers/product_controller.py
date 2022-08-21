@@ -1,4 +1,5 @@
 from app.models.product import Product, AddAttributes, Price, Quantity
+from app.modules import csv_getter
 
 
 def create_product(name, url_name, system_codes):
@@ -182,6 +183,16 @@ def search_product_child(name: str, system_code: str, storages: list, customer_t
     Get a product by system_code in main collection in database.
     """
     result = Product.search_product_child(name, system_code, storages, customer_type)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_csv(storage_id: str) -> dict:
+    """
+    Get a product by system_code in main collection in database.
+    """
+    result = csv_getter.get_csv(storage_id)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
