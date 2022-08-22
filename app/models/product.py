@@ -36,84 +36,10 @@ class Product:
                     '$match': {
                         'step': 4
                     }
-                }, {
-                    '$project': {
-                        'system_code': 1,
-                        'keys': {
-                            '$objectToArray': '$warehouse_details'
-                        },
-                        'root_obj': '$$ROOT'
-                    }
-                }, {
-                    '$unwind': '$keys'
-                }, {
-                    '$project': {
-                        'system_code': 1,
-                        'customer_type': '$keys.k',
-                        'zz': {
-                            '$objectToArray': '$keys.v.storages'
-                        },
-                        'root_obj': 1
-                    }
-                }, {
-                    '$unwind': '$zz'
-                }, {
-                    '$project': {
-                        'system_code': 1,
-                        'storage_id': '$zz.k',
-                        'customer_type': 1,
-                        'qty': {
-                            '$subtract': [
-                                '$zz.v.quantity', '$zz.v.reserved'
-                            ]
-                        },
-                        'min': {
-                            '$subtract': [
-                                {
-                                    '$subtract': [
-                                        '$zz.v.quantity', '$zz.v.reserved'
-                                    ]
-                                }, '$zz.v.min_qty'
-                            ]
-                        },
-                        'root_obj': 1
-                    }
-                }, {
-                    '$match': {
-                        'customer_type': customer_type,
-                        'qty': {
-                            '$gt': 0
-                        },
-                        'min': {
-                            '$gte': 0
-                        },
-                        'storage_id': {
-                            '$in': storages
-                        }
-                    }
-                }, {
-                    '$group': {
-                        '_id': '$_id',
-                        'item': {
-                            '$addToSet': '$root_obj'
-                        }
-                    }
-                }, {
-                    '$project': {
-                        '_id': 0,
-                        'item': {
-                            '$first': '$item'
-                        }
-                    }
                 },
                 {
-                    '$project': {
-                        'item._id': 0
-                    }
-                }
-                , {
-                    '$replaceRoot': {
-                        'newRoot': '$item'
+                    "$project": {
+                        "_id": 0
                     }
                 }
             ]
