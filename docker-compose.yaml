@@ -36,8 +36,14 @@ services:
     api:
         build: .
         environment:
-        - TZ=Asia/Tehran
+          - TZ=Asia/Tehran
+        networks:
+          - rabbit
 
 volumes:
     mongodb-data-product:
     redis-data-product:
+        
+networks:
+  rabbit:
+    driver: bridge
