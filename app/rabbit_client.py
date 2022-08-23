@@ -26,7 +26,7 @@ class RabbitRPCClient:
         self.connect()
         self.receiving_queue = receiving_queue
         self.channel.queue_declare(queue=self.receiving_queue, durable=True)
-        self.channel.basic_qos(prefetch_count=10)
+        self.channel.basic_qos(prefetch_count=1)
         self.callback = callback
         self.fanout_callback = None
         self.headers = headers
