@@ -1743,6 +1743,11 @@ class Quantity:
         update quantity in database
         """
         with MongoConnection() as client:
+            client.quantity_log.insert_one({
+                "system_code": system_code, "customer_type": customer_type, "storage_id": storage_id,
+                "quantity": quantity,
+                "min_qty": min_qty, "max_qty": max_qty
+            })
             storage = {
                 "storage_id": storage_id,
                 "reserved": 0,
