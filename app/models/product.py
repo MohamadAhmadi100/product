@@ -1677,6 +1677,10 @@ class Quantity:
 
     def set_quantity(self):
         with MongoConnection() as client:
+            client.quantity_log.insert_one({
+                "system_code": self.system_code, "customer_types": self.customer_types,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
             db_query = dict()
             for key, value in self.customer_types.items():
                 if value.get("storages"):
@@ -1746,7 +1750,8 @@ class Quantity:
             client.quantity_log.insert_one({
                 "system_code": system_code, "customer_type": customer_type, "storage_id": storage_id,
                 "quantity": quantity,
-                "min_qty": min_qty, "max_qty": max_qty
+                "min_qty": min_qty, "max_qty": max_qty,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
             storage = {
                 "storage_id": storage_id,
