@@ -774,7 +774,9 @@ class Product:
 
                         product['attributes'] = attributes_list
                         product['color'] = {"value": product['color'],
-                                            "label": redis.client.hget(product['color'], lang)}
+                                            "label": redis.client.hget(product['color'], lang),
+                                            "hex": redis.client.hget(product['color'], "hex")
+                                            }
                         product['guaranty'] = {"value": product['guaranty'],
                                                "label": redis.client.hget(product['guaranty'], lang)}
                         product['seller'] = {"value": product['seller'],
