@@ -992,7 +992,25 @@ class Product:
                         'price': {
                             'storage_id': '$zz.k',
                             'regular': '$zz.v.regular',
-                            'special': '$zz.v.special'
+                            'special': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {
+                                                '$gt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_from_date'
+                                                ]
+                                            }, {
+                                                '$lt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_to_date'
+                                                ]
+                                            }
+                                        ]
+                                    }, '$zz.v.special', None
+                                ]
+                            }
                         },
                         'root_obj': 1
                     }
