@@ -7,7 +7,7 @@ stages:
 build:
   stage: build
   only:
-    - dev
+    - master
   tags:
     - api-gw
   script:
@@ -35,7 +35,7 @@ build:
 dev_deploy:
   stage: deploy
   only:
-    - dev
+    - master
   tags:
     - api-gw
   script:
@@ -63,7 +63,7 @@ dev_deploy:
 push:
   stage: push
   only:
-    - master
+    - dev
   tags:
     - deploy
   script:
@@ -92,7 +92,7 @@ push:
 master_deploy:
   stage: deploy
   only:
-    - master
+    - dev
   tags:
     - deploy
   script:
