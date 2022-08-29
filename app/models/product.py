@@ -39,7 +39,12 @@ class Product:
                 },
                 {
                     "$project": {
-                        "_id": 0
+                        "_id": 0,
+                    }
+                },
+                {
+                    "$addFields": {
+                    "GIN":None
                     }
                 }
             ]
