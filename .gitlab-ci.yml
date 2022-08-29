@@ -88,7 +88,7 @@ push:
     - echo TEMPLATE=$TEMPLATE >> .env
     - docker login nexus.aasood.com -u registry -p $REGPASS
     - docker build -t product:0.0.1 . -t nexus.aasood.com/backend/product:$CI_COMMIT_SHORT_SHA
-    - docker push nexus.aasood.com/backend/product:$CI_COMMIT_SHORT_SHA
+#    - docker push nexus.aasood.com/backend/product:$CI_COMMIT_SHORT_SHA
 
 master_deploy:
   stage: deploy
