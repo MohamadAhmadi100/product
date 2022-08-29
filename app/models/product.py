@@ -1780,7 +1780,6 @@ class Quantity:
             })
             storage = {
                 "storage_id": storage_id,
-                "reserved": 0,
                 "quantity": quantity,
                 "min_qty": min_qty,
                 "max_qty": max_qty
@@ -1793,7 +1792,7 @@ class Quantity:
                             "warehouse_label": obj[0].get("warehouse_name"),
                             })
             db_query = {f"warehouse_details.{customer_type}.storages.{storage_id}.{key}": value for key, value in
-                        storage.items()}
+                        storage.items() if value}
 
             db_query.update({
                 "step": {"$cond": [{"$eq": ["$step", 3]}, 4, "$step"]}
