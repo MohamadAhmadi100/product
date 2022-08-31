@@ -77,7 +77,7 @@ def articles(product, dst_warehouse):
     return articles_deta
 
 
-def add_product_details(product, referral_number, supplier, form_date, dst_warehouse):
+def add_product_archive(product, referral_number, supplier, form_date, dst_warehouse):
     with MongoConnection() as client:
         client.product_archive.insert_one({
             "referral_number": referral_number,
@@ -97,7 +97,7 @@ def add_msm_stocks(product, storage_id, supplier_name):
     with MongoConnection() as client:
         count = client.stocks_collection.count_documents(
             {"systemCode": product['system_code'], "stockId": storage_id})
-        change_imei_to_msm_object = articles(product,storage_id)
+        change_imei_to_msm_object = articles(product, storage_id)
         if count > 0:
             stocks = client.stocks_collection.find_one({"systemCode": product['system_code'], "stockId": storage_id})
             cardex_detail = cardex(
@@ -176,3 +176,135 @@ def add_warehouse_product(product, referral_number, supplier, form_date, dst_war
             "isDoubleSim": False,
         })
         return {"success": True}
+
+
+def export_transfer_archive(products, dst_warehouse, referral_number, staff_name):
+    with MongoConnection() as client:
+        count_imei = client.imeis.count_documents({"system_code": products['system_code'], "storage_id": "1000"})
+        if count_imei == 0:
+            transfer_object = client.imeis.find_one({"system_code": products['system_code']}, {"_id": False})
+            transfer_object['stock_label'] = "انتقالی"
+            transfer_object['storage_id'] = "1000"
+            transfer_object['imeis'] = []
+            client.imeis.insert_one(transfer_object)
+        transfer_stocks = []
+        for imeis in products['imeis']:
+            client.product_archive.update_one({"articles.first": imeis}, {"$set": {
+                "articles.$.transfer_detail":
+                    [{
+                        "to_storage": dst_warehouse['storage_id'],
+                        "referral_number": referral_number,
+                        "export_time": str(jdatetime.datetime.now()).split(".")[0],
+                        "export_by": staff_name
+                    }]
+                ,
+                "articles.$.status": "transfer"
+            }})
+            client.imeis.update_one({"imeis.imei": imeis}, {"$pull": {"imeis": {"imei": imeis}}})
+            transfer_stocks.append(
+                {"imei": imeis, "to_storage": dst_warehouse['storage_id'], "referral_number": referral_number})
+        client.imeis.update_one({"system_code": products['system_code'], "storage_id": "1000"},
+                                {"$push": {"imeis": {"$each": transfer_stocks}}})
+        return {"success": True}
+
+
+def import_transfer_archive(products, src_warehouse, dst_warehouse, referral_number, staff_name):
+    with MongoConnection() as client:
+        transfer_stocks = []
+        warehouse = find_warehouse(src_warehouse['storage_id'])['warehouses']
+        for imeis in products['imeis']:
+            client.product_archive.update_one({"articles.first": imeis},
+                                              {"$set": {
+                                                  "articles.$.status": "landed",
+                                                  "articles.$.stockId": dst_warehouse['storage_id'],
+                                                  "articles.$.stockName": warehouse['warehouse_name'],
+                                                  "articles.$.stockLabel": warehouse['warehouse_name'],
+                                                  "articles.$.stockState": warehouse['state'],
+                                                  "articles.$.stockCity": warehouse['city'],
+                                                  "articles.$.stockStateId": warehouse['state_id'],
+                                                  "articles.$.stockCityId": warehouse['city_id'],
+                                              },
+                                                  "$push": {"articles.$.transfer_detail": {
+                                                      "from_storage": src_warehouse['storage_id'],
+                                                      "referral_number": referral_number,
+                                                      "import_time": str(jdatetime.datetime.now()).split(".")[0],
+                                                      "import_by": staff_name
+                                                  }
+                                                  }})
+            objected_imei = {"imeis": imeis}
+            client.imeis.update_one({"imeis.imei": imeis, "storage_id": "1000"}, {"$pull": {"imeis": {"imei": imeis}}})
+            transfer_stocks.append(objected_imei)
+        client.imeis.update_one({"system_code": products['system_code'], "storage_id": dst_warehouse['storage_id']},
+                                {"$push": {"imeis": {"$each": transfer_stocks}}})
+
+        return {"success": True}
+
+
+def check_transfer_imei(imei, transfer_object):
+    with MongoConnection() as clinet:
+        check_imei = clinet.product_archive.aggregate([
+            {
+                '$match': {
+                    'articles.first': imei
+                }
+            }, {
+                '$unwind': {
+                    'path': '$articles'
+                }
+            }, {
+                '$match': {
+                    'articles.first': imei
+                }
+            }, {
+                '$project': {
+                    'exist': '$articles.exist',
+                    'storage': '$articles.stockId',
+                    'status': '$articles.status'
+                }
+            }, {
+                '$project': {
+                    '_id': 0
+                }
+            }
+        ])
+        if check_imei.alive:
+            check_data = list(check_imei)[0]
+            if check_data.get("exist"):
+                if transfer_object['status_type'] == "submit":
+                    if check_data.get("storage") == transfer_object['src_warehouse']['storage_id']:
+                        return {"success": True, "status_code": 200}
+                    else:
+                        return {"success": False, "error": "کد مورد نظر در انبار دیگری موجود است", "status_code": 400}
+                elif transfer_object['status_type'] == "transfer":
+                    if check_data.get("status") == "transfer":
+                        imeis_check = clinet.imeis.aggregate([
+                            {
+                                '$unwind': {
+                                    'path': '$imeis'
+                                }
+                            }, {
+                                '$match': {
+                                    'imeis.imei': imei
+                                }
+                            }, {
+                                '$project': {
+                                    '_id': 0,
+                                    'to_storage': '$imeis.to_storage',
+                                    'referral_number': '$imeis.referral_number'
+                                }
+                            }
+                        ])
+                        if imeis_check.alive:
+                            imeis_check = list(imeis_check)[0]
+                            if check_data.get("storage") == transfer_object['src_warehouse'][
+                                'storage_id'] and imeis_check.get("to_storage") == transfer_object['dst_warehouse'][
+                                'storage_id']:
+                                return {"success": True, "status_code": 200}
+                            else:
+                                return {"success": False, "error": "کد مورد نظر در انبار دیگری موجود است",
+                                        "status_code": 400}
+            else:
+                return {"success": False, "error": "کد مورد نظر قبلا خروج خورده است", "status_code": 400}
+        else:
+            return {"success": False, "error": "imei مورد نظر یافت نشد", "status_code": 400}
+

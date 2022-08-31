@@ -16,6 +16,7 @@ class AddRemoveReserve:
                         if cusrsor == storage_id:
                             if (storage_dict["reserved"] + count) <= storage_dict['quantity']:
                                 storage_dict["reserved"] += count
+                                client.product.replace_one({"system_code": system_code},products)
                                 return {"success": True,
                                         "query": {"system_code": system_code},
                                         "replace_data": products,
@@ -196,7 +197,7 @@ class addRemoveQuantity:
                         "status_code": 404}
 
     @staticmethod
-    def remove_quantity(system_code, storage_id, count, customer_type):
+    def remove_reserve_quantity(system_code, storage_id, count, customer_type):
         with MongoConnection() as client:
             cardex_data = {}
             quantity_count = client.product.count_documents({"system_code": system_code})
@@ -205,22 +206,31 @@ class addRemoveQuantity:
                 for products in product:
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
-                            cardex_data['old_quantity'] = storage_dict["quantity"]
-                            storage_dict["quantity"] -= count
-                            cardex_data['new_quantity'] = storage_dict["quantity"]
-                            cardex_data['old_reserve'] = storage_dict["reserved"]
-                            storage_dict["reserved"] -= count
-                            cardex_data['new_reserve'] = storage_dict["reserved"]
-                            if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0:
-                                return {"success": False, "error": "تعداد از موجودی بیشتر است",
+                            if storage_dict["quantity"] > 0 or storage_dict["reserved"] > 0:
+                                cardex_data['old_quantity'] = storage_dict["quantity"]
+                                storage_dict["quantity"] -= count
+                                cardex_data['new_quantity'] = storage_dict["quantity"]
+                                cardex_data['old_reserve'] = storage_dict["reserved"]
+                                storage_dict["reserved"] -= count
+                                cardex_data['new_reserve'] = storage_dict["reserved"]
+                                if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0:
+                                    return {"success": False, "error": "تعداد از موجودی بیشتر است",
+                                            "status_code": 404}
+                                client.product.update_one({"system_code": system_code}, {"$set": products})
+                                return {"success": True, "message": "عملیات مورد نظر با موفقیت انجام شد",
+                                        "status_code": 200,
+                                        "cardex_data": cardex_data}
+                            else:
+                                client.reserve_log_collection.insert_one(
+                                    {"systemCode": str(system_code), "stockId": str(storage_id),
+                                     "message": "reserve or qty kamtar az 0",
+                                     "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
+                                return {"success": False, "error": "موجودی یا رزرو کمتر از محصولات است",
                                         "status_code": 404}
-                            client.product.update_one({"system_code": system_code}, {"$set": products})
-                            return {"success": True, "message": "عملیات مورد نظر با موفقیت انجام شد",
-                                    "status_code": 200,
-                                    "cardex_data": cardex_data}
             else:
                 client.reserve_log_collection.insert_one(
                     {"systemCode": str(system_code), "stockId": str(storage_id),
                      "message": "product not found in remove qty",
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                 return {"success": False, "error": "سیستم کد مورد نظر وجود ندارد", "status_code": 404}
+

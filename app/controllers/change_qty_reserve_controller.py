@@ -1,6 +1,7 @@
 from app.helpers.warehouses import warehouses
-from app.reserve_quantity.add_remove_model import addRemoveQuantity
+from app.reserve_quantity.add_remove_model import addRemoveQuantity, AddRemoveReserve
 from app.reserve_quantity.imeis import *
+from app.reserve_quantity.reserve_helper import transfer_add_reserve_quantity
 from app.reserve_quantity.route_actions import Reserve
 
 """
@@ -61,23 +62,31 @@ def add_to_reserve(order):
 
 
 def remove_reserve_edit(edited_object, order_number, customer_id, customer_type, customer_name):
-    add_cardex_to_msm, add_cardex_to_quantity = list(), list()
+    add_cardex_to_quantity, check_data = list(), list()
 
     for item in edited_object:
         result = Reserve.remove_reserve_edit_order(item.get("systemCode"), item.get("storageId"),
                                                    (int(item.get("oldCount")) - int(item.get("newCount"))),
                                                    customer_type, item.get("sku"), item.get("order_number"))
-        if result.get("success") is False:
-            return result
-        add_cardex_to_msm.append(result.get("msm"))
+        data_for_check = (item, result.get("success"))
+        check_data.append(data_for_check)
         add_cardex_to_quantity.append(result.get("quantity"))
-
-    try:
-        Reserve.cardex(customer_id, customer_name, order_number, add_cardex_to_quantity)
-        Reserve.msm_log(customer_id, customer_name, order_number, add_cardex_to_msm)
-        return {'success': True, 'message': 'done', 'status_code': 200}
-    except:
-        return {'success': False, 'message': 'log error', 'status_code': 409}
+    checked = all(elem[1] for elem in check_data)
+    if checked:
+        try:
+            Reserve.cardex(customer_id, customer_name, order_number, add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        for element in check_data:
+            if element[1] is True:
+                result = AddRemoveReserve.add_reserve_quantity(element[0].get("systemCode"),
+                                                               element[0].get("storageId"), element[0].get("count"),
+                                                               element[0].get("customer_type"), order_number)
+                if result.get("success") is False:
+                    return result
+        return {'success': False, 'message': 'operation unsuccessful', "check_data": check_data, 'status_code': 200}
 
 
 """
@@ -132,7 +141,7 @@ def warehouse_buying(product, dst_warehouse, referral_number, supplier_name, for
             if product_result.get("success"):
                 add_msm_stocks(product, dst_warehouse, supplier_name)
                 imei = add_imeis(product, dst_warehouse)
-                archive = add_product_details(product, referral_number, supplier_name, form_date, dst_warehouse)
+                archive = add_product_archive(product, referral_number, supplier_name, form_date, dst_warehouse)
                 if imei and archive:
                     cardex_detail = cardex(
                         storage_id=dst_warehouse,
@@ -159,56 +168,66 @@ def warehouse_buying(product, dst_warehouse, referral_number, supplier_name, for
         return check
 
 
-def export_transfer_form(product, src_warehouse, referral_number):
-    product_result = addRemoveQuantity.remove_quantity(product['system_code'], src_warehouse, product['count'],
-                                                       product['customer_type'])
-    # TODO imeis
-    if product_result.get("success"):
-        cardex_detail = cardex(
-            storage_id=src_warehouse,
-            system_code=product['system_code'],
-            order_number=referral_number,
-            qty=product['count'],
-            sku=product['name'],
-            type="export transfer",
-            imeis=product['imeis'],
-            oldQuantity=product_result['cardex_data'].get("old_quantity"),
-            newQuantity=product_result['cardex_data'].get("new_quantity"),
-            oldReserve=product_result['cardex_data'].get('old_reserve'),
-            newRreserve=product_result['cardex_data'].get('new_reserve')
-        )
-        with MongoConnection() as client:
-            client.cardex_collection.insert_one(cardex_detail)
-        product_result.pop("cardex_data")
-        return product_result
-    else:
-        return product_result
+def transfer_products(transfer_object, system_code, staff_name):
+    global products
+    try:
+        for items in transfer_object['products']:
+            if items['system_code'] == system_code:
+                products = items
+
+        if transfer_object['status_type'] == "submit":
+            return Reserve.export_transfer_form(products, transfer_object['dst_warehouse'],
+                                                transfer_object['src_warehouse'], transfer_object['referral_number'],
+                                                transfer_object['quantity_type'], staff_name)
+        elif transfer_object['status_type'] == "transfer":
+            return Reserve.import_transfer_form(products, transfer_object['dst_warehouse'],
+                                                transfer_object['src_warehouse'], transfer_object['referral_number'],
+                                                transfer_object['quantity_type'], staff_name)
+        return {'success': False, 'message': 'status not fount', 'status_code': 400}
+    except:
+        return {'success': False, 'message': 'root exception error', 'status_code': 400}
 
 
-def import_transfer_form(product, dst_warehouse, referral_number):
-    product_result = addRemoveQuantity.add_quantity(product['system_code'], dst_warehouse, product['count'],
-                                                    product['customer_type'], product['sell_price'])
-    # TODO imeis
-    if product_result.get("success"):
-        cardex_detail = cardex(
-            storage_id=dst_warehouse,
-            system_code=product['system_code'],
-            order_number=referral_number,
-            qty=product['count'],
-            sku=product['name'],
-            type="import transfer",
-            imeis=product['imeis'],
-            oldQuantity=product_result['cardex_data'].get("old_quantity"),
-            newQuantity=product_result['cardex_data'].get("new_quantity"),
-            oldReserve=product_result['cardex_data'].get('reserve'),
-            newRreserve=product_result['cardex_data'].get('reserve')
-        )
-        with MongoConnection() as client:
-            client.cardex_collection.insert_one(cardex_detail)
-        product_result.pop("cardex_data")
-        return product_result
+def add_to_reserve_transfer(transfer_object):
+    check_data, add_cardex_to_quantity = list(), list()
+    for item in transfer_object.get("products"):
+        result = transfer_add_reserve_quantity(item.get("system_code"),
+                                               transfer_object['src_warehouse'].get("storage_id"),
+                                               item.get("count"), transfer_object['quantity_type'], item.get("name"),
+                                               transfer_object['referral_number'])
+
+        data_for_check = (item, result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(result.get('quantity_cardex_data'))
+    checked = all(elem[1] for elem in check_data)
+    if checked:
+        try:
+
+            Reserve.cardex("staff", None, transfer_object['referral_number'],
+                           add_cardex_to_quantity)
+            return {'success': True, 'message': 'فرم انتقالی با موفقیت ثبت شد', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
     else:
-        return product_result
+        for element in check_data:
+            data_response = []
+            if element[1] is True:
+                result = Reserve.remove_reserve_cancel(element[0].get("system_code"),
+                                                       transfer_object['src_warehouse'].get("storage_id"),
+                                                       element[0].get("count"), transfer_object['quantity_type'],
+                                                       element[0].get("name"), transfer_object['referral_number'])
+                if result.get("success") is False:
+                    return result
+            else:
+                data_response.append(element)
+        return {'success': False, 'message': 'operation unsuccessful', "error": data_response, 'status_code': 200}
+
+
+def check_transfer_imeis(imei, transfer_object):
+    try:
+        return check_transfer_imei(imei, transfer_object)
+    except:
+        return {'success': False, 'message': 'root exception error', 'status_code': 400}
 
 
 def all_warehouses():

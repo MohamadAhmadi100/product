@@ -1,6 +1,5 @@
-from app.helpers.mongo_connection import MongoConnection
 from app.reserve_quantity.add_remove_model import addRemoveQuantity
-from app.reserve_quantity.cardex import cardex
+from app.reserve_quantity.imeis import *
 from app.reserve_quantity.reserve_helper import *
 
 
@@ -112,15 +111,79 @@ class Reserve:
         try:
             quantity_result = remove_quantity_edit_order(system_code, storage_id, count, customer_type, sku,
                                                          order_number)
-            msm_result = remove_msm_edit_order(system_code, storage_id, count, order_number)
-            if quantity_result.get("success") and msm_result.get("success"):
+            # msm_result = remove_msm_edit_order(system_code, storage_id, count, order_number)
+            if quantity_result.get("success"):
                 with MongoConnection() as client:
-                    client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
+                    # client.stocks_collection.update_one(msm_result.get("query"), msm_result.get("update_data"))
                     client.product.replace_one(quantity_result.get("query"), quantity_result.get("replace_data"))
                 return {"success": True, "message": "done", "status_code": 200,
-                        "msm": msm_result.get("msm_cardex_data"),
+                        # "msm": msm_result.get("msm_cardex_data"),
                         "quantity": quantity_result.get("quantity_cardex_data")}
         except TypeError:
             return {"success": False, "error": f"{system_code}"}
         except:
             return {"success": False, "error": f"{system_code}"}
+
+    @staticmethod
+    def remove_reserve_qty_export_transfer(product, src_warehouse, dst_warehouse, referral_number, customer_type):
+        product_result = addRemoveQuantity.remove_reserve_quantity(product['system_code'], src_warehouse['storage_id'],
+                                                                   product['count'],
+                                                                   customer_type)
+        if product_result.get("success"):
+            cardex_detail = cardex(
+                storage_id=src_warehouse['storage_id'],
+                system_code=product['system_code'],
+                order_number=referral_number,
+                qty=product['count'],
+                sku=product['name'],
+                type="export transfer",
+                imeis=product['imeis'],
+                oldQuantity=product_result['cardex_data'].get("old_quantity"),
+                newQuantity=product_result['cardex_data'].get("new_quantity"),
+                oldReserve=product_result['cardex_data'].get('old_reserve'),
+                newRreserve=product_result['cardex_data'].get('new_reserve')
+            )
+            with MongoConnection() as client:
+                client.cardex_collection.insert_one(cardex_detail)
+            product_result.pop("cardex_data")
+            return product_result
+        else:
+            return product_result
+
+    @staticmethod
+    def export_transfer_form(product, dst_warehouse, src_warehouse, referral_number, customer_type, staff_name):
+        product_result = Reserve.remove_reserve_qty_export_transfer(product, src_warehouse, dst_warehouse,
+                                                                    referral_number, customer_type)
+
+        if product_result.get("success"):
+            export_transfer_archive(product, dst_warehouse, referral_number, staff_name)
+            return product_result
+        else:
+            return product_result
+
+    @staticmethod
+    def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,quantity_type, staff_name):
+        product_result = addRemoveQuantity.add_quantity(product['system_code'], src_warehouse['storage_id'], product['count'],
+                                                        quantity_type, product['sell_price'])
+
+        if product_result.get("success"):
+            import_transfer_archive(product, src_warehouse, dst_warehouse, referral_number, staff_name)
+            cardex_detail = cardex(
+                storage_id=dst_warehouse,
+                system_code=product['system_code'],
+                order_number=referral_number,
+                qty=product['count'],
+                sku=product['name'],
+                type="import transfer",
+                imeis=product['imeis'],
+                oldQuantity=product_result['cardex_data'].get("old_quantity"),
+                newQuantity=product_result['cardex_data'].get("new_quantity"),
+                oldReserve=product_result['cardex_data'].get('reserve'),
+                newRreserve=product_result['cardex_data'].get('reserve')
+            )
+            with MongoConnection() as client:
+                client.cardex_collection.insert_one(cardex_detail)
+            product_result.pop("cardex_data")
+            return product_result
+        else:
+            return product_result

@@ -170,3 +170,25 @@ def remove_quantity_edit_order(system_code, storage_id, count, customer_type, sk
         return reserve
     else:
         return reserve
+
+
+def transfer_add_reserve_quantity(system_code, storage_id, count, customer_type, sku, order_number):
+    reserve = AddRemoveReserve.add_reserve_quantity(system_code, storage_id, count, customer_type, order_number)
+    # cardex
+    if reserve.get("success"):
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            order_number=order_number,
+            qty=count,
+            sku=sku,
+            type="transfer",
+            oldQuantity=reserve['product'].get("quantity"),
+            newQuantity=reserve['product'].get("quantity"),
+            oldReserve=reserve['product'].get('reserved') - count,
+            newRreserve=reserve['product'].get('reserved')
+        )
+        reserve['quantity_cardex_data'] = quantity_cardex_data
+        return reserve
+    else:
+        return reserve
