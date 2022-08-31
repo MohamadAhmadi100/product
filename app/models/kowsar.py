@@ -14,23 +14,28 @@ class KowsarPart:
         request_data = {
             "PartPartStoreDTOLst": [{"inv_Store_Code": str(i)} for i in storage_ids],
             "PartGroupCodeLst": [
-                f"{self.model_code}"
+                f"{self.parent_system_code[:16]}"
             ],
             "prt_Part_Code": system_code,
-            "prt_PartGroup_CodeMain": f"{self.model_code[:4]}",
+            "prt_PartGroup_CodeMain": f"{self.parent_system_code[:6]}",
             "prt_Part_Name": name,
             "prt_Part_HasQTYControl": True,
             "prt_PartUnit_Code": "2",
-            "inv_PartClass_Code": f"{self.model_code[:2]}",
-            "sel_PartCategory_Code": f"{self.model_code[:2]}",
+            "inv_PartClass_Code": f"{self.parent_system_code[:2]}",
+            "sel_PartCategory_Code": f"{self.parent_system_code[:2]}",
             "gnr_Lookup_InternalIdDecIncrementGroup": "1",
             "gnr_Lookup_InternalIdSerialState": "2",
-            "prt_Part_Sellable": "0"  # be 1 on production
+            "prt_Part_Sellable": "1"
         }
-        result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data, headers={
-            "UserName": "Site",
-            "Password": "Site@3333"
-        }).json()
+        try:
+            result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data, headers={
+                "UserName": "Site",
+                "Password": "Site@3333"
+            }).json()
+        except Exception as e:
+            result = {
+                "HasError": True,
+            }
         if not result.get("HasError", True):
             return True, result.get("prt_Part_Code")
         return False, None
@@ -115,18 +120,22 @@ class KowsarGroup:
             "Barcode Reader": "200060", "Cartridge": "200061", "Gaming": "200062", "Vacuum Cleaner": "200063"
         }
 
-        if len(self.system_code) == 13:
+        if len(self.system_code) == 16:
             request_data['SaveAsFormalAcc'] = True
             accformal_name = parent_data.get("sub_category") if parent_data.get(
-                "sub_category") not in ["Mobile", "t-mobile"] else "mobile"
+                "sub_category") not in ["Mobile", "mobile"] else "mobile"
             request_data['acc_FormalGrouping_NameMain'] = "گروهای کالا"
             request_data['acc_FormalAcc_Code'] = codes.get(accformal_name)
-
-        result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPartGroup", json=request_data,
-                               headers={
-                                   "UserName": "Site",
-                                   "Password": "Site@3333"
-                               }).json()
+        try:
+            result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPartGroup", json=request_data,
+                                   headers={
+                                       "UserName": "Site",
+                                       "Password": "Site@3333"
+                                   }).json()
+        except:
+            result = {
+                "HasError": True,
+            }
         if not result.get("HasError", True):
             return True
         return False

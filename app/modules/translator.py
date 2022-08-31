@@ -189,6 +189,371 @@ mock = {'Accessory': {'en_us': 'Accessory', 'fa_ir': 'اکسسوری'},
         'MB': {'en_us': 'MegaByte', 'fa_ir': 'مگابایت'},
         }
 
+mock = {
+    "Black": {"en_us": "Black", "fa_ir": "مشکی"},
+    "Phantom black": {"en_us": "Phantom black", "fa_ir": "مشکی"},
+    "Gray": {"en_us": "Gray", "fa_ir": "خاکستری"},
+    "Graphite": {"en_us": "Graphite", "fa_ir": "نوک مدادی"},
+    "Blue": {"en_us": "Blue", "fa_ir": "آبی"},
+    "Sky blue": {"en_us": "Sky blue", "fa_ir": "آبی آسمانی"},
+    "Green": {"en_us": "Green", "fa_ir": "سبز"},
+    "Mint": {"en_us": "Mint", "fa_ir": "نعنایی"},
+    "Peach": {"en_us": "Peach", "fa_ir": "هلویی"},
+    "Pink": {"en_us": "Pink", "fa_ir": "صورتی"},
+    "Pink gold": {"en_us": "Pink gold", "fa_ir": "طلای صورتی"},
+    "Lavender": {"en_us": "Lavender", "fa_ir": "بنفش"},
+    "Violet": {"en_us": "Violet", "fa_ir": "بنفش"},
+    "Burgundy": {"en_us": "Burgundy", "fa_ir": "شرابی"},
+    "Cream": {"en_us": "Cream", "fa_ir": "کرم"},
+    "White": {"en_us": "White", "fa_ir": "سفید"},
+    "Red": {"en_us": "Red", "fa_ir": "قرمز"},
+    "Icy Blue": {"en_us": "Icy Blue", "fa_ir": "آبی"},
+    "Blazing Black": {"en_us": "Blazing Black", "fa_ir": "مشکی"},
+    "Light Blue": {"en_us": "Light Blue", "fa_ir": "آبی"},
+    "Graphite Gray": {"en_us": "Graphite Gray", "fa_ir": "خاکستری"},
+    "Polar White": {"en_us": "Polar White", "fa_ir": "سفید"},
+    "Atlantic Blue": {"en_us": "Atlantic Blue", "fa_ir": "آبی اطلسی"},
+    "Star Blue": {"en_us": "Star Blue", "fa_ir": "آبی روشن (ستاره ای)"},
+    "Pearl White": {"en_us": "Pearl White", "fa_ir": "سفید"},
+    "Twilight Blue": {"en_us": "Twilight Blue", "fa_ir": "آبی تیره"},
+    "Carbon Gray": {"en_us": "Carbon Gray", "fa_ir": "خاکستری"},
+    "Pebble White": {"en_us": "Pebble White", "fa_ir": "سفید"},
+    "Sea Blue": {"en_us": "Sea Blue", "fa_ir": "آبی"},
+    "Power Black": {"en_us": "Power Black", "fa_ir": "مشکی"},
+    "POCO Yellow": {"en_us": "POCO Yellow", "fa_ir": "زرد"},
+    "Cool Blue": {"en_us": "Cool Blue", "fa_ir": "آبی"},
+    "Carbon Black": {"en_us": "Carbon Black", "fa_ir": "مشکی"},
+    "Coral Green": {"en_us": "Coral Green", "fa_ir": "سبز"},
+    "Metallic Blue": {"en_us": "Metallic Blue", "fa_ir": "آبی"},
+    "Truffle Black ": {"en_us": "Truffle Black ", "fa_ir": "مشکی"},
+    "Bubblegum Blue": {"en_us": "Bubblegum Blue", "fa_ir": "آبی"},
+    "Peach Pink": {"en_us": "Peach Pink", "fa_ir": "صورتی"},
+    "Snowflake White": {"en_us": "Snowflake White", "fa_ir": "سفید"},
+    "Astral White": {"en_us": "Astral White", "fa_ir": "سفید"},
+    "Bifrost Blue": {"en_us": "Bifrost Blue", "fa_ir": "آبی"},
+    "Royal Blue": {"en_us": "Royal Blue", "fa_ir": "آبی"},
+    "Shadow Gray": {"en_us": "Shadow Gray", "fa_ir": "خاکستری"},
+    "Silver": {"en_us": "Silver", "fa_ir": "نقره ای"},
+    "Cyber Yellow": {"en_us": "Cyber Yellow", "fa_ir": "زرد"},
+    "Knight Silver": {"en_us": "Knight Silver", "fa_ir": "نقره ای"},
+    "Stealth Black": {"en_us": "Stealth Black", "fa_ir": "مشکی"},
+    "Purple": {"en_us": "Purple", "fa_ir": "بنفش"},
+    "Laser Blue": {"en_us": "Laser Blue", "fa_ir": "آبی"},
+    "Laser Black": {"en_us": "Laser Black", "fa_ir": "مشکی"},
+    "Deep Ocean Blue": {"en_us": "Deep Ocean Blue", "fa_ir": "آبی"},
+    "Moonlight Silver": {"en_us": "Moonlight Silver", "fa_ir": "نقره ای"},
+    " Arctic White": {"en_us": " Arctic White", "fa_ir": "سفید"},
+    "Midnight": {"en_us": "Midnight", "fa_ir": "مشکی"},
+    "Starlight": {"en_us": "Starlight", "fa_ir": "سفید"},
+    "Alpine Green": {"en_us": "Alpine Green", "fa_ir": "سبز"},
+    "Gold": {"en_us": "Gold", "fa_ir": "طلایی"},
+    "Sierra Blue": {"en_us": "Sierra Blue", "fa_ir": "آبی"},
+    "Aawaat": {"en_us": "Aawaat", "fa_ir": "آوات"},
+    "ASD": {"en_us": "ASD", "fa_ir": "آسود"},
+    "Sherkati": {"en_us": "Sherkati", "fa_ir": "شرکتی"},
+}
+
+a = {
+    "colors": [
+        {
+            "label": "مشکی",
+            "name": "Black",
+            "hex": "#000000"
+        },
+        {
+            "label": "مشکی",
+            "name": "Phantom Black",
+            "hex": "#39373b"
+        },
+        {
+            "label": "خاکستری",
+            "name": "Gray",
+            "hex": "#808080"
+        },
+        {
+            "label": "نوک مدادی",
+            "name": "Graphite",
+            "hex": "#251607"
+        },
+        {
+            "label": "آبی",
+            "name": "Blue",
+            "hex": "#1c1cbf"
+        },
+        {
+            "label": "آبی آسمانی",
+            "name": "Sky blue",
+            "hex": "#87CEEB"
+        },
+        {
+            "label": "سبز",
+            "name": "Green",
+            "hex": "#0b6c0b"
+        },
+        {
+            "label": "نعنایی",
+            "name": "Mint",
+            "hex": "#3EB489"
+        },
+        {
+            "label": "هلویی",
+            "name": "Peach",
+            "hex": "#FFE5B4"
+        },
+        {
+            "label": "صورتی",
+            "name": "Pink",
+            "hex": "#ffc0cb"
+        },
+        {
+            "label": "طلای صورتی",
+            "name": "Pink gold",
+            "hex": "#e6c7c2"
+        },
+        {
+            "label": "بنفش",
+            "name": "Lavender",
+            "hex": "#E6E6FA"
+        },
+        {
+            "label": "بنفش",
+            "name": "Violet",
+            "hex": "#8F00FF"
+        },
+        {
+            "label": "شرابی",
+            "name": "Burgundy",
+            "hex": "#800020"
+        },
+        {
+            "label": "کرم",
+            "name": "Cream",
+            "hex": "#FFFDD0"
+        },
+        {
+            "label": "سفید",
+            "name": "White",
+            "hex": "#ffffff"
+        },
+        {
+            "label": "قرمز",
+            "name": "Red",
+            "hex": "#ff0000"
+        },
+        {
+            "label": "آبی",
+            "name": "Icy Blue",
+            "hex": "#C8E9E9"
+        },
+        {
+            "label": "مشکی",
+            "name": "Blazing Black",
+            "hex": "#121212"
+        },
+        {
+            "label": "آبی",
+            "name": "Light Blue",
+            "hex": "#ADD8E6"
+        },
+        {
+            "label": "خاکستری",
+            "name": "Graphite Gray",
+            "hex": "#53565b"
+        },
+        {
+            "label": "سفید",
+            "name": "Polar White",
+            "hex": "#eef4f4"
+        },
+        {
+            "label": "آبی اطلسی",
+            "name": "Atlantic Blue",
+            "hex": "#0c325b"
+        },
+        {
+            "label": "آبی روشن (ستاره ای)",
+            "name": "Star Blue",
+            "hex": "#9ab4c2"
+        },
+        {
+            "label": "سفید",
+            "name": "Pearl White",
+            "hex": "#F8F6F0"
+        },
+        {
+            "label": "آبی تیره",
+            "name": "Twilight Blue",
+            "hex": "#6a7a8c"
+        },
+        {
+            "label": "خاکستری",
+            "name": "Carbon Gray",
+            "hex": "#625D5D"
+        },
+        {
+            "label": "سفید",
+            "name": "Pebble White",
+            "hex": "#f0e9da"
+        },
+        {
+            "label": "آبی",
+            "name": "Sea Blue",
+            "hex": "#006994"
+        },
+        {
+            "label": "مشکی",
+            "name": "Power Black",
+            "hex": "#01030E"
+        },
+        {
+            "label": "زرد",
+            "name": "POCO Yellow",
+            "hex": "#ffd400"
+        },
+        {
+            "label": "آبی",
+            "name": "Cool Blue",
+            "hex": "#71c7ec"
+        },
+        {
+            "label": "مشکی",
+            "name": "Carbon Black",
+            "hex": "#545351"
+        },
+        {
+            "label": "سبز",
+            "name": "Coral Green",
+            "hex": "#c8ecc7"
+        },
+        {
+            "label": "آبی",
+            "name": "Metallic Blue",
+            "hex": "#32527b"
+        },
+        {
+            "label": "آبی",
+            "name": "Bubblegum Blue",
+            "hex": "#2035d7"
+        },
+        {
+            "label": "صورتی",
+            "name": "Peach Pink",
+            "hex": "#FF9899"
+        },
+        {
+            "label": "سفید",
+            "name": "Snowflake White",
+            "hex": "#E4E2DD"
+        },
+        {
+            "label": "سفید",
+            "name": "Astral White",
+            "hex": "#D1D1D9"
+        },
+        {
+            "label": "آبی",
+            "name": "Bifrost Blue",
+            "hex": "#5286D8"
+        },
+        {
+            "label": "آبی",
+            "name": "Royal Blue",
+            "hex": "#4169e1"
+        },
+        {
+            "label": "خاکستری",
+            "name": "Shadow Gray",
+            "hex": "#595953"
+        },
+        {
+            "label": "نقره ای",
+            "name": "Silver",
+            "hex": "#c0c0c0"
+        },
+        {
+            "label": "زرد",
+            "name": "Cyber Yellow",
+            "hex": " #ffd300"
+        },
+        {
+            "label": "نقره ای",
+            "name": "Knight Silver",
+            "hex": " #C3D2E1"
+        },
+        {
+            "label": "مشکی",
+            "name": "Stealth Black",
+            "hex": " #3c3c3e"
+        },
+        {
+            "label": "بنفش",
+            "name": "Purple",
+            "hex": " #800080"
+        },
+        {
+            "label": "آبی",
+            "name": "Laser Blue",
+            "hex": " #144b9f"
+        },
+        {
+            "label": "مشکی",
+            "name": "Laser Black",
+            "hex": " #010203"
+        },
+        {
+            "label": "آبی",
+            "name": "Deep Ocean Blue",
+            "hex": " #0D395A"
+        },
+        {
+            "label": "نقره ای",
+            "name": "Moonlight Silver",
+            "hex": " #CDCDCD"
+        },
+        {
+            "label": "سفید",
+            "name": "Arctic White",
+            "hex": " #F2F2F2"
+        },
+        {
+            "label": "مشکی",
+            "name": "Midnight",
+            "hex": " #1E1F22"
+        },
+        {
+            "label": "سفید",
+            "name": "Starlight",
+            "hex": " #EBECE0"
+        },
+        {
+            "label": "سبز",
+            "name": "Alpine Green",
+            "hex": " #456549"
+        },
+        {
+            "label": "طلايی",
+            "name": "Gold",
+            "hex": " #ffd900"
+        },
+        {
+            "label": "آبی",
+            "name": "Sierra Blue",
+            "hex": " #64A2C3"
+        }
+    ]
+}
+
+
+def gettrtredis():
+    tmplist = list()
+    with RedisConnection() as redis:
+        keys_of_redis = redis.client.keys()
+        for key in keys_of_redis:
+            val = redis.client.hget(key, "hex")
+            if not val:
+                tmplist.append(key)
+    return tmplist
+
 
 def update_redis_database():
     list_of_words = mock
@@ -196,6 +561,13 @@ def update_redis_database():
         for key, value in list_of_words.items():
             for in_key, in_value in value.items():
                 redis_db.client.hset(key, in_key, in_value)
+
+
+# with RedisConnection() as redis_db:
+#     key = "Truffle Black"
+#     value = {"en_us": "Truffle Black", "fa_ir": "مشکی", 'hex': '#413E42'}
+#     for in_key, in_value in value.items():
+#         redis_db.client.hset(key, in_key, in_value)
 
 
 class RamStorageTranslater:
@@ -215,8 +587,9 @@ class RamStorageTranslater:
             return "".join(translated_list)
 
 # if __name__ == '__main__':
-#     update_redis_database()
-
+#     z = gettrtredis()
+#     w = 0
+#     a = ['Onyx', 'Glacier Blue', 'Phantom White', 'Onyx Gray', "Bronze"]
 
 # from deep_translator import GoogleTranslator
 # from tqdm import tqdm
