@@ -61,10 +61,10 @@ def set_product_price(system_code: str, customer_type: dict):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def update_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
-                 informal_price: dict,
-                 special_from_date: str,
-                 special_to_date: str) -> dict:
+def update_product_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
+                         informal_price: dict,
+                         special_from_date: str,
+                         special_to_date: str) -> dict:
     """
     update price (regular & special) by customer type and storage for a system code
     """
@@ -75,7 +75,7 @@ def update_price(system_code: str, customer_type: str, storage_id: str, regular:
     return {"success": False, "status_code": 417, "error": "failed to update price"}
 
 
-def get_stock(system_code: str) -> dict:
+def get_product_stock(system_code: str) -> dict:
     """
     get stock of a system_code
     """
@@ -196,23 +196,3 @@ def get_csv(storage_id: str) -> dict:
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
-
-# def delete_product(system_code: str) -> dict:
-#     """
-#     Delete a product by name in main collection in database.
-#     """
-#     if len(system_code) == 11:
-#         parent = CreateParent(system_code, None, None)
-#         if not parent.system_code_is_unique():
-#             message, success = parent.delete()
-#             if success:
-#                 return {"success": True, "message": message, "status_code": 200}
-#             return {"success": False, "error": message, "status_code": 400}
-#     else:
-#         child = CreateChild(system_code, None)
-#         if not child.system_code_is_unique():
-#             message, success = child.delete()
-#             if success:
-#                 return {"success": True, "message": message, "status_code": 200}
-#             return {"success": False, "error": message, "status_code": 400}
-#     return {"success": False, "error": "system code not found", "status_code": 404}
