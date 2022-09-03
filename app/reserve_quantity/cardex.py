@@ -26,7 +26,9 @@ def cardex(**kwargs):
 def add_to_cardex(user_id, user_name, order_number, cardex_details):
     with MongoConnection() as client:
         for item in cardex_details:
-            cardex = {"userId": user_id, "userName": user_name, "orderNumber": order_number}
+            if item['incremental_id'] is None:
+                item['incremental_id'] = order_number
+            cardex = {"userId": user_id, "userName": user_name}
             cardex.update(item)
             client.cardex_collection.insert_one(cardex)
         return "cardex done"
