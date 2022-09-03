@@ -29,7 +29,7 @@ build:
     - echo SENDER=$SENDER >> .env
     - echo RECIPIENTS=$RECIPIENTS >> .env
     - echo TEMPLATE=$TEMPLATE >> .env
-    - docker login nexus.aasood.com -u registry -p $REGPASS 
+#    - docker login nexus.aasood.com -u registry -p $REGPASS 
     - docker build -t product:0.0.1 .
 
 dev_deploy:
@@ -57,7 +57,7 @@ dev_deploy:
     - echo SENDER=$SENDER >> .env
     - echo RECIPIENTS=$RECIPIENTS >> .env
     - echo TEMPLATE=$TEMPLATE >> .env
-    - docker login nexus.aasood.com -u registry -p $REGPASS
+#    - docker login nexus.aasood.com -u registry -p $REGPASS
     - docker-compose -f docker-compose.yaml up -d --build
 
 push:
@@ -85,7 +85,7 @@ push:
     - echo SENDER=$SENDER >> .env
     - echo RECIPIENTS=$RECIPIENTS >> .env
     - echo TEMPLATE=$TEMPLATE >> .env
-    - docker login nexus.aasood.com -u registry -p $REGPASS
+#    - docker login nexus.aasood.com -u registry -p $REGPASS
     - docker build -t product:0.0.1 . -t nexus.aasood.com/backend/product:$CI_COMMIT_SHORT_SHA
 #    - docker push nexus.aasood.com/backend/product:$CI_COMMIT_SHORT_SHA
 
@@ -114,5 +114,5 @@ master_deploy:
     - echo SENDER=$SENDER >> .env
     - echo RECIPIENTS=$RECIPIENTS >> .env
     - echo TEMPLATE=$TEMPLATE >> .env
-    - docker login nexus.aasood.com -u registry -p $REGPASS
+#    - docker login nexus.aasood.com -u registry -p $REGPASS
     - docker-compose -f docker-compose.yaml up -d --build
