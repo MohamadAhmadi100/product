@@ -36,84 +36,15 @@ class Product:
                     '$match': {
                         'step': 4
                     }
-                }, {
-                    '$project': {
-                        'system_code': 1,
-                        'keys': {
-                            '$objectToArray': '$warehouse_details'
-                        },
-                        'root_obj': '$$ROOT'
-                    }
-                }, {
-                    '$unwind': '$keys'
-                }, {
-                    '$project': {
-                        'system_code': 1,
-                        'customer_type': '$keys.k',
-                        'zz': {
-                            '$objectToArray': '$keys.v.storages'
-                        },
-                        'root_obj': 1
-                    }
-                }, {
-                    '$unwind': '$zz'
-                }, {
-                    '$project': {
-                        'system_code': 1,
-                        'storage_id': '$zz.k',
-                        'customer_type': 1,
-                        'qty': {
-                            '$subtract': [
-                                '$zz.v.quantity', '$zz.v.reserved'
-                            ]
-                        },
-                        'min': {
-                            '$subtract': [
-                                {
-                                    '$subtract': [
-                                        '$zz.v.quantity', '$zz.v.reserved'
-                                    ]
-                                }, '$zz.v.min_qty'
-                            ]
-                        },
-                        'root_obj': 1
-                    }
-                }, {
-                    '$match': {
-                        'customer_type': customer_type,
-                        'qty': {
-                            '$gt': 0
-                        },
-                        'min': {
-                            '$gte': 0
-                        },
-                        'storage_id': {
-                            '$in': storages
-                        }
-                    }
-                }, {
-                    '$group': {
-                        '_id': '$_id',
-                        'item': {
-                            '$addToSet': '$root_obj'
-                        }
-                    }
-                }, {
-                    '$project': {
-                        '_id': 0,
-                        'item': {
-                            '$first': '$item'
-                        }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
                     }
                 },
                 {
-                    '$project': {
-                        'item._id': 0
-                    }
-                }
-                , {
-                    '$replaceRoot': {
-                        'newRoot': '$item'
+                    "$addFields": {
+                    "GIN":None
                     }
                 }
             ]
@@ -848,7 +779,9 @@ class Product:
 
                         product['attributes'] = attributes_list
                         product['color'] = {"value": product['color'],
-                                            "label": redis.client.hget(product['color'], lang)}
+                                            "label": redis.client.hget(product['color'], lang),
+                                            "hex": redis.client.hget(product['color'], "hex")
+                                            }
                         product['guaranty'] = {"value": product['guaranty'],
                                                "label": redis.client.hget(product['guaranty'], lang)}
                         product['seller'] = {"value": product['seller'],
@@ -1064,7 +997,25 @@ class Product:
                         'price': {
                             'storage_id': '$zz.k',
                             'regular': '$zz.v.regular',
-                            'special': '$zz.v.special'
+                            'special': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {
+                                                '$gt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_from_date'
+                                                ]
+                                            }, {
+                                                '$lt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_to_date'
+                                                ]
+                                            }
+                                        ]
+                                    }, '$zz.v.special', None
+                                ]
+                            }
                         },
                         'root_obj': 1
                     }
@@ -1751,6 +1702,10 @@ class Quantity:
 
     def set_quantity(self):
         with MongoConnection() as client:
+            client.quantity_log.insert_one({
+                "system_code": self.system_code, "customer_types": self.customer_types,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
             db_query = dict()
             for key, value in self.customer_types.items():
                 if value.get("storages"):
@@ -1817,9 +1772,14 @@ class Quantity:
         update quantity in database
         """
         with MongoConnection() as client:
+            client.quantity_log.insert_one({
+                "system_code": system_code, "customer_type": customer_type, "storage_id": storage_id,
+                "quantity": quantity,
+                "min_qty": min_qty, "max_qty": max_qty,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
             storage = {
                 "storage_id": storage_id,
-                "reserved": 0,
                 "quantity": quantity,
                 "min_qty": min_qty,
                 "max_qty": max_qty
@@ -1832,7 +1792,7 @@ class Quantity:
                             "warehouse_label": obj[0].get("warehouse_name"),
                             })
             db_query = {f"warehouse_details.{customer_type}.storages.{storage_id}.{key}": value for key, value in
-                        storage.items()}
+                        storage.items() if value}
 
             db_query.update({
                 "step": {"$cond": [{"$eq": ["$step", 3]}, 4, "$step"]}

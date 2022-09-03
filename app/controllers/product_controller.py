@@ -1,4 +1,5 @@
 from app.models.product import Product, AddAttributes, Price, Quantity
+from app.modules import csv_getter
 
 
 def create_product(name, url_name, system_codes):
@@ -186,22 +187,12 @@ def search_product_child(name: str, system_code: str, storages: list, customer_t
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
 
-# def delete_product(system_code: str) -> dict:
-#     """
-#     Delete a product by name in main collection in database.
-#     """
-#     if len(system_code) == 11:
-#         parent = CreateParent(system_code, None, None)
-#         if not parent.system_code_is_unique():
-#             message, success = parent.delete()
-#             if success:
-#                 return {"success": True, "message": message, "status_code": 200}
-#             return {"success": False, "error": message, "status_code": 400}
-#     else:
-#         child = CreateChild(system_code, None)
-#         if not child.system_code_is_unique():
-#             message, success = child.delete()
-#             if success:
-#                 return {"success": True, "message": message, "status_code": 200}
-#             return {"success": False, "error": message, "status_code": 400}
-#     return {"success": False, "error": "system code not found", "status_code": 404}
+
+def get_csv(storage_id: str) -> dict:
+    """
+    Get a product by system_code in main collection in database.
+    """
+    result = csv_getter.get_csv(storage_id)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}

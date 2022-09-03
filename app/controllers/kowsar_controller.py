@@ -22,26 +22,27 @@ def get_kowsar_items(system_code: str):
     return {"success": False, "error": "کالای مورد نظر یافت نشد", "status_code": 404}
 
 
-def create_system_code(system_code, storage_ids, parent_system_code, guaranty):
+def create_system_code(system_code, storage_ids, guaranty):
     """
     create system code from model code
     """
+    parent_system_code = system_code[:22]
     kowsar = KowsarPart(system_code, storage_ids, parent_system_code, guaranty)
     if not kowsar.is_unique():
         return {"success": False, "error": "کد مورد نظر قبلا ساخته شده است", "status_code": 400}
     data = KowsarGetter.system_code_name_getter(parent_system_code)
     if not data:
         return {"success": False, "status_code": 404, "error": "کالای مورد نظر یافت نشد"}
-    # name = kowsar.name_getter()
-    # name = data.get("brand", "").upper() + " " + data.get("model", "").upper() + " " + name.upper()
-    # result, system_code = kowsar.create_kowsar_part(name, storage_ids, system_code)
-    result = True
+    name = data['sub_category'] + " " + data['brand'] + " " + data['model'] + ' (' + data['configs']['ram'] + ' ' + \
+           data['configs']['storage'] + ' ' + data['configs']['network'] + ") " + data['configs']['region'] + " | " + \
+           data['seller'] + " | " + guaranty + " " + f"[{data['color']}]"
+    result, system_code = kowsar.create_kowsar_part(name, storage_ids, system_code)
     if result:
-        kowsar.create_in_db(data)
-        return {"success": True, "message": {
-            "system_code": system_code,
-            "message": "با موفقیت ایجاد شد"
-        }, "status_code": 200}
+        if kowsar.create_in_db(data):
+            return {"success": True, "message": {
+                "system_code": system_code,
+                "message": "با موفقیت ایجاد شد"
+            }, "status_code": 200}
     return {"success": False, "error": "ساخت محصول با خطا مواجه شد", "status_code": 500}
 
 
@@ -55,8 +56,14 @@ def create_kowsar_group(system_code, name, parent_system_code, configs):
     parent_data = None
     if len(system_code) != 2:
         parent_data = KowsarGetter.system_code_name_getter(parent_system_code)
-    # result = kowsar.create_kowsar_group(parent_data)
+        if not parent_data:
+            return {"success": False, "error": "پرنت محصول یافت نشد", "status_code": 404}
+    if len(system_code) == 16 and configs:
+        kowsar.name = parent_data['model'] + ' (' + configs['ram'] + ' ' + configs['storage'] + ' ' + configs[
+            'network'] + ") " + configs['region']
     result = True
+    if len(system_code) <= 16:
+        result = kowsar.create_kowsar_group(parent_data)
     if result:
         complete_data = kowsar.category_name_getter(parent_data)
         mongo_result = kowsar.create_in_db(complete_data)
