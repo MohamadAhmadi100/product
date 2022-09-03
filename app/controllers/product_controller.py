@@ -61,10 +61,10 @@ def set_product_price(system_code: str, customer_type: dict):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def update_product_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
-                         informal_price: dict,
-                         special_from_date: str,
-                         special_to_date: str) -> dict:
+def update_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
+                 informal_price: dict,
+                 special_from_date: str,
+                 special_to_date: str) -> dict:
     """
     update price (regular & special) by customer type and storage for a system code
     """
@@ -75,7 +75,7 @@ def update_product_price(system_code: str, customer_type: str, storage_id: str, 
     return {"success": False, "status_code": 417, "error": "failed to update price"}
 
 
-def get_product_stock(system_code: str) -> dict:
+def get_stock(system_code: str) -> dict:
     """
     get stock of a system_code
     """
