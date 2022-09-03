@@ -2,7 +2,6 @@ import jdatetime
 
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.warehouses import find_warehouse
-from app.reserve_quantity.cardex import cardex
 
 
 def check_buying_imeis(product):
@@ -91,62 +90,6 @@ def add_product_archive(product, referral_number, supplier, form_date, dst_wareh
             "articles": articles(product, dst_warehouse)
         })
         return {"success": True}
-
-
-def add_msm_stocks(product, storage_id, supplier_name):
-    with MongoConnection() as client:
-        count = client.stocks_collection.count_documents(
-            {"systemCode": product['system_code'], "stockId": storage_id})
-        change_imei_to_msm_object = articles(product, storage_id)
-        if count > 0:
-            stocks = client.stocks_collection.find_one({"systemCode": product['system_code'], "stockId": storage_id})
-            cardex_detail = cardex(
-                storage_id=storage_id,
-                system_code=stocks['systemCode'],
-                sku=stocks['sku'],
-                type="buying form",
-                qty=product['count'],
-                oldQuantity=stocks['quantity'],
-                newQuantity=stocks['quantity'] + product['count'],
-                oldReserve=stocks['reserve'],
-                newRreserve=stocks['reserve'],
-                imeis=product['imeis']
-            )
-            client.stocks_log_collection.insert_one(cardex_detail)
-            client.stocks_collection.update_one({"systemCode": product['system_code'], "stockId": storage_id},
-                                                {"$inc": {"quantity": product['count']},
-                                                 "$push": {"imeis": {"$each": change_imei_to_msm_object}}}
-                                                )
-        else:
-            cardex_detail = cardex(
-                storage_id=storage_id,
-                system_code=product['system_code'],
-                sku=product['name'],
-                type="buying form",
-                qty=product['count'],
-                oldQuantity=0,
-                newQuantity=product['count'],
-                oldReserve=0,
-                newRreserve=0,
-                imeis=product['imeis']
-            )
-            client.stocks_log_collection.insert_one(cardex_detail)
-            client.stocks_collection.insert_one({
-                "systemCode": product['system_code'],
-                "sku": product['name'],
-                "stockId": storage_id,
-                "quantity": product['count'],
-                "reserve": 0,
-                "supplier": supplier_name,
-                "cat": None,
-                "brand": product['brand'],
-                "model": product['model'],
-                "color": product['color'],
-                "seller": product['seller'],
-                "guaranty": product['guaranty'],
-                "packName": 'new product',
-                "imeis": change_imei_to_msm_object
-            })
 
 
 def add_warehouse_product(product, referral_number, supplier, form_date, dst_warehouse):
@@ -307,4 +250,3 @@ def check_transfer_imei(imei, transfer_object):
                 return {"success": False, "error": "کد مورد نظر قبلا خروج خورده است", "status_code": 400}
         else:
             return {"success": False, "error": "imei مورد نظر یافت نشد", "status_code": 400}
-

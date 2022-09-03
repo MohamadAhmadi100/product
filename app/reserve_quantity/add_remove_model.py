@@ -4,9 +4,14 @@ from app.helpers.mongo_connection import MongoConnection
 from app.helpers.warehouses import find_warehouse
 
 
-class AddRemoveReserve:
-    @staticmethod
-    def add_reserve_quantity(system_code, storage_id, count, customer_type, order_number):
+class AddRemoveQtyReserve:
+    def __init__(self):
+        self.cardex = {}
+
+    def add_reserve(self, system_code, storage_id, count, customer_type, order_number):
+        """
+        add reserve to product
+        """
         with MongoConnection() as client:
             quantity_count = client.product.count_documents({"system_code": system_code})
             if quantity_count > 0:
@@ -15,14 +20,15 @@ class AddRemoveReserve:
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
                             if (storage_dict["reserved"] + count) <= storage_dict['quantity']:
+                                self.cardex['qty'] = count
+                                self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] += count
-                                client.product.replace_one({"system_code": system_code},products)
-                                return {"success": True,
-                                        "query": {"system_code": system_code},
-                                        "replace_data": products,
-                                        "product": storage_dict}
+                                self.cardex['newReserve'] = storage_dict["reserved"]
+                                self.cardex['oldQuantity'] = storage_dict["quantity"]
+                                self.cardex['newQuantity'] = storage_dict["quantity"]
+                                client.product.replace_one({"system_code": system_code}, products)
+                                return {"success": True, "cardex": self.cardex}
                             else:
-                                # storage_dict["reserved"] += count
                                 client.reserve_log_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
                                      "old_reserve": storage_dict["reserved"],
@@ -34,46 +40,10 @@ class AddRemoveReserve:
                                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                                 return {"success": False}
 
-    @staticmethod
-    def add_reserve_msm(system_code, storage_id, count, order_number):
-        with MongoConnection() as client:
-            try:
-                product_count = client.stocks_collection.count_documents(
-                    {"systemCode": str(system_code), "stockId": str(storage_id)})
-
-                if product_count > 0:
-                    product = client.stocks_collection.find_one(
-                        {"systemCode": str(system_code), "stockId": str(storage_id)},
-                        {"_id": False})
-
-                    if (int(product["reserve"]) + count) <= int(product["quantity"]):
-                        update_data = {"$set": {"reserve": int(product["reserve"]) + count}}
-                        query_data = {"systemCode": str(product["systemCode"]), "stockId": str(product["stockId"])}
-
-                        return {"success": True, "query": query_data, "product": product,
-                                "update_data": update_data}
-
-                    else:
-                        client.reserve_log_collection.insert_one(
-                            {"systemCode": str(system_code), "stockId": str(storage_id), "orderNumber": order_number,
-                             "message": "reserve bishtar az quantity",
-                             "editDate": str(jdatetime.datetime.now()).split(".")[0]})
-                        return {"success": False}
-
-                else:
-                    client.reserve_log_collection.insert_one(
-                        {"systemCode": str(system_code), "stockId": str(storage_id), "orderNumber": order_number,
-                         "message": "system code not found!", "editDate": str(jdatetime.datetime.now()).split(".")[0]})
-                    return {"success": False}
-
-            except:
-                client.reserve_log_collection.insert_one(
-                    {"systemCode": str(system_code), "stockId": str(storage_id), "orderNumber": order_number,
-                     "message": "root exception", "editDate": str(jdatetime.datetime.now()).split(".")[0]})
-                return {"success": False}
-
-    @staticmethod
-    def remove_reserve_quantity(system_code, storage_id, count, customer_type, order_number):
+    def remove_reserve(self, system_code, storage_id, count, customer_type, order_number):
+        """
+        remove reserve from product
+        """
         with MongoConnection() as client:
             quantity_count = client.product.count_documents({"system_code": system_code})
             if quantity_count > 0:
@@ -82,11 +52,14 @@ class AddRemoveReserve:
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
                             if (storage_dict["reserved"] - count) >= 0:
+                                self.cardex['qty'] = count
+                                self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] -= count
-                                return {"success": True,
-                                        "query": {"system_code": system_code},
-                                        "replace_data": products,
-                                        "product": storage_dict}
+                                self.cardex['newReserve'] = storage_dict["reserved"]
+                                self.cardex['oldQuantity'] = storage_dict["quantity"]
+                                self.cardex['newQuantity'] = storage_dict["quantity"]
+                                client.product.replace_one({"system_code": system_code}, products)
+                                return {"success": True, "cardex": self.cardex}
                             else:
                                 client.reservlog_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
@@ -99,50 +72,11 @@ class AddRemoveReserve:
                                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                                 return {"success": True}
 
-    @staticmethod
-    def remove_reserve_msm(system_code, storage_id, count, order_number):
+    def add_quantity(self, system_code, storage_id, count, customer_type, price):
+        """
+        add quantity to product
+        """
         with MongoConnection() as client:
-            try:
-                product_count = client.stocks_collection.count_documents(
-                    {"systemCode": str(system_code), "stockId": str(storage_id)})
-
-                if product_count > 0:
-                    product = client.stocks_collection.find_one(
-                        {"systemCode": str(system_code), "stockId": str(storage_id)},
-                        {"_id": False})
-
-                    if (int(product["reserve"]) - count) >= 0:
-                        update_data = {"$set": {"reserve": int(product["reserve"]) - count}}
-                        query_data = {"systemCode": str(product["systemCode"]), "stockId": str(product["stockId"])}
-
-                        return {"success": True, "query": query_data, "product": product,
-                                "update_data": update_data}
-
-                    else:
-                        client.reserve_log_collection.insert_one(
-                            {"systemCode": str(system_code), "stockId": str(storage_id), "orderNumber": order_number,
-                             "message": "reserve bishtar az quantity",
-                             "editDate": str(jdatetime.datetime.now()).split(".")[0]})
-                        return {"success": False}
-
-                else:
-                    client.reserve_log_collection.insert_one(
-                        {"systemCode": str(system_code), "stockId": str(storage_id), "orderNumber": order_number,
-                         "message": "system code not found!", "editDate": str(jdatetime.datetime.now()).split(".")[0]})
-                    return {"success": False}
-
-            except:
-                client.reserve_log_collection.insert_one(
-                    {"systemCode": str(system_code), "stockId": str(storage_id), "orderNumber": order_number,
-                     "message": "root exception", "editDate": str(jdatetime.datetime.now()).split(".")[0]})
-                return {"success": False}
-
-
-class addRemoveQuantity:
-    @staticmethod
-    def add_quantity(system_code, storage_id, count, customer_type, price):
-        with MongoConnection() as client:
-            cardex_data = {}
             quantity_count = client.product.count_documents({"system_code": system_code})
             if quantity_count > 0:
                 product = client.product.find({"system_code": system_code}, {"_id": False})
@@ -155,20 +89,21 @@ class addRemoveQuantity:
                         for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)[
                             'storages'].items():
                             if cusrsor == storage_id:
-                                cardex_data['old_quantity'] = storage_dict["quantity"]
+                                self.cardex['qty'] = count
+                                self.cardex['oldQuantity'] = storage_dict["quantity"]
                                 storage_dict["quantity"] += count
-                                cardex_data['new_quantity'] = storage_dict["quantity"]
-                                cardex_data['reserve'] = storage_dict["reserved"]
+                                self.cardex['newQuantity'] = storage_dict["quantity"]
+                                self.cardex['oldReserve'] = storage_dict["reserved"]
+                                self.cardex['newReserve'] = storage_dict["reserved"]
                                 storage_dict["regular"] = price
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
-                                return {"success": True, "message": "عملیات مورد نظر با موفقیت انجام شد",
-                                        "status_code": 200,
-                                        "cardex_data": cardex_data}
+                                return {"success": True, "cardex": self.cardex}
                     else:
-                        cardex_data['old_quantity'] = 0
-                        cardex_data["qty"] = count
-                        cardex_data['new_quantity'] = count
-                        cardex_data['reserve'] = 0
+                        self.cardex['qty'] = count
+                        self.cardex['oldQuantity'] = 0
+                        self.cardex['newQuantity'] = count
+                        self.cardex['oldReserve'] = 0
+                        self.cardex['newReserve'] = 0
                         warehouse_detail = find_warehouse(storage_id)
                         client.product.update_one(
                             {"system_code": system_code},
@@ -186,8 +121,7 @@ class addRemoveQuantity:
                                 "warehouse_label": warehouse_detail['warehouses'].get('warehouse_name')
                             }
                             }})
-                        return {"success": True, "message": "عملیات مورد نظر با موفقیت انجام شد", "status_code": 200,
-                                "cardex_data": cardex_data}
+                        return {"success": True, "cardex": self.cardex}
             else:
                 client.reserve_log_collection.insert_one(
                     {"systemCode": str(system_code), "stockId": str(storage_id),
@@ -196,10 +130,11 @@ class addRemoveQuantity:
                 return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد",
                         "status_code": 404}
 
-    @staticmethod
-    def remove_reserve_quantity(system_code, storage_id, count, customer_type):
+    def remove_reserve_quantity(self, system_code, storage_id, count, customer_type):
+        """
+        remove quantity and reserve from product
+        """
         with MongoConnection() as client:
-            cardex_data = {}
             quantity_count = client.product.count_documents({"system_code": system_code})
             if quantity_count > 0:
                 product = client.product.find({"system_code": system_code}, {"_id": False})
@@ -207,19 +142,18 @@ class addRemoveQuantity:
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
                             if storage_dict["quantity"] > 0 or storage_dict["reserved"] > 0:
-                                cardex_data['old_quantity'] = storage_dict["quantity"]
+                                self.cardex['qty'] = count
+                                self.cardex['oldQuantity'] = storage_dict["quantity"]
                                 storage_dict["quantity"] -= count
-                                cardex_data['new_quantity'] = storage_dict["quantity"]
-                                cardex_data['old_reserve'] = storage_dict["reserved"]
+                                self.cardex['newQuantity'] = storage_dict["quantity"]
+                                self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] -= count
-                                cardex_data['new_reserve'] = storage_dict["reserved"]
+                                self.cardex['newReserve'] = storage_dict["reserved"]
                                 if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0:
                                     return {"success": False, "error": "تعداد از موجودی بیشتر است",
                                             "status_code": 404}
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
-                                return {"success": True, "message": "عملیات مورد نظر با موفقیت انجام شد",
-                                        "status_code": 200,
-                                        "cardex_data": cardex_data}
+                                return {"success": True, "cardex": self.cardex}
                             else:
                                 client.reserve_log_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
@@ -233,4 +167,3 @@ class addRemoveQuantity:
                      "message": "product not found in remove qty",
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                 return {"success": False, "error": "سیستم کد مورد نظر وجود ندارد", "status_code": 404}
-
