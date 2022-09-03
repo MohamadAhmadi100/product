@@ -8,7 +8,7 @@ def cardex(**kwargs):
         "stockId": kwargs.get("storage_id"),
         "stockName": "",
         "systemCode": kwargs.get("system_code"),
-        "incremental_id": kwargs.get("order_number"),
+        "incremental_id": kwargs.get("incremental_id"),
         "sku": kwargs.get("sku"),
         "type": kwargs.get("type"),
         "qty": kwargs.get("qty"),
