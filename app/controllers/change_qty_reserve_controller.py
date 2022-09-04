@@ -1,7 +1,6 @@
 from app.helpers.warehouses import warehouses
 from app.reserve_quantity.cardex import add_to_cardex
-from app.reserve_quantity.imeis import *
-from app.reserve_quantity.route_actions import ReserveRoutes
+from app.reserve_quantity.route_actions import *
 
 """
 order
@@ -9,16 +8,16 @@ order
 
 
 def add_to_reserve(order):
-    order_model = ReserveRoutes(dict(order))
+    order_model = OrderModel(dict(order))
     check_data, add_cardex_to_quantity, data_response = list(), list(), list()
     for cursor_products in order_model.order_data:
         # add reserve per items
-        reserve_reserve_result = order_model.add_to_reserve_order(cursor_products.get("system_code"),
-                                                                  cursor_products.get("storage_id"),
-                                                                  cursor_products.get("count"),
-                                                                  cursor_products.get("customer_type"),
-                                                                  cursor_products.get("sku"),
-                                                                  cursor_products.get("order_number"))
+        reserve_reserve_result = add_to_reserve_order(cursor_products.get("system_code"),
+                                                      cursor_products.get("storage_id"),
+                                                      cursor_products.get("count"),
+                                                      cursor_products.get("customer_type"),
+                                                      cursor_products.get("sku"),
+                                                      cursor_products.get("order_number"))
         data_for_check = (cursor_products, reserve_reserve_result.get("success"))
         check_data.append(data_for_check)
         add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
@@ -35,12 +34,11 @@ def add_to_reserve(order):
         # roll back
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = order_model.remove_reserve_rollback(reserved_products[0].get("system_code"),
-                                                                     reserved_products[0].get("storage_id"),
-                                                                     reserved_products[0].get("count"),
-                                                                     reserved_products[0].get("customer_type"),
-                                                                     reserved_products[0].get("sku"),
-                                                                     reserved_products[0].get("order_number"))
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("system_code"),
+                                                         reserved_products[0].get("storage_id"),
+                                                         reserved_products[0].get("count"),
+                                                         reserved_products[0].get("customer_type"),
+                                                         reserved_products[0].get("order_number"))
                 if reserve_result.get("success") is False:
                     return reserve_result
                 data_response.append(reserved_products)
@@ -48,16 +46,16 @@ def add_to_reserve(order):
 
 
 def remove_from_reserve(order):
-    order_model = ReserveRoutes(dict(order))
+    order_model = OrderModel(dict(order))
     check_data, add_cardex_to_quantity, data_response = list(), list(), list()
     for cursor_products in order_model.order_data:
         # add reserve per items
-        reserve_result = order_model.remove_reserve_cancel(cursor_products.get("system_code"),
-                                                           cursor_products.get("storage_id"),
-                                                           cursor_products.get("count"),
-                                                           cursor_products.get("customer_type"),
-                                                           cursor_products.get("sku"),
-                                                           cursor_products.get("order_number"))
+        reserve_result = remove_reserve_cancel(cursor_products.get("system_code"),
+                                               cursor_products.get("storage_id"),
+                                               cursor_products.get("count"),
+                                               cursor_products.get("customer_type"),
+                                               cursor_products.get("sku"),
+                                               cursor_products.get("order_number"))
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
         add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
@@ -74,12 +72,11 @@ def remove_from_reserve(order):
         # roll back
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = order_model.add_reserve_rollback(reserved_products[0].get("system_code"),
-                                                                  reserved_products[0].get("storage_id"),
-                                                                  reserved_products[0].get("count"),
-                                                                  reserved_products[0].get("customer_type"),
-                                                                  reserved_products[0].get("sku"),
-                                                                  reserved_products[0].get("order_number"))
+                reserve_result = add_reserve_rollback(reserved_products[0].get("system_code"),
+                                                      reserved_products[0].get("storage_id"),
+                                                      reserved_products[0].get("count"),
+                                                      reserved_products[0].get("customer_type"),
+                                                      reserved_products[0].get("order_number"))
                 if reserve_result.get("success") is False:
                     return reserve_result
             else:
@@ -93,12 +90,12 @@ def remove_reserve_edit(edited_object, order_number, customer_id, customer_type,
 
     for cursor_products in edited_object:
         # add reserve per items
-        reserve_result = ReserveRoutes.remove_reserve_edit_order(cursor_products.get("systemCode"),
-                                                                 cursor_products.get("storageId"),
-                                                                 (int(cursor_products.get("oldCount")) - int(
-                                                                     cursor_products.get("newCount"))),
-                                                                 customer_type, cursor_products.get("sku"),
-                                                                 cursor_products.get("order_number"))
+        reserve_result = remove_reserve_edit_order(cursor_products.get("systemCode"),
+                                                   cursor_products.get("storageId"),
+                                                   (int(cursor_products.get("oldCount")) - int(
+                                                       cursor_products.get("newCount"))),
+                                                   customer_type, cursor_products.get("sku"),
+                                                   cursor_products.get("order_number"))
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
         add_cardex_to_quantity.append(reserve_result.get("quantity"))
@@ -114,11 +111,11 @@ def remove_reserve_edit(edited_object, order_number, customer_id, customer_type,
         # roll back
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = ReserveRoutes.add_reserve_rollback(reserved_products[0].get("systemCode"),
-                                                                    reserved_products[0].get("storageId"),
-                                                                    reserved_products[0].get("count"),
-                                                                    reserved_products[0].get("customer_type"),
-                                                                    order_number)
+                reserve_result = add_reserve_rollback(reserved_products[0].get("systemCode"),
+                                                      reserved_products[0].get("storageId"),
+                                                      reserved_products[0].get("count"),
+                                                      reserved_products[0].get("customer_type"),
+                                                      order_number)
                 if reserve_result.get("success") is False:
                     return reserve_result
             else:
@@ -136,11 +133,11 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
     check_data, data_response, add_cardex_to_quantity = list(), list(), list()
     for cursor_products in data.get("products"):
         # add reserve per items
-        reserve_result = ReserveRoutes.add_to_reserve_dealership(cursor_products.get("system_code"),
-                                                                 cursor_products.get("storage_id"),
-                                                                 cursor_products.get("count"),
-                                                                 customer_type[0], cursor_products.get("name"),
-                                                                 referral_number)
+        reserve_result = add_to_reserve_dealership(cursor_products.get("system_code"),
+                                                   cursor_products.get("storage_id"),
+                                                   cursor_products.get("count"),
+                                                   customer_type[0], cursor_products.get("name"),
+                                                   referral_number)
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
@@ -157,12 +154,11 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
         # roll back
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = ReserveRoutes.remove_reserve_rollback(reserved_products[0].get("systemCode"),
-                                                                       reserved_products[0].get("storageId"),
-                                                                       reserved_products[0].get("count"),
-                                                                       reserved_products[0].get("customer_type"),
-                                                                       reserved_products[0].get("name"),
-                                                                       referral_number)
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
+                                                         reserved_products[0].get("storageId"),
+                                                         reserved_products[0].get("count"),
+                                                         reserved_products[0].get("customer_type"),
+                                                         referral_number)
                 if reserve_result.get("success") is False:
                     return reserve_result
             else:
@@ -180,9 +176,9 @@ def warehouse_buying(product, dst_warehouse, referral_number, supplier_name, for
     if check.get("success"):
         master_product = add_warehouse_product(product, referral_number, supplier_name, form_date, dst_warehouse)
         if master_product.get("success"):
-            product_reserve_result = ReserveRoutes.add_buying_form(product, dst_warehouse, customer_type,
-                                                                   referral_number,
-                                                                   supplier_name, form_date)
+            product_reserve_result = add_buying_form(product, dst_warehouse, customer_type,
+                                                     referral_number,
+                                                     supplier_name, form_date)
             if product_reserve_result.get("success"):
 
                 return product_reserve_result
@@ -202,15 +198,15 @@ def transfer_products(transfer_object, system_code, staff_name):
                 products = cursor_products
 
         if transfer_object['status_type'] == "submit":
-            return ReserveRoutes.export_transfer_form(products, transfer_object['dst_warehouse'],
-                                                      transfer_object['src_warehouse'],
-                                                      transfer_object['referral_number'],
-                                                      transfer_object['quantity_type'])
+            return export_transfer_form(products, transfer_object['dst_warehouse'],
+                                        transfer_object['src_warehouse'],
+                                        transfer_object['referral_number'],
+                                        transfer_object['quantity_type'], 'staff')
         elif transfer_object['status_type'] == "transfer":
-            return ReserveRoutes.import_transfer_form(products, transfer_object['dst_warehouse'],
-                                                      transfer_object['src_warehouse'],
-                                                      transfer_object['referral_number'],
-                                                      transfer_object['quantity_type'])
+            return import_transfer_form(products, transfer_object['dst_warehouse'],
+                                        transfer_object['src_warehouse'],
+                                        transfer_object['referral_number'],
+                                        transfer_object['quantity_type'], 'staff')
         return {'success': False, 'error': 'status not fount', 'status_code': 400}
     except:
         return {'success': False, 'error': 'root exception error', 'status_code': 400}
@@ -219,12 +215,12 @@ def transfer_products(transfer_object, system_code, staff_name):
 def add_to_reserve_transfer(transfer_object):
     check_data, add_cardex_to_quantity, data_response = list(), list(), list()
     for cursor_products in transfer_object.get("products"):
-        reserve_result = ReserveRoutes.create_transfer_reserve(cursor_products.get("system_code"),
-                                                               transfer_object['src_warehouse'].get("storage_id"),
-                                                               cursor_products.get("count"),
-                                                               transfer_object['quantity_type'],
-                                                               cursor_products.get("name"),
-                                                               transfer_object['referral_number'])
+        reserve_result = create_transfer_reserve(cursor_products.get("system_code"),
+                                                 transfer_object['src_warehouse'].get("storage_id"),
+                                                 cursor_products.get("count"),
+                                                 transfer_object['quantity_type'],
+                                                 cursor_products.get("name"),
+                                                 transfer_object['referral_number'])
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
@@ -240,12 +236,11 @@ def add_to_reserve_transfer(transfer_object):
     else:
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = ReserveRoutes.remove_reserve_rollback(reserved_products[0].get("systemCode"),
-                                                                       reserved_products[0].get("storageId"),
-                                                                       reserved_products[0].get("count"),
-                                                                       reserved_products[0].get("customer_type"),
-                                                                       reserved_products[0].get("name"),
-                                                                       transfer_object['referral_number'])
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
+                                                         reserved_products[0].get("storageId"),
+                                                         reserved_products[0].get("count"),
+                                                         reserved_products[0].get("customer_type"),
+                                                         transfer_object['referral_number'])
                 if reserve_result.get("success") is False:
                     return reserve_result
             else:
@@ -267,3 +262,15 @@ def all_warehouses():
 
 def warehouse(storage_id):
     return find_warehouse(storage_id)
+
+
+def return_imei(system_code, storage_id, customer_type, order_number, imeis):
+    add_cardex_to_quantity = []
+    reserve_result = return_order_items(system_code, storage_id, customer_type, order_number, imeis)
+    if reserve_result.get("success"):
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
+        add_to_cardex("staff", None, order_number, add_cardex_to_quantity)
+        reserve_result.pop("quantity_cardex_data")
+        return reserve_result
+    else:
+        return reserve_result
