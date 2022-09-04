@@ -44,7 +44,7 @@ def add_to_reserve_order(system_code, storage_id, count, customer_type, sku, ord
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
-            new_reserve=reserve_result['cardex'].get('newRreserve')
+            new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
@@ -70,7 +70,7 @@ def add_to_reserve_dealership(system_code, storage_id, count, customer_type, sku
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
-            new_reserve=reserve_result['cardex'].get('newRreserve')
+            new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
@@ -96,7 +96,7 @@ def remove_reserve_cancel(system_code, storage_id, count, customer_type, sku, or
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
-            new_reserve=reserve_result['cardex'].get('newRreserve')
+            new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
@@ -148,7 +148,7 @@ def remove_reserve_edit_order(system_code, storage_id, count, customer_type, sku
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
-            new_reserve=reserve_result['cardex'].get('newRreserve')
+            new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
