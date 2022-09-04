@@ -180,7 +180,7 @@ def warehouse_buying(product, dst_warehouse, referral_number, supplier_name, for
                                                      referral_number,
                                                      supplier_name, form_date)
             if product_reserve_result.get("success"):
-
+                product_reserve_result['message'] = "عملیات با موفقیت انجام شد"
                 return product_reserve_result
             else:
                 return product_reserve_result
