@@ -26,16 +26,13 @@ class OrderModel:
         return provided_data
 
 
-add_remove_reserve = AddRemoveQtyReserve()
-
-
 def add_to_reserve_order(system_code, storage_id, count, customer_type, sku, order_number):
     """
     order add to reserve
     """
-
-    reserve_result = add_remove_reserve.add_reserve(system_code, storage_id, count, customer_type,
-                                                    order_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type,
+                                                  order_number)
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
             storage_id=storage_id,
@@ -59,8 +56,9 @@ def add_to_reserve_dealership(system_code, storage_id, count, customer_type, sku
     """
     dealership add to reserve
     """
-    reserve_result = add_remove_reserve.add_reserve(system_code, storage_id, count, customer_type,
-                                                    order_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type,
+                                                  order_number)
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
             storage_id=storage_id,
@@ -84,8 +82,9 @@ def remove_reserve_cancel(system_code, storage_id, count, customer_type, sku, or
     """
     cancel order remove reserve
     """
-    reserve_result = add_remove_reserve.remove_reserve(system_code, storage_id, count, customer_type,
-                                                       order_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type,
+                                                     order_number)
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
             storage_id=storage_id,
@@ -109,8 +108,9 @@ def remove_reserve_rollback(system_code, storage_id, count, customer_type, order
     """
     rollback remove reserve
     """
-    reserve_result = add_remove_reserve.remove_reserve(system_code, storage_id, count, customer_type,
-                                                       order_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type,
+                                                     order_number)
     if reserve_result.get("success"):
         return reserve_result
     else:
@@ -121,8 +121,9 @@ def add_reserve_rollback(system_code, storage_id, count, customer_type, order_nu
     """
     order add to reserve
     """
-    reserve_result = add_remove_reserve.add_reserve(system_code, storage_id, count, customer_type,
-                                                    order_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type,
+                                                  order_number)
     if reserve_result.get("success"):
         return reserve_result
     else:
@@ -133,8 +134,9 @@ def remove_reserve_edit_order(system_code, storage_id, count, customer_type, sku
     """
     remove reserve edit order
     """
-    reserve_result = add_remove_reserve.remove_reserve(system_code, storage_id, count, customer_type,
-                                                       order_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type,
+                                                     order_number)
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
             storage_id=storage_id,
@@ -158,9 +160,10 @@ def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
     """
     export transfer remove reserve and quantity
     """
-    reserve_result = add_remove_reserve.remove_reserve_quantity(product['system_code'],
-                                                                src_warehouse['storage_id'],
-                                                                product['count'], customer_type)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve_quantity(product['system_code'],
+                                                              src_warehouse['storage_id'],
+                                                              product['count'], customer_type)
     if reserve_result.get("success"):
         export_transfer_archive(product, dst_warehouse, referral_number, staff_name)
         quantity_cardex_data = cardex(
@@ -183,9 +186,10 @@ def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
 
 
 def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number, quantity_type, staff_name):
-    reserve_result = add_remove_reserve.add_quantity(product['system_code'], src_warehouse['storage_id'],
-                                                     product['count'],
-                                                     quantity_type, product['sell_price'])
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_quantity(product['system_code'], src_warehouse['storage_id'],
+                                                   product['count'],
+                                                   quantity_type, product['sell_price'])
 
     if reserve_result.get("success"):
         import_transfer_archive(product, src_warehouse, dst_warehouse, referral_number, staff_name)
@@ -210,8 +214,9 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
 
 def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_number, quantity_type,
                             staff_name):
-    reserve_result = add_remove_reserve.add_reserve(product['system_code'], src_warehouse['storage_id'],
-                                                    product['count'], quantity_type, referral_number)
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(product['system_code'], src_warehouse['storage_id'],
+                                                  product['count'], quantity_type, referral_number)
 
     if reserve_result.get("success"):
         import_transfer_archive(product, src_warehouse, dst_warehouse, referral_number, staff_name)
@@ -235,8 +240,9 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
 
 
 def add_buying_form(product, dst_warehouse, customer_type, referral_number, supplier_name, form_date):
-    reserve_result = add_remove_reserve.add_quantity(product['system_code'], dst_warehouse['storage_id'],
-                                                     product['count'], customer_type, product['sell_price'])
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_quantity(product['system_code'], dst_warehouse,
+                                                   product['count'], customer_type, product['sell_price'])
 
     if reserve_result.get("success"):
         imei = add_imeis(product, dst_warehouse)
@@ -248,7 +254,7 @@ def add_buying_form(product, dst_warehouse, customer_type, referral_number, supp
                 incremental_id=referral_number,
                 qty=product['count'],
                 sku=product['name'],
-                type="import transfer",
+                type="buying form",
                 imeis=product['imeis'],
                 old_quantity=reserve_result['cardex'].get('oldQuantity'),
                 new_quantity=reserve_result['cardex'].get('newQuantity'),
@@ -264,11 +270,12 @@ def add_buying_form(product, dst_warehouse, customer_type, referral_number, supp
 
 
 def return_order_items(system_code, storage_id, customer_type, order_number, imei):
+    add_remove_model = AddRemoveQtyReserve()
     return_action = return_order(imei, system_code, storage_id)
 
     if return_action.get("success"):
-        reserve_result = add_remove_reserve.add_quantity(system_code, storage_id,
-                                                         1, customer_type, None)
+        reserve_result = add_remove_model.add_quantity(system_code, storage_id,
+                                                       1, customer_type, None)
         if reserve_result.get("success"):
             quantity_cardex_data = cardex(
                 storage_id=storage_id,
