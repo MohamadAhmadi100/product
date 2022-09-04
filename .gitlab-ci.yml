@@ -58,7 +58,7 @@ dev_deploy:
     - echo RECIPIENTS=$RECIPIENTS >> .env
     - echo TEMPLATE=$TEMPLATE >> .env
 #    - docker login nexus.aasood.com -u registry -p $REGPASS
-    - docker-compose -f docker-compose.yaml up -d --build
+    - docker-compose -f docker-compose.yaml up -d --build --scale api=3
 
 push:
   stage: push
