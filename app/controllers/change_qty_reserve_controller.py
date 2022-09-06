@@ -212,15 +212,16 @@ def transfer_products(transfer_object, system_code, staff_name):
         return {'success': False, 'error': 'root exception error', 'status_code': 400}
 
 
-def add_to_reserve_transfer(transfer_object):
+def add_to_reserve_transfer(transfer_object, staff):
     check_data, add_cardex_to_quantity, data_response = list(), list(), list()
     for cursor_products in transfer_object.get("products"):
-        reserve_result = create_transfer_reserve(cursor_products.get("system_code"),
-                                                 transfer_object['src_warehouse'].get("storage_id"),
-                                                 cursor_products.get("count"),
+        reserve_result = create_transfer_reserve(cursor_products,
+                                                 transfer_object['src_warehouse'],
+                                                 transfer_object['dst_warehouse'],
+                                                 transfer_object['referral_number'],
                                                  transfer_object['quantity_type'],
-                                                 cursor_products.get("name"),
-                                                 transfer_object['referral_number'])
+                                                 staff_name=staff,
+                                                 )
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
@@ -236,16 +237,16 @@ def add_to_reserve_transfer(transfer_object):
     else:
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
-                                                         reserved_products[0].get("storageId"),
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("system_code"),
+                                                         transfer_object['src_warehouse'].get("storage_id"),
                                                          reserved_products[0].get("count"),
-                                                         reserved_products[0].get("customer_type"),
+                                                         transfer_object['quantity_type'],
                                                          transfer_object['referral_number'])
                 if reserve_result.get("success") is False:
                     return reserve_result
             else:
                 data_response.append(reserved_products)
-        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response,
+        return {'success': False, 'error': 'موجودی محصولات کافی نیست', "check_data": data_response,
                 'status_code': 200}
 
 
