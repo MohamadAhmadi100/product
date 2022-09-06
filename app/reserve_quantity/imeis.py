@@ -250,3 +250,24 @@ def check_transfer_imei(imei, transfer_object):
                 return {"success": False, "error": "کد مورد نظر قبلا خروج خورده است", "status_code": 400}
         else:
             return {"success": False, "error": "imei مورد نظر یافت نشد", "status_code": 400}
+
+
+def return_order(imei, system_code, storage_id):
+    with MongoConnection() as clinet:
+        count_imei = clinet.imeis.count_documents({"imeis.imei": imei, "storage_id": storage_id})
+        count_archive = clinet.archive.count_documents({"articles.first": imei})
+        if count_archive == 0:
+            return {"success": False, "error": "کد مورد نظر یافت نشد"}
+
+        clinet.product_archive.update_one({"articles.first": imei},
+                                          {"$set": {
+                                              "articles.$.exist": True,
+                                              "articles.$.return_imei": True,
+                                          }})
+
+        if count_imei == 0:
+            clinet.imeis.update_one(
+                {"system_code": system_code, "storage_id": storage_id},
+                {"$push": {"imeis": {"$each": [{"imei": imei}]}}})
+        return {"success": True, "message": "کد مورد نظر با موفقیت به انبار عودت داده شد."}
+

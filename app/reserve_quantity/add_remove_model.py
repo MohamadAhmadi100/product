@@ -81,6 +81,7 @@ class AddRemoveQtyReserve:
             if quantity_count > 0:
                 product = client.product.find({"system_code": system_code}, {"_id": False})
                 for products in product:
+                    self.cardex['name'] = products['name']
                     found_storage = False
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
@@ -95,7 +96,8 @@ class AddRemoveQtyReserve:
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 self.cardex['newReserve'] = storage_dict["reserved"]
-                                storage_dict["regular"] = price
+                                if price is not None:
+                                    storage_dict["regular"] = price
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
                                 return {"success": True, "cardex": self.cardex}
                     else:
