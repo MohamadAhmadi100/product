@@ -198,8 +198,8 @@ def transfer_products(transfer_object, system_code, staff_name):
                 products = cursor_products
 
         if transfer_object['status_type'] == "submit":
-            return export_transfer_form(products, transfer_object['dst_warehouse'],
-                                        transfer_object['src_warehouse'],
+            return export_transfer_form(products, transfer_object['src_warehouse'],
+                                        transfer_object['dst_warehouse'],
                                         transfer_object['referral_number'],
                                         transfer_object['quantity_type'], 'staff')
         elif transfer_object['status_type'] == "transfer":
