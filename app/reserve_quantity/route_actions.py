@@ -296,3 +296,55 @@ def return_order_items(system_code, storage_id, customer_type, order_number, ime
             return reserve_result
     else:
         return return_action
+
+
+def remove_reserve_edit_transfer(system_code, storage_id, count, customer_type, order_number):
+    """
+    edit transfer form products
+    """
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type,
+                                                     order_number)
+    if reserve_result.get("success"):
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            incremental_id=order_number,
+            qty=count,
+            sku=reserve_result['cardex'].get('name'),
+            type="edit transfer form",
+            old_quantity=reserve_result['cardex'].get('oldQuantity'),
+            new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_reserve=reserve_result['cardex'].get('oldReserve'),
+            new_reserve=reserve_result['cardex'].get('newReserve')
+        )
+        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        return reserve_result
+    else:
+        return {"success": False, "error": f"{system_code}"}
+
+
+def add_to_reserve_edit_transfer(system_code, storage_id, count, customer_type, order_number):
+    """
+    edit transfer form products add to reserve
+    """
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type,
+                                                  order_number)
+    if reserve_result.get("success"):
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            incremental_id=order_number,
+            qty=count,
+            sku=reserve_result['cardex'].get('name'),
+            type="edit transfer form",
+            old_quantity=reserve_result['cardex'].get('oldQuantity'),
+            new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_reserve=reserve_result['cardex'].get('oldReserve'),
+            new_reserve=reserve_result['cardex'].get('newReserve')
+        )
+        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        return reserve_result
+    else:
+        return {"success": False, "error": f"{system_code}"}

@@ -275,3 +275,32 @@ def return_imei(system_code, storage_id, customer_type, order_number, imeis):
         return reserve_result
     else:
         return reserve_result
+
+
+def edit_transfer_form(edit_object):
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    # add reserve per items
+    if edit_object['count'] < 0:
+        reserve_result = remove_reserve_edit_transfer(edit_object.get("system_code"),
+                                                      edit_object.get("storage_id"),
+                                                      edit_object.get("count") * -1,
+                                                      edit_object.get("customer_type"),
+                                                      edit_object.get("referral_number"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
+        if reserve_result.get("success"):
+            add_to_cardex(None, "staff", edit_object.get("referral_number"), add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        else:
+            return reserve_result
+    elif edit_object['count'] > 0:
+        reserve_result = add_to_reserve_edit_transfer(edit_object.get("system_code"),
+                                                      edit_object.get("storage_id"),
+                                                      edit_object.get("count"),
+                                                      edit_object.get("customer_type"),
+                                                      edit_object.get("referral_number"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
+        if reserve_result.get("success"):
+            add_to_cardex(None, "staff", edit_object.get("referral_number"), add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        else:
+            return reserve_result
