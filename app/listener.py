@@ -10,6 +10,7 @@ from app.controllers.custom_category import *
 from app.controllers.change_qty_reserve_controller import *
 from app.controllers.checkout_controller import *
 from app.controllers.scm_controller import *
+from app.controllers.order import *
 
 from app.modules import terminal_log
 

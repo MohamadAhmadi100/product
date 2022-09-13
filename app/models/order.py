@@ -7,54 +7,56 @@ def exit_order_handler(order_number,
                        products,
                        staff_id,
                        staff_name):
-    rollback_list = []
-    rollback_flag = True
-    error_message = None
-    for product in products:
-        imeis = product["imeis"]
-        count = len(imeis)
-        system_code = product["system_code"]
+    try:
+        rollback_list = []
+        rollback_flag = True
+        error_message = None
+        for product in products:
+            imeis = product["imeis"]
+            count = len(imeis)
+            system_code = product["system_code"]
 
-        success, message = update_quantity(order_number,
-                                           storage_id,
-                                           system_code,
-                                           count,
-                                           staff_id,
-                                           staff_name,
-                                           "exitOrder",
-                                           True)
+            success, message = update_quantity(order_number,
+                                               storage_id,
+                                               system_code,
+                                               count,
+                                               staff_id,
+                                               staff_name,
+                                               "exitOrder",
+                                               True)
 
-        if success:
+            if success:
 
-            rollback_object = create_rollback(order_number,
-                                              storage_id,
-                                              system_code,
-                                              count,
-                                              staff_id,
-                                              staff_name,
-                                              imeis
-                                              )
-            rollback_list.append(rollback_object)
-        else:
-            rollback_flag = False
-            error_message = message
-            break
-    if not rollback_flag:
-        if len(rollback_list) > 0:
-            rollback_products(rollback_list)
+                rollback_object = create_rollback(order_number,
+                                                  storage_id,
+                                                  system_code,
+                                                  count,
+                                                  staff_id,
+                                                  staff_name,
+                                                  imeis
+                                                  )
+                rollback_list.append(rollback_object)
+            else:
+                rollback_flag = False
+                error_message = message
+                break
+        if not rollback_flag:
+            if len(rollback_list) > 0:
+                rollback_products(rollback_list)
+                return False, error_message
+
             return False, error_message
 
-        return False, error_message
+        if not imeis_checking(rollback_list):
+            rollback_products(rollback_list)
+            return False, "مشکل در چک imei"
 
-    if not checking_imeis(rollback_list):
-        rollback_products(rollback_list)
-        return False, "مشکل در چک imei"
-
-    if not update_imeis(rollback_list):
-        rollback_products(rollback_list)
-        return False, "مشکل در آپدیت imei"
-    # return True, rollback_list
-    return True, rollback_list
+        if not update_imeis(rollback_list):
+            rollback_products(rollback_list)
+            return False, "مشکل در آپدیت imei"
+        return True, rollback_list
+    except:
+        return False, "خطای سیستمی رخ داده است"
 
 
 def update_quantity(order_number,
@@ -66,7 +68,7 @@ def update_quantity(order_number,
                     service_name,
                     flag):
     try:
-        product, objects = get_product(storage_id, system_code)
+        product, objects = get_product_query(storage_id, system_code)
         if not objects:
             return False, "مغایرت در سیستم کد"
         if flag:
@@ -140,18 +142,6 @@ def rollback_products(products: list):
         return False
 
 
-def checking_imeis(rollback_list):
-    for pro in rollback_list:
-        pro_imeis = pro["imeis"]
-        storage_id = pro["storageId"]
-        system_code = pro["systemCode"]
-        check_imei_collection = check_is_imei(system_code, storage_id, pro_imeis)
-        check_archive_collection = archive_checking(system_code, storage_id, pro_imeis)
-        if not check_imei_collection or not check_archive_collection:
-            return False
-    return True
-
-
 def update_imeis(rollback_list):
     try:
         imei_list = []
@@ -159,7 +149,7 @@ def update_imeis(rollback_list):
         update_flag = True
         for pro in rollback_list:
             pro_imeis = pro["imeis"]
-            if not delete_imei(pro_imeis):
+            if not delete_imei_query(pro_imeis):
                 update_flag = False
                 break
             imei_list.append(pro)
@@ -171,7 +161,7 @@ def update_imeis(rollback_list):
 
         if not update_flag:
             if len(archive_list) > 0 or len(imei_list) > 0:
-                if not rollback_update_imeis(imei_list, archive_list):
+                if not imeis_rollback(imei_list, archive_list):
                     # TOdo insert log
                     return False
 
@@ -218,30 +208,6 @@ def create_cardex_object(qty_object,
         return False
 
 
-def cardex_query(quantity_cardex_data):
-    try:
-        with MongoConnection() as mongo:
-            mongo.db.cardex.insert_one(quantity_cardex_data)
-        return True
-    except Exception:
-        return False
-
-
-def quantity_checking(quantity, reserved, count):
-    if quantity < count or reserved < count:
-        return False
-    return True
-
-
-def product_query(system_code, product_object):
-    try:
-        with MongoConnection() as mongo:
-            mongo.product.replace_one({"system_code": system_code}, product_object)
-        return True
-    except:
-        return False
-
-
 def create_archive_obj(imeis):
     imei_obj = []
     for i in imeis:
@@ -252,12 +218,12 @@ def create_archive_obj(imeis):
     return imei_obj
 
 
-def rollback_update_imeis(imeis: list, archives: list):
+def imeis_rollback(imeis: list, archives: list):
     try:
         if len(imeis) > 0:
 
             for imei in imeis:
-                if not insert_imei(imei["imeis"], imei["systemCode"], imei["storageId"], "imeis"):
+                if not add_imei_query(imei["imeis"], imei["systemCode"], imei["storageId"], "imeis"):
                     # TOdo insert log
                     return False
         if len(archives) > 0:
@@ -270,99 +236,11 @@ def rollback_update_imeis(imeis: list, archives: list):
         return False
 
 
-def archive_checking(system_code, storage_id, imeis):
-    try:
-        for imei in imeis:
-            with MongoConnection() as mongo:
-
-                products = mongo.archive.aggregate([
-                    {
-                        '$unwind': {
-                            'path': '$articles'
-                        }
-                    }, {
-                        '$match': {
-
-                            'system_code': system_code,
-                            'articles.first': imei,
-                            'articles.stockId': storage_id,
-                            'articles.type': 'physical',
-                            'articles.status': 'landed',
-                        }
-                    }, {
-                        '$project': {
-                            'exist': '$articles.exist',
-                        }
-                    }, {
-                        '$project': {
-                            '_id': 0
-                        }
-                    }
-                ])
-            if products.alive:
-                exist = list(products)[0]
-                if not exist["exist"]:
-                    return False
-            else:
-                return False
-        return True
-
-    except Exception:
-        return False
-
-
-def check_is_imei(system_code, storage_id, imeis):
-    try:
-        imeis_collection = get_imei(system_code, storage_id)
-        if imeis:
-            check = []
-            for imei in imeis_collection["imeis"]:
-                if imei["imei"] in imeis:
-                    check.append(imei["imei"])
-            if len(imeis) != len(check):
-                return False
-            return True
-        else:
-            return False
-    except:
-        return False
-
-
-def get_imei(system_code, storage_id):
-    try:
-        with MongoConnection() as mongo:
-            products = mongo.imeis.find_one(
-                {"system_code": str(system_code), "storage_id": str(storage_id), "type": "imeis"})
-            if products:
-                return products
-            else:
-                return False
-    except:
-        return False
-
-
-def delete_imei(imeis: list):
-    try:
-        for imei in imeis:
-            with MongoConnection() as mongo:
-                mongo.db.imeis.update_one({"imeis.imei": imei},
-                                                  {"$pull": {
-                                                      "imeis": {
-                                                          "imei": imei
-                                                      }}}
-                                                  )
-            # if query.matched_count > 0:
-            #     return True
-        return True
-    except:
-        return False
-
-
 def update_archive(imeis: list, flag):
     try:
 
         for imei in imeis:
-            response = archive_query(imei, {"articles.$.exist": flag})
+            response = update_archive_query(imei, {"articles.$.exist": flag})
             if not response:
                 return False
         return True
@@ -370,20 +248,61 @@ def update_archive(imeis: list, flag):
         return False
 
 
-def archive_query(imei, new_object):
+def update_reserve_qty(qty_object, count, flag):
     try:
-        with MongoConnection() as mongo:
-            query = mongo.db.archive.update_one({"articles.first": imei},
-                                                {"$set": new_object})
-        if query.matched_count > 0:
-            return True
-        return False
-
+        if flag:
+            qty_object["quantity"] -= count
+            qty_object["reserved"] -= count
+        else:
+            qty_object["quantity"] += count
+            qty_object["reserved"] += count
+        return True
     except:
         return False
 
 
-def insert_imei(imei: list, system_code: str, storage_id: str, record_type: str):
+# checking functions
+def imeis_checking(rollback_list):
+    for pro in rollback_list:
+        pro_imeis = pro["imeis"]
+        storage_id = pro["storageId"]
+        system_code = pro["systemCode"]
+        check_imei_collection = check_is_imei(system_code, storage_id, pro_imeis)
+        check_archive_collection = check_in_archive(system_code, storage_id, pro_imeis)
+        if check_imei_collection and check_archive_collection:
+            return True
+    return False
+
+
+def check_is_imei(system_code, storage_id, imeis):
+    try:
+        for imei in imeis:
+            if not check_imei_query(system_code, storage_id, imei, "imeis"):
+                return False
+        return True
+    except:
+        return False
+
+
+def check_in_archive(system_code, storage_id, imeis):
+    try:
+        for imei in imeis:
+            if not check_archive_query(system_code, storage_id, imei):
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def quantity_checking(quantity, reserved, count):
+    if quantity < count or reserved < count:
+        return False
+    return True
+
+
+# query functions
+
+def add_imei_query(imei: list, system_code: str, storage_id: str, record_type: str):
     try:
         imei_list = create_archive_obj(imei)
         with MongoConnection() as mongo:
@@ -401,7 +320,7 @@ def insert_imei(imei: list, system_code: str, storage_id: str, record_type: str)
         return False
 
 
-def get_product(storage_id, system_code):
+def get_product_query(storage_id, system_code):
     with MongoConnection() as mongo:
         product = mongo.product.find_one({"system_code": system_code})
     if not product:
@@ -414,39 +333,146 @@ def get_product(storage_id, system_code):
     return product, qty_object
 
 
-def update_reserve_qty(qty_object, count, flag):
+def update_archive_query(imei, new_object):
     try:
-        if flag:
-            qty_object["quantity"] -= count
-            qty_object["reserved"] -= count
-        else:
-            qty_object["quantity"] += count
-            qty_object["reserved"] += count
+        with MongoConnection() as mongo:
+            query = mongo.db.archive.update_one({"articles.first": imei},
+                                                {"$set": new_object})
+        if query.matched_count > 0:
+            return True
+        return False
+
+    except:
+        return False
+
+
+def delete_imei_query(imeis: list):
+    try:
+        for imei in imeis:
+            with MongoConnection() as mongo:
+                mongo.db.imeis.update_one({"imeis.imei": imei},
+                                          {"$pull": {
+                                              "imeis": {
+                                                  "imei": imei
+                                              }}}
+                                          )
+
         return True
     except:
         return False
 
-# def insert_bug_log(storage_dict, objects):
-#     try:
-#         quantity_log_data = {
-#             "userId": objects.get("userId", ""),
-#             "userName": objects.get("userName", ""),
-#             "orderNumber": objects.get("orderNumber", ""),
-#             "stockId": objects.get("stockId", ""),
-#             "stockName": objects.get("stockName", ""),
-#             "systemCode": objects.get("systemCode", ""),
-#             "sku": objects.get("sku", ""),
-#             "type": objects.get("serviceName", ""),
-#             "qty": objects.get("qty", ""),
-#             "createdDate": str(jdatetime.datetime.now()).split(".")[0],
-#             "to_stock": objects.get("qty", ""),
-#             "biFlag": False
-#         }
-#         if storage_dict:
-#             quantity_log_data["quantity"] = storage_dict["quantity"]
-#             quantity_log_data["reserve"] = storage_dict["reserved"]
-#
-#         client.bug_log.insert_one(quantity_log_data)
-#
-#     except Exception as e:
-#         print(str(e))
+
+def product_query(system_code, product_object):
+    try:
+        with MongoConnection() as mongo:
+            mongo.product.replace_one({"system_code": system_code}, product_object)
+        return True
+    except:
+        return False
+
+
+def cardex_query(quantity_cardex_data):
+    try:
+        with MongoConnection() as mongo:
+            mongo.db.cardex.insert_one(quantity_cardex_data)
+        return True
+    except Exception:
+        return False
+
+
+def check_imei_query(system_code, storage_id, imei, type):
+    try:
+        with MongoConnection() as mongo:
+            imeis = mongo.imeis.aggregate([
+                {
+                    '$unwind': {
+                        'path': '$imeis'
+                    }
+                }, {
+                    '$match': {
+
+                        'system_code': system_code,
+                        'imeis.imei': imei,
+                        'storage_id': storage_id,
+                        'type': type,
+
+                    }
+                }, {
+                    '$project': {
+                        'exist': '$imeis.imei',
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0
+                    }
+                }
+            ])
+
+        if imeis.alive:
+            exist = list(imeis)[0]
+            if exist["exist"]:
+                return True
+            return False
+
+        return False
+
+    except:
+        return False
+
+
+def check_archive_query(system_code, storage_id, imei):
+    try:
+
+        with MongoConnection() as mongo:
+
+            products = mongo.archive.aggregate([
+                {
+                    '$unwind': {
+                        'path': '$articles'
+                    }
+                }, {
+                    '$match': {
+
+                        'system_code': system_code,
+                        'articles.first': imei,
+                        'articles.stockId': storage_id,
+                        'articles.type': 'physical',
+                        'articles.status': 'landed',
+                    }
+                }, {
+                    '$project': {
+                        'exist': '$articles.exist',
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0
+                    }
+                }
+            ])
+        if products.alive:
+            exist = list(products)[0]
+            if exist["exist"]:
+                return True
+            return False
+
+        return False
+    except:
+        return False
+
+
+# other router
+
+def handle_imei_checking(system_code,storage_id,imei):
+    try:
+        imei_check = check_imei_query(system_code,storage_id,imei,"imeis")
+        archive_check = check_archive_query(system_code,storage_id,imei)
+
+        if imei_check and archive_check:
+            return True ,"موفق"
+        return False, "ناموفق"
+    except:
+        return False,"مشکل سیستمی رخ داده است"
+
+
+
+

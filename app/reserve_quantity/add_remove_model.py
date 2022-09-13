@@ -20,6 +20,7 @@ class AddRemoveQtyReserve:
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
                             if (storage_dict["reserved"] + count) <= storage_dict['quantity']:
+                                self.cardex['name'] = products['name']
                                 self.cardex['qty'] = count
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] += count
@@ -52,6 +53,7 @@ class AddRemoveQtyReserve:
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
                         if cusrsor == storage_id:
                             if (storage_dict["reserved"] - count) >= 0:
+                                self.cardex['name'] = products['name']
                                 self.cardex['qty'] = count
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] -= count
@@ -61,7 +63,7 @@ class AddRemoveQtyReserve:
                                 client.product.replace_one({"system_code": system_code}, products)
                                 return {"success": True, "cardex": self.cardex}
                             else:
-                                client.reservlog_collection.insert_one(
+                                client.reserve_log_collection.insert_one(
                                     {"systemCode": str(system_code), "stockId": str(storage_id),
                                      "old_reserve": storage_dict["reserved"],
                                      "new_reserve": storage_dict["reserved"] - count,
@@ -70,7 +72,7 @@ class AddRemoveQtyReserve:
                                      "count": count,
                                      "order_number": order_number, "message": "reserve manfi",
                                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
-                                return {"success": True}
+                                return {"success": False, "error":"موجودی یا رزرو کافی نیست"}
 
     def add_quantity(self, system_code, storage_id, count, customer_type, price):
         """
