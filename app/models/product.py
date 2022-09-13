@@ -28,6 +28,50 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def get_basket_product(system_code, storage_id, customer_type):
+        with MongoConnection() as mongo:
+            warehouse_query_string = f"$warehouse_details.{customer_type}.storages.{storage_id}"
+            pipe_lines = [
+                {
+                    '$match': {
+                        'system_code': system_code
+                    }
+                }, {
+                    '$addFields': {
+                        'regular': f'{warehouse_query_string}.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                f'{warehouse_query_string}.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                f'{warehouse_query_string}.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, f'{warehouse_query_string}.special', None
+                            ]
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'warehouse_details': 0
+                    }
+                }
+            ]
+            result = list(mongo.product.aggregate(pipe_lines))
+            if result:
+                return result[0]
+            return None
+
+    @staticmethod
     def price_list(customer_type, storage_id, sub_category, brand, model):
         with MongoConnection() as mongo:
             pipe_lines = [
