@@ -196,3 +196,10 @@ def get_csv(storage_id: str) -> dict:
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def price_list(customer_type, storage_id, sub_category, brand, model):
+    result = Product.price_list(customer_type, storage_id, sub_category, brand, model)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
