@@ -93,14 +93,17 @@ class Product:
                             }, {
                                 '$unwind': '$data'
                             }, {
-                                '$sort': {
-                                    'data.system_code': 1
-                                }
-                            }, {
                                 '$group': {
                                     '_id': {
                                         'brand': '$data.brand',
                                         'sub': '$data.sub_category'
+                                    },
+                                    'system_code': {
+                                        '$addToSet': {
+                                            '$substr': [
+                                                '$data.system_code', 0, 6
+                                            ]
+                                        }
                                     },
                                     'models': {
                                         '$addToSet': '$data.model'
@@ -112,7 +115,10 @@ class Product:
                                     'brands': {
                                         '$push': {
                                             'brand': '$_id.brand',
-                                            'models': '$models'
+                                            'models': '$models',
+                                            'system_code': {
+                                                '$first': '$system_code'
+                                            }
                                         }
                                     }
                                 }
@@ -121,6 +127,10 @@ class Product:
                                     'name': '$_id',
                                     'brands': 1,
                                     '_id': 0
+                                }
+                            }, {
+                                '$sort': {
+                                    'brands.system_code': 1
                                 }
                             }
                         ],
@@ -323,7 +333,8 @@ class Product:
             for storage in warehouses:
                 storages_labels.append({
                     "storage_id": storage.get("warehouse_id"),
-                    "label": storage.get('warehouse_name')
+                    "label": storage.get('warehouse_name'),
+                    "active": True if storage_id else False
                 })
 
             with RedisConnection() as redis:
