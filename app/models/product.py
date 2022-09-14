@@ -57,7 +57,11 @@ class Product:
                                     ]
                                 }, f'{warehouse_query_string}.special', None
                             ]
-                        }
+                        },
+                        "quantity": {"$subtract": [f"{warehouse_query_string}.quantity",
+                                                   f"{warehouse_query_string}.reserved"]},
+                        "min_qty": f"{warehouse_query_string}.min_qty",
+                        "max_qty": f"{warehouse_query_string}.max_qty"
                     }
                 }, {
                     '$project': {
