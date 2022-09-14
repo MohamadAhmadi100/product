@@ -57,7 +57,11 @@ class Product:
                                     ]
                                 }, f'{warehouse_query_string}.special', None
                             ]
-                        }
+                        },
+                        "quantity": {"$subtract": [f"{warehouse_query_string}.quantity",
+                                                   f"{warehouse_query_string}.reserved"]},
+                        "min_qty": f"{warehouse_query_string}.min_qty",
+                        "max_qty": f"{warehouse_query_string}.max_qty"
                     }
                 }, {
                     '$project': {
@@ -72,12 +76,105 @@ class Product:
             return None
 
     @staticmethod
-    def price_list(customer_type, storage_id, sub_category, brand, model):
+    def price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages):
         with MongoConnection() as mongo:
             pipe_lines = [
                 {
+                    '$match': {
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'min_qty': "$zz.v.min_qty",
+                        'max_qty': {
+                            '$cond': [
+                                {
+                                    '$gt': [
+                                        '$zz.v.quantity', '$zz.v.max_qty'
+                                    ]
+                                }, '$zz.v.max_qty', '$zz.v.quantity'
+                            ]
+                        },
+                        'regular': '$zz.v.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, '$zz.v.special', None
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        },
+                        'storage_id': storage_id
+                    }
+                },
+                {
                     "$facet": {
                         "filters": [
+                            {
+                                '$replaceRoot': {
+                                    'newRoot': '$root_obj'
+                                }
+                            },
                             {
                                 '$group': {
                                     '_id': None,
@@ -85,7 +182,8 @@ class Product:
                                         '$addToSet': {
                                             'sub_category': '$sub_category',
                                             'brand': '$brand',
-                                            'model': '$model'
+                                            'model': '$model',
+                                            'system_code': '$system_code'
                                         }
                                     }
                                 }
@@ -97,8 +195,15 @@ class Product:
                                         'brand': '$data.brand',
                                         'sub': '$data.sub_category'
                                     },
+                                    'system_code': {
+                                        '$addToSet': {
+                                            '$substr': [
+                                                '$data.system_code', 0, 6
+                                            ]
+                                        }
+                                    },
                                     'models': {
-                                        '$push': '$data.model'
+                                        '$addToSet': '$data.model'
                                     }
                                 }
                             }, {
@@ -107,7 +212,10 @@ class Product:
                                     'brands': {
                                         '$push': {
                                             'brand': '$_id.brand',
-                                            'models': '$models'
+                                            'models': '$models',
+                                            'system_code': {
+                                                '$first': '$system_code'
+                                            }
                                         }
                                     }
                                 }
@@ -117,87 +225,14 @@ class Product:
                                     'brands': 1,
                                     '_id': 0
                                 }
+                            }, {
+                                '$sort': {
+                                    'brands.system_code': 1
+                                }
                             }
                         ],
                         "products": [
                             {
-                                '$match': {
-                                    'visible_in_site': True
-                                }
-                            }, {
-                                '$project': {
-                                    'system_code': 1,
-                                    'keys': {
-                                        '$objectToArray': '$warehouse_details'
-                                    },
-                                    'root_obj': '$$ROOT'
-                                }
-                            }, {
-                                '$unwind': '$keys'
-                            }, {
-                                '$project': {
-                                    'system_code': 1,
-                                    'customer_type': '$keys.k',
-                                    'zz': {
-                                        '$objectToArray': '$keys.v.storages'
-                                    },
-                                    'root_obj': 1
-                                }
-                            }, {
-                                '$unwind': '$zz'
-                            }, {
-                                '$project': {
-                                    'system_code': 1,
-                                    'storage_id': '$zz.k',
-                                    'customer_type': 1,
-                                    'qty': {
-                                        '$subtract': [
-                                            '$zz.v.quantity', '$zz.v.reserved'
-                                        ]
-                                    },
-                                    'min': {
-                                        '$subtract': [
-                                            {
-                                                '$subtract': [
-                                                    '$zz.v.quantity', '$zz.v.reserved'
-                                                ]
-                                            }, '$zz.v.min_qty'
-                                        ]
-                                    },
-                                    'regular': '$zz.v.regular',
-                                    'special': {
-                                        '$cond': [
-                                            {
-                                                '$and': [
-                                                    {
-                                                        '$gt': [
-                                                            jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                                            '$zz.v.special_from_date'
-                                                        ]
-                                                    }, {
-                                                        '$lt': [
-                                                            jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                                            '$zz.v.special_to_date'
-                                                        ]
-                                                    }
-                                                ]
-                                            }, '$zz.v.special', None
-                                        ]
-                                    },
-                                    'root_obj': 1
-                                }
-                            }, {
-                                '$match': {
-                                    'customer_type': customer_type,
-                                    'qty': {
-                                        '$gt': 0
-                                    },
-                                    'min': {
-                                        '$gte': 0
-                                    },
-                                    'storage_id': storage_id
-                                }
-                            }, {
                                 '$group': {
                                     '_id': {
                                         '$substr': [
@@ -211,8 +246,8 @@ class Product:
                                             ]
                                         }
                                     },
-                                    "name": {
-                                        "$push": "$root_obj.name"
+                                    'name': {
+                                        '$push': '$root_obj.name'
                                     },
                                     'products': {
                                         '$push': {
@@ -222,6 +257,9 @@ class Product:
                                             'guaranty': '$root_obj.guaranty',
                                             'regular': '$regular',
                                             'special': '$special',
+                                            'system_code': '$system_code',
+                                            "min_qty": "$min_qty",
+                                            "max_qty": "$max_qty"
                                         }
                                     }
                                 }
@@ -232,21 +270,25 @@ class Product:
                                     'header': {
                                         '$first': '$header'
                                     },
-                                    "name": {
-                                        "$first": "$name"
+                                    'name': {
+                                        '$first': '$name'
                                     },
                                     'products': 1
                                 }
                             }, {
+                                '$sort': {
+                                    'name': 1
+                                }
+                            }, {
                                 '$group': {
                                     '_id': '$header',
-                                    "system_code": {
-                                        "$push": '$system_code'
+                                    'system_code': {
+                                        '$push': '$system_code'
                                     },
                                     'models': {
                                         '$push': {
                                             'system_code': '$system_code',
-                                            "name": "$name",
+                                            'name': '$name',
                                             'products': '$products'
                                         }
                                     }
@@ -254,9 +296,19 @@ class Product:
                             }, {
                                 '$project': {
                                     'name': '$_id',
-                                    "system_code": {"$first": '$system_code'},
+                                    'system_code': {
+                                        '$substr': [
+                                            {
+                                                '$first': '$system_code'
+                                            }, 0, 9
+                                        ]
+                                    },
                                     '_id': 0,
                                     'models': 1
+                                }
+                            }, {
+                                '$sort': {
+                                    'system_code': 1
                                 }
                             }
                         ]
@@ -273,12 +325,26 @@ class Product:
             db_data = db_data[0]
             filters = db_data.get('filters')
             db_data = db_data.get("products")
-            warehouses = list(mongo.warehouses_collection.find({"isActive": True}, {"_id": 0}))
+
+            for _filter in filters:
+                for brand in _filter.get("brands", []):
+                    kowsar_data = mongo.kowsar_collection.find_one(
+                        {"brand": brand.get("brand"), "sub_category": _filter.get("name"),
+                         "system_code": {"$regex": ".{25}"}})
+                    brand['label'] = kowsar_data.get('brand_label', brand.get('brand'))
+                _filter['label'] = kowsar_data.get('sub_category_label', _filter.get("name"))
+
+            warehouses = list(
+                mongo.warehouses_collection.find(
+                    {"isActive": True, "warehouse_id": {"$in": [int(storage) for storage in allowed_storages]}},
+                    {"_id": 0}))
+
             storages_labels = list()
             for storage in warehouses:
                 storages_labels.append({
                     "storage_id": storage.get("warehouse_id"),
-                    "label": storage.get('warehouse_name')
+                    "label": storage.get('warehouse_name'),
+                    "active": True if storage_id else False
                 })
 
             with RedisConnection() as redis:
@@ -626,14 +692,6 @@ class Product:
                     '$facet': {
                         'categories': [
                             {
-                                '$match': {
-                                    'item.sub_category': {
-                                        '$in': [
-                                            'Mobile', 'Tablet'
-                                        ]
-                                    }
-                                }
-                            }, {
                                 '$project': {
                                     'item.system_code': {
                                         '$substr': [

@@ -117,7 +117,8 @@ class KowsarGroup:
             "Modem": "200051", "Access Point": "200052", "Switch/Router": "200053",
             "Printer": "200054", "Scanner": "200055", "Copy-Machine": "200056",
             "Data Video Projector": "200057", "Telephone": "200058", "Fax": "200059",
-            "Barcode Reader": "200060", "Cartridge": "200061", "Gaming": "200062", "Vacuum Cleaner": "200063"
+            "Barcode Reader": "200060", "Cartridge": "200061", "Gaming": "200062", "Vacuum Cleaner": "200063",
+            "Laptop": "903434"
         }
 
         if len(self.system_code) == 16:
