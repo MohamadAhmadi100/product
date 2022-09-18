@@ -110,12 +110,13 @@ def update_quantity(system_code: str, customer_type: str, storage_id: str, quant
 def get_product_list_back_office(brands: list, warehouses: list, price_from: int, price_to: int, sellers: list,
                                  colors: list, quantity_from: int, quantity_to: int, date_from: str, date_to: str,
                                  guarantees: list, steps: list, visible_in_site: bool, approved: bool, available: bool,
-                                 page: int, per_page: int, lang: str) -> dict:
+                                 page: int, per_page: int, system_code: str, lang: str) -> dict:
     """
     """
     result = Product.get_product_list_back_office(brands, warehouses, price_from, price_to, sellers, colors,
                                                   quantity_from, quantity_to, date_from, date_to, guarantees, steps,
-                                                  visible_in_site, approved, available, page, per_page, lang)
+                                                  visible_in_site, approved, available, page, per_page, system_code,
+                                                  lang)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "products not found", "status_code": 404}
