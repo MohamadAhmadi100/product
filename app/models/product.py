@@ -345,7 +345,7 @@ class Product:
                 storages_labels.append({
                     "storage_id": storage.get("warehouse_id"),
                     "label": storage.get('warehouse_name'),
-                    "active": True if storage_id else False
+                    "active": True if int(storage_id) == storage.get("warehouse_id") else False
                 })
 
             with RedisConnection() as redis:
