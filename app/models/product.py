@@ -1683,7 +1683,7 @@ class Product:
     @staticmethod
     def get_product_list_back_office(brands, warehouses, price_from, price_to, sellers, colors,
                                      quantity_from, quantity_to, date_from, date_to, guarantees, steps,
-                                     visible_in_site, approved, available, page, per_page, lang):
+                                     visible_in_site, approved, available, page, per_page, system_code, lang):
         with MongoConnection() as mongo:
             skip = (page - 1) * per_page
             pipe_lines = [
@@ -1810,6 +1810,8 @@ class Product:
                     }
                 }
             ]
+            if system_code:
+                pipe_lines[0]['$facet']['list'][0]['$match']['system_code'] = {"$regex": f"^{system_code}"}
             if brands:
                 pipe_lines[0]['$facet']['list'][0]['$match']['brand'] = {'$in': brands}
             if sellers:

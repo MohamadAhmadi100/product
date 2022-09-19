@@ -5,9 +5,9 @@ from app.helpers.mongo_connection import MongoConnection
 
 def cardex(**kwargs):
     return {
-        "stock_id": kwargs.get("storage_id"),
+        "storage_id": kwargs.get("storage_id"),
         "stock_name": "",
-        "systemCode": kwargs.get("system_code"),
+        "system_code": kwargs.get("system_code"),
         "incremental_id": kwargs.get("incremental_id"),
         "sku": kwargs.get("sku"),
         "type": kwargs.get("type"),

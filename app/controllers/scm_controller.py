@@ -13,4 +13,3 @@ def inv_products_report(storages, system_code, name, daily_system_code, daily_re
         return inv_report(storages, system_code, name, daily_system_code, daily_result)
     except:
         return {'success': False, 'error': 'root exception error', 'status_code': 400}
-
