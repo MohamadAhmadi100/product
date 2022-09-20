@@ -65,7 +65,18 @@ class KowsarGetter:
                                 {'$cond': [{'$eq': ['$$value', '']}, '', '-']},
                                 '$$this.v']
                         }
-                    }}
+                    }},
+                    "configs_keys": {
+                        '$setIntersection': {
+                            '$reduce': {
+                                'input': {"$objectToArray": "$configs"},
+                                'initialValue': [],
+                                'in': {
+                                    '$concatArrays': ['$$value', ['$$this.k']]
+                                }
+                            }
+                        }
+                    }
                 }
             elif len(system_code) in [16, 19, 22]:
                 query = {
@@ -86,7 +97,18 @@ class KowsarGetter:
                 filter=query,
                 projection=project
             ))
-            if len(system_code) in [6, 16, 19, 22]:
+
+            if len(system_code) == 13:
+                result = list()
+                for product in products:
+                    configs = product.get("configs_keys")
+                    del product['configs_keys']
+                    result.append(product)
+                products = {
+                    "data": result,
+                    "configs": configs
+                }
+            elif len(system_code) in [6, 16, 19, 22]:
                 brands_list = list()
                 products.sort(key=lambda x: x['for_parent'], reverse=True)
                 result = list()
@@ -96,8 +118,7 @@ class KowsarGetter:
                             {"system_code": system_code + product.get('system_code')} if len(system_code) != 6 else {})
                         result.append(product)
                         brands_list.append(product.get('label'))
-                return result
-
+                products = result
             return products
 
     @staticmethod
