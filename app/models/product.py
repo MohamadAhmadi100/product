@@ -5,7 +5,7 @@ import jdatetime
 
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.redis_connection import RedisConnection
-from app.modules.kowsar_getter import KowsarGetter
+from app.models.kowsar import KowsarGetter
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
 

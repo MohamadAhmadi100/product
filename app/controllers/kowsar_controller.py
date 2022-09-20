@@ -1,5 +1,5 @@
-from app.models.kowsar import KowsarPart, KowsarGroup, KowsarConfig
-from app.modules.kowsar_getter import KowsarGetter
+from app.models.kowsar import KowsarGetter
+from app.models.kowsar import KowsarPart, KowsarGroup
 
 
 def get_kowsar(system_code: str):
@@ -76,23 +76,8 @@ def create_kowsar_group(system_code, name, parent_system_code, configs):
     return {"success": False, "error": "ساخت گروه با خطا مواجه شد", "status_code": 500}
 
 
-def create_kowsar_static_configs(config_type, system_code, name):
-    """
-    create kowsar static configs
-    """
-    if KowsarConfig.is_unique(config_type, system_code):
-        result = KowsarConfig.create_static_configs(config_type, system_code, name)
-        if result:
-            return {"success": True, "message": "با موفقیت ایجاد شد", "status_code": 200}
-        return {"success": False, "error": "ساخت گروه با خطا مواجه شد", "status_code": 500}
-    return {"success": False, "error": "گروه مورد نظر قبلا ساخته شده است", "status_code": 400}
-
-
-def get_kowsar_static_configs_by_config_type(config_type):
-    """
-    get kowsar static configs by config type
-    """
-    data = KowsarConfig.get_static_configs_by_config_type(config_type)
-    if data:
-        return {"success": True, "message": data, "status_code": 200}
-    return {"success": False, "error": "گروه مورد نظر یافت نشد", "status_code": 404}
+def get_kowsar_system_code(system_code):
+    result = KowsarGetter.get_kowsar_system_code(system_code)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 500}
