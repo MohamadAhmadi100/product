@@ -363,7 +363,7 @@ class Product:
         return {'data': db_data, "storages": storages_labels, "filters": filters}
 
     @staticmethod
-    def search_product_child(name, system_code, storages, customer_type):
+    def search_product_child(name, system_code, storages, customer_type, in_stock):
         with MongoConnection() as mongo:
             pipe_lines = [
                 {
@@ -386,6 +386,75 @@ class Product:
                 pipe_lines[0]['$match']['name'] = {'$regex': re.compile(fr"{name}(?i)")}
             else:
                 pipe_lines[0]['$match']['system_code'] = system_code
+
+            if in_stock:
+                temp = [
+                    {
+                        '$project': {
+                            'system_code': 1,
+                            'keys': {
+                                '$objectToArray': '$warehouse_details'
+                            },
+                            'root_obj': '$$ROOT'
+                        }
+                    }, {
+                        '$unwind': '$keys'
+                    }, {
+                        '$project': {
+                            'system_code': 1,
+                            'customer_type': '$keys.k',
+                            'zz': {
+                                '$objectToArray': '$keys.v.storages'
+                            },
+                            'root_obj': 1
+                        }
+                    }, {
+                        '$unwind': '$zz'
+                    }, {
+                        '$project': {
+                            'system_code': 1,
+                            'storage_id': '$zz.k',
+                            'customer_type': 1,
+                            'qty': {
+                                '$subtract': [
+                                    '$zz.v.quantity', '$zz.v.reserved'
+                                ]
+                            },
+                            'min': {
+                                '$subtract': [
+                                    {
+                                        '$subtract': [
+                                            '$zz.v.quantity', '$zz.v.reserved'
+                                        ]
+                                    }, '$zz.v.min_qty'
+                                ]
+                            },
+                            'price': {
+                                'storage_id': '$zz.k',
+                                'regular': '$zz.v.regular',
+                                'special': '$zz.v.special'
+                            },
+                            'root_obj': 1
+                        }
+                    }, {
+                        '$match': {
+                            'customer_type': customer_type,
+                            'qty': {
+                                '$gt': 0
+                            },
+                            'min': {
+                                '$gte': 0
+                            },
+                            "storage_id": {"$in": storages}
+                        }
+                    }, {
+                        '$replaceRoot': {
+                            'newRoot': '$root_obj'
+                        }
+                    }
+                ]
+                temp.extend(pipe_lines)
+                pipe_lines = temp
 
             result = mongo.product.aggregate(pipe_lines)
             return list(result)
