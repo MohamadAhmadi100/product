@@ -92,6 +92,8 @@ class KowsarGetter:
                 result = list()
                 for product in products:
                     if product.get('label') not in brands_list:
+                        product.update(
+                            {"system_code": system_code + product.get('system_code')} if len(system_code) != 6 else {})
                         result.append(product)
                         brands_list.append(product.get('label'))
                 return result
