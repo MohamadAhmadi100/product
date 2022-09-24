@@ -477,7 +477,7 @@ def handle_imei_checking(system_code, storage_id, imei):
 def get_cardex_report(page,
                       per_page,
                       sort_name,
-                      sort_type,system_code, storage_id, incremental_id, process_type):
+                      sort_type, system_code, storage_id, incremental_id, process_type):
     try:
         page = page if page else 1
         per_page = per_page if per_page else 15
@@ -508,10 +508,25 @@ def get_cardex_report(page,
             query["type"] = process_type
         with MongoConnection() as mongo:
 
-            result = list(mongo.cardex_collection.find(query, {"_id": False}).sort(sort_name, sort_type).limit(limit).skip(skip))
+            result = list(
+                mongo.cardex_collection.find(query, {"_id": False}).sort(sort_name, sort_type).limit(limit).skip(skip))
 
             count = mongo.cardex_collection.count_documents(query)
             return True, {"totalCount": count, "result": result}
+    except:
+
+        return False, {"totalCount": 0, "result": "خطای سیستمی رخ داده است"}
+
+
+def get_imeis_report(system_code, storage_id):
+    try:
+        with MongoConnection() as mongo:
+
+            result = mongo.imeis.find_one({"system_code": system_code, "storage_id": storage_id}, {"_id": False})
+            if result:
+                return True, result["imeis"]
+            else:
+                return False, "داده ای وجود ندارد"
     except:
 
         return False, "خطای سیستمی رخ داده است"
