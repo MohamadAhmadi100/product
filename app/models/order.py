@@ -462,17 +462,56 @@ def check_archive_query(system_code, storage_id, imei):
 
 # other router
 
-def handle_imei_checking(system_code,storage_id,imei):
+def handle_imei_checking(system_code, storage_id, imei):
     try:
-        imei_check = check_imei_query(system_code,storage_id,imei,"imeis")
-        archive_check = check_archive_query(system_code,storage_id,imei)
+        imei_check = check_imei_query(system_code, storage_id, imei, "imeis")
+        archive_check = check_archive_query(system_code, storage_id, imei)
 
         if imei_check and archive_check:
-            return True ,"موفق"
+            return True, "موفق"
         return False, "ناموفق"
     except:
-        return False,"مشکل سیستمی رخ داده است"
+        return False, "مشکل سیستمی رخ داده است"
 
 
+def get_cardex_report(page,
+                      per_page,
+                      sort_name,
+                      sort_type,system_code, storage_id, incremental_id, process_type):
+    try:
+        page = page if page else 1
+        per_page = per_page if per_page else 15
+        sort_type = sort_type if sort_type else "descend"
+        sort_name = sort_name if sort_name else "edit_date"
+        system_code = system_code if system_code else None
+        storage_id = storage_id if storage_id else None
+        incremental_id = incremental_id if incremental_id else None
+        process_type = process_type if process_type else None
 
+        page = page
+        per = per_page
+        skip = per * (page - 1)
+        limit = per
+        if sort_type == "descend":
+            sort_type = -1
+        else:
+            sort_type = 1
 
+        query = {}
+        if system_code:
+            query["system_code"] = system_code
+        if storage_id:
+            query["storage_id"] = storage_id
+        elif incremental_id:
+            query["incremental_id"] = incremental_id
+        elif process_type:
+            query["type"] = process_type
+        with MongoConnection() as mongo:
+
+            result = list(mongo.cardex_collection.find(query, {"_id": False}).sort(sort_name, sort_type).limit(limit).skip(skip))
+
+            count = mongo.cardex_collection.count_documents(query)
+            return True, {"totalCount": count, "result": result}
+    except:
+
+        return False, "خطای سیستمی رخ داده است"

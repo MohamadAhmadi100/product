@@ -226,7 +226,7 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
             incremental_id=referral_number,
             qty=product['count'],
             sku=product['name'],
-            type="import transfer",
+            type="create transfer",
             imeis=product['imeis'],
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
