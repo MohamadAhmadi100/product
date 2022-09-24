@@ -59,8 +59,11 @@ def create_kowsar_group(system_code, name, parent_system_code, configs):
         if not parent_data:
             return {"success": False, "error": "پرنت محصول یافت نشد", "status_code": 404}
     if len(system_code) == 16 and configs:
-        kowsar.name = parent_data['model'] + ' (' + configs['ram'] + ' ' + configs['storage'] + ' ' + configs[
-            'network'] + ") " + configs['region']
+        if parent_data.get('sub_category') in ["Mobile", "Tablet"]:
+            kowsar.name = parent_data['model'] + ' (' + configs['ram'] + ' ' + configs['storage'] + ' ' + configs[
+                'network'] + ") " + configs['region']
+        else:
+            kowsar.name = parent_data['model'] + ' (' + " ".join([v for k, v in configs.items()]) + ')'
     result = True
     if len(system_code) <= 16:
         result = kowsar.create_kowsar_group(parent_data)
