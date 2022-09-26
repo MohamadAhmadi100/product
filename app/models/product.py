@@ -1515,7 +1515,7 @@ class Product:
             brands_list_db = brands_list_db if brands_list_db.alive else []
             brands_list = list()
             for brand in brands_list_db:
-                brand_data = db_data_getter({"brand": brand.get("brand"), "system_code": {"$regex": "^.{9}$"}})
+                brand_data = db_data_getter({"brand": brand.get("brand"), "system_code": {"$regex": f"^{system_code[:6]}"}})
                 brands_list.append({"name": brand.get("brand"), "label": brand_data.get("brand_label"),
                                     "image": brand_data.get("image"),
                                     "route": brand.get("brand").replace(" ", ""),
