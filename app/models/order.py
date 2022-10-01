@@ -263,14 +263,18 @@ def update_reserve_qty(qty_object, count, flag):
 
 # checking functions
 def imeis_checking(rollback_list):
+    flag = True
     for pro in rollback_list:
         pro_imeis = pro["imeis"]
         storage_id = pro["storageId"]
         system_code = pro["systemCode"]
         check_imei_collection = check_is_imei(system_code, storage_id, pro_imeis)
         check_archive_collection = check_in_archive(system_code, storage_id, pro_imeis)
-        if check_imei_collection and check_archive_collection:
-            return True
+        if not check_imei_collection or not check_archive_collection:
+            flag = False
+            break
+    if flag:
+        return True
     return False
 
 
