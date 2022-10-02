@@ -311,7 +311,7 @@ def return_order_items(system_code, storage_id, customer_type, order_number, ime
                 new_quantity=reserve_result['cardex'].get('newQuantity'),
                 old_reserve=reserve_result['cardex'].get('oldReserve'),
                 new_reserve=reserve_result['cardex'].get('newReserve'),
-                staff_user=staff_name
+                user=staff_name
             )
             return_action['quantity_cardex_data'] = quantity_cardex_data
             return return_action
