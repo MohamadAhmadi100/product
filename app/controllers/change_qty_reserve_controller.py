@@ -265,16 +265,61 @@ def warehouse(storage_id):
     return find_warehouse(storage_id)
 
 
-def return_imei(system_code, storage_id, customer_type, order_number, imeis):
-    add_cardex_to_quantity = []
-    reserve_result = return_order_items(system_code, storage_id, customer_type, order_number, imeis)
-    if reserve_result.get("success"):
-        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
-        add_to_cardex("staff", None, order_number, add_cardex_to_quantity)
-        reserve_result.pop("quantity_cardex_data")
-        return reserve_result
+def return_imei(order, imei, staff_name):
+    order_model = OrderModel(dict(order))
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    checked = False
+    for cursor_products in order_model.return_order_data:
+        if cursor_products.get("imei") == imei:
+            reserve_reserve_result = return_order_items(cursor_products.get("system_code"),
+                                                        cursor_products.get("storage_id"),
+                                                        cursor_products.get("customer_type"),
+                                                        cursor_products.get("order_number"),
+                                                        cursor_products.get("imei"),
+                                                        staff_name
+                                                        )
+            add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+            checked = True
+
+    if checked:
+        try:
+            add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                          add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
     else:
-        return reserve_result
+        return {'success': False, 'message': 'عملیات ناموفقیت امیز بود', "check_data": data_response,
+                'status_code': 200}
+
+
+def return_order(order, staff_name):
+    order_model = OrderModel(dict(order))
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    for cursor_products in order_model.return_order_data:
+        # add quantity per items
+        reserve_reserve_result = return_order_items(cursor_products.get("system_code"),
+                                                    cursor_products.get("storage_id"),
+                                                    cursor_products.get("customer_type"),
+                                                    cursor_products.get("order_number"),
+                                                    cursor_products.get("imei"),
+                                                    staff_name
+                                                    )
+        data_for_check = (cursor_products, reserve_reserve_result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+    # check all items reserved
+    checked = all(elem[1] for elem in check_data)
+    if checked:
+        try:
+            add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                          add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        return {'success': False, 'message': 'عملیات ناموفقیت امیز بود', "check_data": data_response,
+                'status_code': 200}
 
 
 def edit_transfer_form(edit_object):
@@ -304,3 +349,194 @@ def edit_transfer_form(edit_object):
             return {'success': True, 'message': 'done', 'status_code': 200}
         else:
             return reserve_result
+
+
+print(return_order({
+    "orderNumber": 300000019,
+    "status": "complete",
+    "createdAt": "1401-05-18 22:58:29",
+    "price": {
+        "totalPrice": 700000,
+        "grandPrice": 700000,
+        "basePrice": 700000,
+        "discount": 0
+    },
+    "total": {
+        "totalQty": 1,
+        "totalItem": 1
+    },
+    "payment": {
+        "paymentId": None,
+        "paymentMethod": [{
+            "walletConsume": None
+        }, {
+            "bankMethod": "cashondelivery"
+        }],
+        "pos": True,
+        "posDetails": {
+            "transaction": None,
+            "type": None,
+            "recipt": None,
+            "paymentDone": None,
+            "processed": None
+        }
+    },
+    "customer": {
+        "fullName": "بهروز نوروزی زاده",
+        "type": "B2B",
+        "id": 3547,
+        "mobile": "09353404849",
+        "stateName": "خراسان رضوی",
+        "stateId": "11",
+        "cityName": "مشهد",
+        "cityId": "1871",
+        "address": "خ عبادی بین عبادی ٨٨ و ٩٠ ف دسترس",
+        "email": "Lorka2012@yahoo.com",
+        "shopName": None,
+        "nId": "921532806",
+        "kosarCode": "2804",
+        "accFormalCode": "806060"
+    },
+    "logs": {
+        "warehouseDetail": {
+            "2": {
+                "warehouseTime": "1401-05-19 10:08:31",
+                "completeTime": "1401-05-19 11:40:35"
+            },
+            "warehouseTime": "1401-05-19 10:08:31",
+            "completeTime": "1401-05-19 11:40:35"
+        }
+    },
+    "totalStocks": 1,
+    "splitedOrder": [{
+        "status": "complete",
+        "orderNumber": 300000019,
+        "storageId": "1",
+        "storageLabel": "مرکزی",
+        "invStock": {
+            "stockItems": 1,
+            "stockQuantity": 1,
+            "stockPrice": 700000
+        },
+        "totalStock": 1,
+        "products": [{
+            "status": "initial",
+            "systemCode": "2000010020018003001021002",
+            "name": "Xiaomi Redmi Note 11 Pro 5G (8GB 128GB 5G) Global | ASD | Sherkati [Graphite Gray]",
+            "price": 8499000,
+            "totalPrice": 16998000,
+            "count": 2,
+            "color": {
+                "value": "Graphite Gray",
+                "label": "Graphite Gray"
+            },
+            "brand": {
+                "value": "Xiaomi",
+                "label": "Xiaomi"
+            },
+            "model": "Redmi Note 11 Pro 5G",
+            "category": {
+                "value": "Device",
+                "label": "Device"
+            },
+            "seller": {
+                "value": "ASD",
+                "label": "ASD"
+            },
+            "guarantee": {
+                "value": "Sherkati",
+                "label": "Sherkati"
+            },
+            "storageId": "1",
+            "imeis": ["865346062537262", "865346062557880"]
+        }, {
+            "status": "initial",
+            "systemCode": "2000010010014002001001002",
+            "name": "Samsung A52 (8GB 128GB 4G) India | ASD | Sherkati [Black]",
+            "price": 8299000,
+            "totalPrice": 8299000,
+            "count": 1,
+            "color": {
+                "value": "Black",
+                "label": "Black"
+            },
+            "brand": {
+                "value": "Samsung",
+                "label": "Samsung"
+            },
+            "model": "A52",
+            "category": {
+                "value": "Device",
+                "label": "Device"
+            },
+            "seller": {
+                "value": "ASD",
+                "label": "ASD"
+            },
+            "guarantee": {
+                "value": "Sherkati",
+                "label": "Sherkati"
+            },
+            "storageId": "1",
+            "imeis": ["354254222532199"]
+        }, {
+            "status": "initial",
+            "systemCode": "2000010010005006001001001",
+            "name": "Samsung A03s (4GB 64GB 4G) RX | ASD | Aawaat [Black]",
+            "price": 3699000,
+            "totalPrice": 3699000,
+            "count": 1,
+            "color": {
+                "value": "Black",
+                "label": "Black"
+            },
+            "brand": {
+                "value": "Samsung",
+                "label": "Samsung"
+            },
+            "model": "A03s",
+            "category": {
+                "value": "Device",
+                "label": "Device"
+            },
+            "seller": {
+                "value": "ASD",
+                "label": "ASD"
+            },
+            "guarantee": {
+                "value": "Aawaat",
+                "label": "Aawaat"
+            },
+            "storageId": "1",
+            "imeis": ["350060030290589"]
+        }],
+        "shipment": {
+            "priceLabel": "رایگان",
+            "shipmentPrice": 0,
+            "customerPrice": 0,
+            "customerDiscount": 0,
+            "shippingLabel": "تحویل درب انبار آسود",
+            "shippingMethod": "aasood",
+            "shippingAddress": "خ عبادی بین عبادی ٨٨ و ٩٠ ف دسترس",
+            "shippingCity": "مشهد",
+            "shippingCityId": "1871",
+            "shippingState": "خراسان رضوی",
+            "shippingStateId": "11",
+            "shippingMobile": "",
+            "receiverFirstName": "",
+            "receiverLastName": "",
+            "receiverNationalId": "",
+            "receiverPhoneNumber": "",
+            "insurance": {
+                "insuranceType": "aasood",
+                "typeLabel": "فاقد بیمه",
+                "amount": 0,
+                "coverage": "بیشترین ارزش بسته:",
+                "selectedType": "fullCart"
+            }
+        }
+    }],
+    "dealership": False,
+    "createdAtMiladi": "2022-08-09 22:58:29"
+})
+)

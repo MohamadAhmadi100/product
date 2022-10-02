@@ -20,9 +20,31 @@ class OrderModel:
                     "count": product["count"],
                     "customer_type": customer_type,
                     "sku": product["name"],
-                    "order_number": self.order['orderNumber']
+                    "order_number": self.order['orderNumber'],
+                    "imei": product.get("imeis")
                 }
                 provided_data.append(product_detail)
+        return provided_data
+
+    @property
+    def return_order_data(self):
+        provided_data = []
+        customer_type = self.order["customer"]["type"]
+        for item in self.order["splitedOrder"]:
+            storage_id = item["storageId"]
+            for product in item["products"]:
+                if product['status'] != "return":
+                    for imeis in product['imeis']:
+                        product_detail = {
+                            "system_code": product["systemCode"],
+                            "storage_id": storage_id,
+                            "count": 1,
+                            "customer_type": customer_type,
+                            "sku": product["name"],
+                            "order_number": self.order['orderNumber'],
+                            "imei": imeis
+                        }
+                        provided_data.append(product_detail)
         return provided_data
 
 
@@ -269,7 +291,7 @@ def add_buying_form(product, dst_warehouse, customer_type, referral_number, supp
         return {"success": False, "error": f"{product['system_code']}"}
 
 
-def return_order_items(system_code, storage_id, customer_type, order_number, imei):
+def return_order_items(system_code, storage_id, customer_type, order_number, imei, staff_name):
     add_remove_model = AddRemoveQtyReserve()
     return_action = return_order(imei, system_code, storage_id)
 
@@ -288,7 +310,8 @@ def return_order_items(system_code, storage_id, customer_type, order_number, ime
                 old_quantity=reserve_result['cardex'].get('oldQuantity'),
                 new_quantity=reserve_result['cardex'].get('newQuantity'),
                 old_reserve=reserve_result['cardex'].get('oldReserve'),
-                new_reserve=reserve_result['cardex'].get('newReserve')
+                new_reserve=reserve_result['cardex'].get('newReserve'),
+                staff_user=staff_name
             )
             return_action['quantity_cardex_data'] = quantity_cardex_data
             return return_action
