@@ -100,13 +100,22 @@ class KowsarGetter:
 
             if len(system_code) == 13:
                 result = list()
-                for product in products:
-                    configs = product.get("configs_keys")
-                    del product['configs_keys']
-                    result.append(product)
+                configs = client.kowsar_collection.find_one(
+                    {"system_code": {"$regex": "^%s.{10}$" % (system_code[:6])}},
+                    {"configs_keys": {
+                        '$setIntersection': {
+                            '$reduce': {
+                                'input': {"$objectToArray": "$configs"},
+                                'initialValue': [],
+                                'in': {
+                                    '$concatArrays': ['$$value', ['$$this.k']]
+                                }
+                            }
+                        }
+                    }})
                 products = {
                     "data": result,
-                    "configs": configs
+                    "configs": configs.get("configs_keys") if configs else None
                 }
             elif len(system_code) in [6, 16, 19, 22]:
                 brands_list = list()
