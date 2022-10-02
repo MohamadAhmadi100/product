@@ -6,12 +6,14 @@ def exit_order(order_number,
                storage_id,
                products,
                staff_id,
-               staff_name):
+               staff_name,
+               customer_type):
     success, message = exit_order_handler(order_number,
                                           storage_id,
                                           products,
                                           staff_id,
-                                          staff_name)
+                                          staff_name,
+                                          customer_type)
     if success:
         return {"message": message, "success": success, "status_code": 200}
     elif not success:

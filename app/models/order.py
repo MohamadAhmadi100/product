@@ -6,7 +6,8 @@ def exit_order_handler(order_number,
                        storage_id,
                        products,
                        staff_id,
-                       staff_name):
+                       staff_name,
+                       customer_type):
     try:
         rollback_list = []
         rollback_flag = True
@@ -23,7 +24,8 @@ def exit_order_handler(order_number,
                                                staff_id,
                                                staff_name,
                                                "exitOrder",
-                                               True)
+                                               True,
+                                               customer_type)
 
             if success:
 
@@ -66,9 +68,10 @@ def update_quantity(order_number,
                     staff_id,
                     staff_name,
                     service_name,
-                    flag):
+                    flag,
+                    customer_type):
     try:
-        product, objects = get_product_query(storage_id, system_code)
+        product, objects = get_product_query(storage_id, system_code, customer_type)
         if not objects:
             return False, "مغایرت در سیستم کد"
         if flag:
@@ -324,13 +327,13 @@ def add_imei_query(imei: list, system_code: str, storage_id: str, record_type: s
         return False
 
 
-def get_product_query(storage_id, system_code):
+def get_product_query(storage_id, system_code, customer_type):
     with MongoConnection() as mongo:
         product = mongo.product.find_one({"system_code": system_code})
     if not product:
         # insert_bug_log(None, objects)
         return False, False
-    qty_object = product.get("warehouse_details").get("B2B").get("storages").get(storage_id)
+    qty_object = product.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
     if not qty_object:
         # insert_bug_log(None, objects)
         return False, False
