@@ -65,18 +65,7 @@ class KowsarGetter:
                                 {'$cond': [{'$eq': ['$$value', '']}, '', '-']},
                                 '$$this.v']
                         }
-                    }},
-                    "configs_keys": {
-                        '$setIntersection': {
-                            '$reduce': {
-                                'input': {"$objectToArray": "$configs"},
-                                'initialValue': [],
-                                'in': {
-                                    '$concatArrays': ['$$value', ['$$this.k']]
-                                }
-                            }
-                        }
-                    }
+                    }}
                 }
             elif len(system_code) in [16, 19, 22]:
                 query = {
@@ -99,7 +88,6 @@ class KowsarGetter:
             ))
 
             if len(system_code) == 13:
-                result = list()
                 configs = client.kowsar_collection.find_one(
                     {"system_code": {"$regex": "^%s.{10}$" % (system_code[:6])}},
                     {"configs_keys": {
@@ -114,7 +102,7 @@ class KowsarGetter:
                         }
                     }})
                 products = {
-                    "data": result,
+                    "data": products,
                     "configs": configs.get("configs_keys") if configs else None
                 }
             elif len(system_code) in [6, 16, 19, 22]:
