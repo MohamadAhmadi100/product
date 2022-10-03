@@ -3,6 +3,192 @@ import requests
 from app.helpers.mongo_connection import MongoConnection
 
 
+class KowsarGetter:
+    @staticmethod
+    def get_kowsar_system_code(system_code: str):
+        """
+        return items in the system_code
+        """
+        with MongoConnection() as client:
+            if system_code == "00":
+                query = {
+                    "system_code": {"$regex": "^[1-9].{1}$"}
+                }
+                project = {
+                    "_id": 0,
+                    "system_code": 1,
+                    "label": '$main_category'
+                }
+            elif len(system_code) == 2:
+                query = {
+                    "system_code": {"$regex": '^' + system_code + ".{4}$"}
+                }
+                project = {
+                    "_id": 0,
+                    "system_code": 1,
+                    "label": '$sub_category'
+                }
+            elif len(system_code) == 6:
+                query = {
+                    "system_code": {"$regex": '^' + "[1-9]" + ".{8}$"}
+                }
+                project = {
+                    "_id": 0,
+                    "system_code": 1,
+                    "label": '$brand',
+                    "for_parent": {
+                        "$cond": [{"$eq": [{"$substr": ['$system_code', 0, len(system_code)]}, system_code]}, True,
+                                  False]}
+                }
+            elif len(system_code) == 9:
+                query = {
+                    "system_code": {"$regex": '^' + system_code + ".{4}$"}
+                }
+                project = {
+                    "_id": 0,
+                    "system_code": 1,
+                    "label": '$model',
+                }
+            elif len(system_code) == 13:
+                query = {
+                    "system_code": {"$regex": '^' + system_code + ".{3}$"}
+                }
+                project = {
+                    "_id": 0,
+                    "system_code": 1,
+                    "label": {'$reduce': {
+                        'input': {"$objectToArray": "$configs"},
+                        'initialValue': '',
+                        'in': {
+                            '$concat': [
+                                '$$value',
+                                {'$cond': [{'$eq': ['$$value', '']}, '', '-']},
+                                '$$this.v']
+                        }
+                    }},
+                    "configs_keys": {
+                        '$setIntersection': {
+                            '$reduce': {
+                                'input': {"$objectToArray": "$configs"},
+                                'initialValue': [],
+                                'in': {
+                                    '$concatArrays': ['$$value', ['$$this.k']]
+                                }
+                            }
+                        }
+                    }
+                }
+            elif len(system_code) in [16, 19, 22]:
+                query = {
+                    "system_code": {"$regex": '^' + "[1-9]" + ".{%s}$" % (len(system_code) + 2)}
+                }
+                project = {
+                    "_id": 0,
+                    "system_code": {"$substr": ['$system_code', len(system_code), 3]},
+                    "label": '$seller' if len(system_code) == 16 else '$color' if len(
+                        system_code) == 19 else '$guaranty',
+                    "for_parent": {
+                        "$cond": [{"$eq": [{"$substr": ['$system_code', 0, len(system_code)]}, system_code]}, True,
+                                  False]}
+                }
+            else:
+                return None
+            products = list(client.kowsar_collection.find(
+                filter=query,
+                projection=project
+            ))
+
+            if len(system_code) == 13:
+                result = list()
+                configs = client.kowsar_collection.find_one(
+                    {"system_code": {"$regex": "^%s.{10}$" % (system_code[:6])}},
+                    {"configs_keys": {
+                        '$setIntersection': {
+                            '$reduce': {
+                                'input': {"$objectToArray": "$configs"},
+                                'initialValue': [],
+                                'in': {
+                                    '$concatArrays': ['$$value', ['$$this.k']]
+                                }
+                            }
+                        }
+                    }})
+                products = {
+                    "data": result,
+                    "configs": configs.get("configs_keys") if configs else None
+                }
+            elif len(system_code) in [6, 16, 19, 22]:
+                brands_list = list()
+                products.sort(key=lambda x: x['for_parent'], reverse=True)
+                result = list()
+                for product in products:
+                    if product.get('label') not in brands_list:
+                        product.update(
+                            {"system_code": system_code + product.get('system_code')} if len(system_code) != 6 else {})
+                        result.append(product)
+                        brands_list.append(product.get('label'))
+                products = result
+            return products
+
+    @staticmethod
+    def system_code_items_getter(system_code: str):
+        """
+        return items in the system_code
+        """
+        with MongoConnection() as client:
+            if system_code == "00":
+                regex = ".{2}$"
+                label = "main_category"
+            elif len(system_code) == 2:
+                label = "sub_category"
+                regex = '^' + system_code + ".{4}$"
+            elif len(system_code) == 6:
+                label = "brand"
+                regex = '^' + system_code + ".{3}$"
+            elif len(system_code) == 9:
+                label = "model"
+                regex = '^' + system_code + ".{4}$"
+            elif len(system_code) == 13:
+                label = "configs"
+                regex = '^' + system_code + ".{3}$"
+                products = list(client.kowsar_collection.aggregate([
+                    {"$match": {'system_code': {'$regex': regex}}},
+                    {"$project": {"_id": 0, "system_code": 1, "label": f"${label}"}}
+                ]))
+                if products:
+                    for product in products:
+                        product['label'] = " ".join(product['label'].values())
+                    return products
+                return []
+            elif len(system_code) == 16:
+                products = list(client.kowsar_collection.aggregate([
+                    {"$match": {'system_code': {'$regex': "^" + system_code + ".{9}$"}}},
+                    {"$project": {"_id": 0}}
+                ]))
+                return products
+            else:
+                return None
+            products = list(client.kowsar_collection.aggregate([
+                {"$match": {'system_code': {'$regex': regex}}},
+                {"$project": {"_id": 0, "system_code": 1, "label": f"${label}"}}
+            ]))
+            return products
+
+    @staticmethod
+    def system_code_name_getter(system_code):
+        """
+        return name or config of the system_code
+        """
+        with MongoConnection() as client:
+            data = client.kowsar_collection.find_one({'system_code': system_code}, {"_id": 0})
+            return data
+
+    @staticmethod
+    def get_parents(system_code):
+        with MongoConnection() as mongo:
+            return mongo.parent_col.find_one({'system_code': system_code}, {"_id": 0})
+
+
 class KowsarPart:
     def __init__(self, system_code, storage_ids, parent_system_code, guaranty):
         self.system_code = system_code
@@ -28,10 +214,11 @@ class KowsarPart:
             "prt_Part_Sellable": "1"
         }
         try:
-            result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data, headers={
-                "UserName": "Site",
-                "Password": "Site@3333"
-            }).json()
+            result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data,
+                                   headers={
+                                       "UserName": "Site",
+                                       "Password": "Site@3333"
+                                   }).json()
         except Exception as e:
             result = {
                 "HasError": True,
@@ -178,29 +365,3 @@ class KowsarGroup:
         if result.inserted_id:
             return True
         return False
-
-
-class KowsarConfig:
-    @staticmethod
-    def is_unique(config_type, system_code):
-        with MongoConnection() as mongo:
-            result = mongo.kowsar_config.find_one(
-                {"config_type": config_type, "system_code": system_code}, {"_id": 1})
-            if result:
-                return False
-            return True
-
-    @staticmethod
-    def create_static_configs(config_type, system_code, name):
-        with MongoConnection() as mongo:
-            result = mongo.kowsar_config.insert_one(
-                {"config_type": config_type, "system_code": system_code, "name": name})
-        if result.inserted_id:
-            return True
-        return False
-
-    @staticmethod
-    def get_static_configs_by_config_type(config_type):
-        with MongoConnection() as mongo:
-            result = mongo.kowsar_config.find({"config_type": config_type}, {"_id": 0})
-            return list(result)

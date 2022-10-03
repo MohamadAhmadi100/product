@@ -5,7 +5,7 @@ import jdatetime
 
 from app.helpers.mongo_connection import MongoConnection
 from app.helpers.redis_connection import RedisConnection
-from app.modules.kowsar_getter import KowsarGetter
+from app.models.kowsar import KowsarGetter
 # from app.validators.attribute_validator import attribute_validator
 from app.reserve_quantity.check_quantity import check_quantity
 
@@ -26,6 +26,190 @@ class Product:
         with MongoConnection() as mongo:
             result = mongo.product.find_one({"system_code": system_code})
             return True if result else False
+
+    @staticmethod
+    def price_list_all(customer_type, sub_category, brand, model, allowed_storages):
+        with MongoConnection() as mongo:
+            pipe_lines = [
+                {
+                    '$match': {
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'min_qty': '$zz.v.min_qty',
+                        'max_qty': {
+                            '$cond': [
+                                {
+                                    '$gt': [
+                                        '$zz.v.quantity', '$zz.v.max_qty'
+                                    ]
+                                }, '$zz.v.max_qty', '$zz.v.quantity'
+                            ]
+                        },
+                        'regular': '$zz.v.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, '$zz.v.special', None
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        },
+                        'storage_id': {
+                            '$in': allowed_storages
+                        }
+                    }
+                }, {
+                    '$match': {}
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 16
+                            ]
+                        },
+                        'header': {
+                            '$push': {
+                                '$concat': [
+                                    '$root_obj.sub_category', '-', '$root_obj.brand'
+                                ]
+                            }
+                        },
+                        'name': {
+                            '$push': '$root_obj.name'
+                        },
+                        'products': {
+                            '$push': {
+                                'storage_id': '$storage_id',
+                                'customer_type': '$customer_type',
+                                'color': '$root_obj.color',
+                                'guaranty': '$root_obj.guaranty',
+                                'regular': '$regular',
+                                'special': '$special',
+                                'system_code': '$system_code',
+                                'min_qty': '$min_qty',
+                                'max_qty': '$max_qty'
+                            }
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'system_code': '$_id',
+                        '_id': 0,
+                        'header': {
+                            '$first': '$header'
+                        },
+                        'name': {
+                            '$first': '$name'
+                        },
+                        'products': 1
+                    }
+                }, {
+                    '$sort': {
+                        'name': 1
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$header',
+                        'system_code': {
+                            '$push': '$system_code'
+                        },
+                        'models': {
+                            '$push': {
+                                'system_code': '$system_code',
+                                'name': '$name',
+                                'products': '$products'
+                            }
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'name': '$_id',
+                        'system_code': {
+                            '$substr': [
+                                {
+                                    '$first': '$system_code'
+                                }, 0, 9
+                            ]
+                        },
+                        '_id': 0,
+                        'models': 1
+                    }
+                }, {
+                    '$sort': {
+                        'system_code': 1
+                    }
+                }
+            ]
+            if sub_category:
+                pipe_lines[7]['$match']["root_obj.sub_category"] = sub_category
+            if brand:
+                pipe_lines[7]['$match']["root_obj.brand"] = brand
+            if model:
+                pipe_lines[7]['$match']["root_obj.model"] = model
+            db_data = list(mongo.product.aggregate(pipe_lines))
+            return db_data
 
     @staticmethod
     def get_basket_product(system_code, storage_id, customer_type):
@@ -363,7 +547,7 @@ class Product:
         return {'data': db_data, "storages": storages_labels, "filters": filters}
 
     @staticmethod
-    def search_product_child(name, system_code, storages, customer_type):
+    def search_product_child(name, system_code, storages, customer_type, in_stock):
         with MongoConnection() as mongo:
             pipe_lines = [
                 {
@@ -386,6 +570,75 @@ class Product:
                 pipe_lines[0]['$match']['name'] = {'$regex': re.compile(fr"{name}(?i)")}
             else:
                 pipe_lines[0]['$match']['system_code'] = system_code
+
+            if in_stock:
+                temp = [
+                    {
+                        '$project': {
+                            'system_code': 1,
+                            'keys': {
+                                '$objectToArray': '$warehouse_details'
+                            },
+                            'root_obj': '$$ROOT'
+                        }
+                    }, {
+                        '$unwind': '$keys'
+                    }, {
+                        '$project': {
+                            'system_code': 1,
+                            'customer_type': '$keys.k',
+                            'zz': {
+                                '$objectToArray': '$keys.v.storages'
+                            },
+                            'root_obj': 1
+                        }
+                    }, {
+                        '$unwind': '$zz'
+                    }, {
+                        '$project': {
+                            'system_code': 1,
+                            'storage_id': '$zz.k',
+                            'customer_type': 1,
+                            'qty': {
+                                '$subtract': [
+                                    '$zz.v.quantity', '$zz.v.reserved'
+                                ]
+                            },
+                            'min': {
+                                '$subtract': [
+                                    {
+                                        '$subtract': [
+                                            '$zz.v.quantity', '$zz.v.reserved'
+                                        ]
+                                    }, '$zz.v.min_qty'
+                                ]
+                            },
+                            'price': {
+                                'storage_id': '$zz.k',
+                                'regular': '$zz.v.regular',
+                                'special': '$zz.v.special'
+                            },
+                            'root_obj': 1
+                        }
+                    }, {
+                        '$match': {
+                            'customer_type': customer_type,
+                            'qty': {
+                                '$gt': 0
+                            },
+                            'min': {
+                                '$gte': 0
+                            },
+                            "storage_id": {"$in": storages}
+                        }
+                    }, {
+                        '$replaceRoot': {
+                            'newRoot': '$root_obj'
+                        }
+                    }
+                ]
+                temp.extend(pipe_lines)
+                pipe_lines = temp
 
             result = mongo.product.aggregate(pipe_lines)
             return list(result)
@@ -1262,7 +1515,7 @@ class Product:
             brands_list_db = brands_list_db if brands_list_db.alive else []
             brands_list = list()
             for brand in brands_list_db:
-                brand_data = db_data_getter({"brand": brand.get("brand"), "system_code": {"$regex": "^.{9}$"}})
+                brand_data = db_data_getter({"brand": brand.get("brand"), "system_code": {"$regex": f"^{system_code[:6]}"}})
                 brands_list.append({"name": brand.get("brand"), "label": brand_data.get("brand_label"),
                                     "image": brand_data.get("image"),
                                     "route": brand.get("brand").replace(" ", ""),

@@ -179,11 +179,12 @@ def get_category_list(user_allowed_storages: list, customer_type: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def search_product_child(name: str, system_code: str, storages: list, customer_type: str) -> dict:
+def search_product_child(name: str, system_code: str, storages: list, customer_type: str,
+                         in_stock: bool = False) -> dict:
     """
     Get a product by system_code in main collection in database.
     """
-    result = Product.search_product_child(name, system_code, storages, customer_type)
+    result = Product.search_product_child(name, system_code, storages, customer_type, in_stock)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
@@ -201,6 +202,13 @@ def get_csv(storage_id: str) -> dict:
 
 def price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages):
     result = Product.price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def price_list_all(customer_type, sub_category, brand, model, allowed_storages):
+    result = Product.price_list_all(customer_type, sub_category, brand, model, allowed_storages)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}

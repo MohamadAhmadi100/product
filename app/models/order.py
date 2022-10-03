@@ -6,7 +6,8 @@ def exit_order_handler(order_number,
                        storage_id,
                        products,
                        staff_id,
-                       staff_name):
+                       staff_name,
+                       customer_type):
     try:
         rollback_list = []
         rollback_flag = True
@@ -23,7 +24,8 @@ def exit_order_handler(order_number,
                                                staff_id,
                                                staff_name,
                                                "exitOrder",
-                                               True)
+                                               True,
+                                               customer_type)
 
             if success:
 
@@ -66,9 +68,10 @@ def update_quantity(order_number,
                     staff_id,
                     staff_name,
                     service_name,
-                    flag):
+                    flag,
+                    customer_type):
     try:
-        product, objects = get_product_query(storage_id, system_code)
+        product, objects = get_product_query(storage_id, system_code, customer_type)
         if not objects:
             return False, "مغایرت در سیستم کد"
         if flag:
@@ -263,14 +266,18 @@ def update_reserve_qty(qty_object, count, flag):
 
 # checking functions
 def imeis_checking(rollback_list):
+    flag = True
     for pro in rollback_list:
         pro_imeis = pro["imeis"]
         storage_id = pro["storageId"]
         system_code = pro["systemCode"]
         check_imei_collection = check_is_imei(system_code, storage_id, pro_imeis)
         check_archive_collection = check_in_archive(system_code, storage_id, pro_imeis)
-        if check_imei_collection and check_archive_collection:
-            return True
+        if not check_imei_collection or not check_archive_collection:
+            flag = False
+            break
+    if flag:
+        return True
     return False
 
 
@@ -320,13 +327,13 @@ def add_imei_query(imei: list, system_code: str, storage_id: str, record_type: s
         return False
 
 
-def get_product_query(storage_id, system_code):
+def get_product_query(storage_id, system_code, customer_type):
     with MongoConnection() as mongo:
         product = mongo.product.find_one({"system_code": system_code})
     if not product:
         # insert_bug_log(None, objects)
         return False, False
-    qty_object = product.get("warehouse_details").get("B2B").get("storages").get(storage_id)
+    qty_object = product.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
     if not qty_object:
         # insert_bug_log(None, objects)
         return False, False
@@ -462,17 +469,71 @@ def check_archive_query(system_code, storage_id, imei):
 
 # other router
 
-def handle_imei_checking(system_code,storage_id,imei):
+def handle_imei_checking(system_code, storage_id, imei):
     try:
-        imei_check = check_imei_query(system_code,storage_id,imei,"imeis")
-        archive_check = check_archive_query(system_code,storage_id,imei)
+        imei_check = check_imei_query(system_code, storage_id, imei, "imeis")
+        archive_check = check_archive_query(system_code, storage_id, imei)
 
         if imei_check and archive_check:
-            return True ,"موفق"
+            return True, "موفق"
         return False, "ناموفق"
     except:
-        return False,"مشکل سیستمی رخ داده است"
+        return False, "مشکل سیستمی رخ داده است"
 
 
+def get_cardex_report(page,
+                      per_page,
+                      sort_name,
+                      sort_type, system_code, storage_id, incremental_id, process_type):
+    try:
+        page = page if page else 1
+        per_page = per_page if per_page else 15
+        sort_type = sort_type if sort_type else "descend"
+        sort_name = sort_name if sort_name else "edit_date"
+        system_code = system_code if system_code else None
+        storage_id = storage_id if storage_id else None
+        incremental_id = incremental_id if incremental_id else None
+        process_type = process_type if process_type else None
+
+        page = page
+        per = per_page
+        skip = per * (page - 1)
+        limit = per
+        if sort_type == "descend":
+            sort_type = -1
+        else:
+            sort_type = 1
+
+        query = {}
+        if system_code:
+            query["system_code"] = system_code
+        if storage_id:
+            query["storage_id"] = storage_id
+        elif incremental_id:
+            query["incremental_id"] = incremental_id
+        elif process_type:
+            query["type"] = process_type
+        with MongoConnection() as mongo:
+
+            result = list(
+                mongo.cardex_collection.find(query, {"_id": False}).sort(sort_name, sort_type).limit(limit).skip(skip))
+
+            count = mongo.cardex_collection.count_documents(query)
+            return True, {"totalCount": count, "result": result}
+    except:
+
+        return False, {"totalCount": 0, "result": "خطای سیستمی رخ داده است"}
 
 
+def get_imeis_report(system_code, storage_id):
+    try:
+        with MongoConnection() as mongo:
+
+            result = mongo.imeis.find_one({"system_code": system_code, "storage_id": storage_id}, {"_id": False})
+            if result:
+                return True, result["imeis"]
+            else:
+                return False, "داده ای وجود ندارد"
+    except:
+
+        return False, "خطای سیستمی رخ داده است"
