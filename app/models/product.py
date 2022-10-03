@@ -121,13 +121,15 @@ class Product:
                         }
                     }
                 }, {
-                    '$match': {}
-                }, {
                     '$group': {
                         '_id': {
-                            '$substr': [
-                                '$system_code', 0, 16
-                            ]
+                            'system_code': {
+                                '$substr': [
+                                    '$system_code', 0, 16
+                                ]
+                            },
+                            'storage_id': '$storage_id',
+                            'storage_label': '$storage_label'
                         },
                         'header': {
                             '$push': {
@@ -155,7 +157,9 @@ class Product:
                     }
                 }, {
                     '$project': {
-                        'system_code': '$_id',
+                        'system_code': '$_id.system_code',
+                        'storage_id': '$_id.storage_id',
+                        'storage_label': '$_id.storage_label',
                         '_id': 0,
                         'header': {
                             '$first': '$header'
@@ -171,7 +175,11 @@ class Product:
                     }
                 }, {
                     '$group': {
-                        '_id': '$header',
+                        '_id': {
+                            'header': '$header',
+                            'storage_id': '$storage_id',
+                            'storage_label': '$storage_label'
+                        },
                         'system_code': {
                             '$push': '$system_code'
                         },
@@ -185,7 +193,9 @@ class Product:
                     }
                 }, {
                     '$project': {
-                        'name': '$_id',
+                        'name': '$_id.header',
+                        'storage_id': '$_id.storage_id',
+                        'storage_label': '$_id.storage_label',
                         'system_code': {
                             '$substr': [
                                 {
@@ -199,6 +209,27 @@ class Product:
                 }, {
                     '$sort': {
                         'system_code': 1
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            'storage_id': '$storage_id',
+                            'storage_label': '$storage_label'
+                        },
+                        'data': {
+                            '$push': {
+                                'system_code': '$system_code',
+                                'name': '$name',
+                                'models': '$models'
+                            }
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'storage_id': '$_id.storage_id',
+                        'storage_label': '$_id.storage_label',
+                        '_id': 0,
+                        'data': 1
                     }
                 }
             ]
@@ -1515,7 +1546,8 @@ class Product:
             brands_list_db = brands_list_db if brands_list_db.alive else []
             brands_list = list()
             for brand in brands_list_db:
-                brand_data = db_data_getter({"brand": brand.get("brand"), "system_code": {"$regex": f"^{system_code[:6]}"}})
+                brand_data = db_data_getter(
+                    {"brand": brand.get("brand"), "system_code": {"$regex": f"^{system_code[:6]}"}})
                 brands_list.append({"name": brand.get("brand"), "label": brand_data.get("brand_label"),
                                     "image": brand_data.get("image"),
                                     "route": brand.get("brand").replace(" ", ""),

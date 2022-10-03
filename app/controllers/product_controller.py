@@ -214,6 +214,9 @@ def price_list_all(customer_type, sub_category, brand, model, allowed_storages):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
+price_list_all("B2B", None, None, None, ['1'])
+
+
 def get_basket_product(system_code, storage_id, customer_type):
     result = Product.get_basket_product(system_code, storage_id, customer_type)
     if result:
