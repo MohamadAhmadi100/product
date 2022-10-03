@@ -84,5 +84,3 @@ def get_kowsar_system_code(system_code):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 500}
-
-get_kowsar_system_code('2000010020002')

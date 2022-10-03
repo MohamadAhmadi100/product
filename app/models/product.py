@@ -60,6 +60,7 @@ class Product:
                     '$project': {
                         'system_code': 1,
                         'storage_id': '$zz.k',
+                        "storage_label": "$zz.v.warehouse_label",
                         'customer_type': 1,
                         'qty': {
                             '$subtract': [
