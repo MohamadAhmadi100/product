@@ -90,15 +90,15 @@ def remove_reserve_edit(edited_object, order_number, customer_id, customer_type,
 
     for cursor_products in edited_object:
         # add reserve per items
-        reserve_result = remove_reserve_edit_order(cursor_products.get("systemCode"),
-                                                   cursor_products.get("storageId"),
-                                                   (int(cursor_products.get("oldCount")) - int(
-                                                       cursor_products.get("newCount"))),
+        reserve_result = remove_reserve_edit_order(cursor_products.get("system_code"),
+                                                   cursor_products.get("storage_id"),
+                                                   (int(cursor_products.get("old_count")) - int(
+                                                       cursor_products.get("new_count"))),
                                                    customer_type, cursor_products.get("sku"),
                                                    cursor_products.get("order_number"))
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
-        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
     # check all items reserved
     checked = all(elem[1] for elem in check_data)
     if checked:
