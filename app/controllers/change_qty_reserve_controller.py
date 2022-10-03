@@ -85,6 +85,36 @@ def remove_from_reserve(order):
                 'status_code': 200}
 
 
+def add_to_reserve_edit_order(product, customer_type, order_number, staff_name):
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    checked = False
+    reserve_reserve_result = add_to_reserve_order(product.get("systemCode"),
+                                                  product.get("storageId"),
+                                                  product.get("count"),
+                                                  customer_type,
+                                                  product.get("name"),
+                                                  order_number)
+    add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+    if reserve_reserve_result.get("success"):
+        checked = True
+    if checked:
+        try:
+            add_to_cardex(None, staff_name, order_number, add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        # roll back
+        reserve_result = remove_reserve_rollback(product.get("systemCode"),
+                                                 product.get("storageId"),
+                                                 product.get("count"),
+                                                 customer_type,
+                                                 order_number)
+        if reserve_result.get("success") is False:
+            return reserve_result
+        return {'success': False, 'message': 'operation unsuccessful', 'status_code': 400}
+
+
 def remove_reserve_edit(edited_object, order_number, customer_id, customer_type, customer_name):
     add_cardex_to_quantity, check_data, data_response = list(), list(), list()
 
@@ -349,4 +379,3 @@ def edit_transfer_form(edit_object):
             return {'success': True, 'message': 'done', 'status_code': 200}
         else:
             return reserve_result
-
