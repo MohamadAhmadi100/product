@@ -2,7 +2,7 @@ import jdatetime
 from app.helpers.mongo_connection import MongoConnection
 
 
-def exit_order_handler(order_number,
+def exit_order_handler(order_number: int,
                        storage_id,
                        products,
                        staff_id,
@@ -35,7 +35,8 @@ def exit_order_handler(order_number,
                                                   count,
                                                   staff_id,
                                                   staff_name,
-                                                  imeis
+                                                  imeis,
+                                                  customer_type
                                                   )
                 rollback_list.append(rollback_object)
             else:
@@ -104,7 +105,8 @@ def create_rollback(order_number,
                     count,
                     staff_id,
                     staff_name,
-                    imeis
+                    imeis,
+                    customer_type
                     ):
     try:
         rollback_object = {
@@ -115,7 +117,8 @@ def create_rollback(order_number,
             "count": count,
             "staffId": staff_id,
             "staffName": staff_name,
-            "imeis": imeis
+            "imeis": imeis,
+            "customerType": customer_type
         }
         return rollback_object
     except:
@@ -131,6 +134,7 @@ def rollback_products(products: list):
             count = product["count"]
             staff_id = product["staffId"]
             staff_name = product["staffName"]
+            customer_type = product["customerType"]
 
             update_quantity(order_number,
                             storage_id,
@@ -139,7 +143,9 @@ def rollback_products(products: list):
                             staff_id,
                             staff_name,
                             "rollbackExitOrder",
-                            False)
+                            False,
+                            customer_type
+                            )
         return True
     except:
         return False
@@ -188,23 +194,23 @@ def create_cardex_object(qty_object,
                          flag):
     try:
         quantity_cardex_data = {
-            "userId": staff_id,
-            "userName": staff_name,
-            "orderNumber": order_number,
-            "stockId": storage_id,
+            "staff_id": staff_id,
+            "staff_user": staff_name,
+            "incremental_id": order_number,
+            "storage_id": storage_id,
             "stockName": "",
-            "systemCode": system_code,
+            "system_code": system_code,
             "sku": "",
             "type": service_name,
             "qty": count,
-            "oldQuantity": qty_object["quantity"],
-            "oldReserve": qty_object["reserved"],
-            "createdDate": str(jdatetime.datetime.now()).split(".")[0],
+            "old_quantity": qty_object["quantity"],
+            "old_reserve": qty_object["reserved"],
+            "edit_date": str(jdatetime.datetime.now()).split(".")[0],
             "biFlag": False
         }
         update_reserve_qty(qty_object, count, flag)
-        quantity_cardex_data["newQuantity"] = qty_object["quantity"]
-        quantity_cardex_data["newReserve"] = qty_object["reserved"]
+        quantity_cardex_data["new_quantity"] = qty_object["quantity"]
+        quantity_cardex_data["new_reserve"] = qty_object["reserved"]
         return quantity_cardex_data
 
     except Exception:
