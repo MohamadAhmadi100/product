@@ -269,5 +269,5 @@ def return_order(imei, system_code, storage_id):
             clinet.imeis.update_one(
                 {"system_code": system_code, "storage_id": storage_id},
                 {"$push": {"imeis": {"$each": [{"imei": imei}]}}})
-        return {"success": True, "message": "کد مورد نظر با موفقیت به انبار عودت داده شد."}
+        return {"success": True}
 

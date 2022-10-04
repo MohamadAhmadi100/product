@@ -85,20 +85,50 @@ def remove_from_reserve(order):
                 'status_code': 200}
 
 
+def add_to_reserve_edit_order(product, customer_type, order_number, staff_name):
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    checked = False
+    reserve_reserve_result = add_to_reserve_order(product.get("systemCode"),
+                                                  product.get("storageId"),
+                                                  product.get("count"),
+                                                  customer_type,
+                                                  product.get("name"),
+                                                  order_number)
+    add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+    if reserve_reserve_result.get("success"):
+        checked = True
+    if checked:
+        try:
+            add_to_cardex(None, staff_name, order_number, add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        # roll back
+        reserve_result = remove_reserve_rollback(product.get("systemCode"),
+                                                 product.get("storageId"),
+                                                 product.get("count"),
+                                                 customer_type,
+                                                 order_number)
+        if reserve_result.get("success") is False:
+            return reserve_result
+        return {'success': False, 'message': 'operation unsuccessful', 'status_code': 400}
+
+
 def remove_reserve_edit(edited_object, order_number, customer_id, customer_type, customer_name):
     add_cardex_to_quantity, check_data, data_response = list(), list(), list()
 
     for cursor_products in edited_object:
         # add reserve per items
-        reserve_result = remove_reserve_edit_order(cursor_products.get("systemCode"),
-                                                   cursor_products.get("storageId"),
-                                                   (int(cursor_products.get("oldCount")) - int(
-                                                       cursor_products.get("newCount"))),
+        reserve_result = remove_reserve_edit_order(cursor_products.get("system_code"),
+                                                   cursor_products.get("storage_id"),
+                                                   (int(cursor_products.get("old_count")) - int(
+                                                       cursor_products.get("new_count"))),
                                                    customer_type, cursor_products.get("sku"),
                                                    cursor_products.get("order_number"))
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
-        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
     # check all items reserved
     checked = all(elem[1] for elem in check_data)
     if checked:
@@ -265,16 +295,61 @@ def warehouse(storage_id):
     return find_warehouse(storage_id)
 
 
-def return_imei(system_code, storage_id, customer_type, order_number, imeis):
-    add_cardex_to_quantity = []
-    reserve_result = return_order_items(system_code, storage_id, customer_type, order_number, imeis)
-    if reserve_result.get("success"):
-        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
-        add_to_cardex("staff", None, order_number, add_cardex_to_quantity)
-        reserve_result.pop("quantity_cardex_data")
-        return reserve_result
+def return_imei(order, imei, staff_name):
+    order_model = OrderModel(dict(order))
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    checked = False
+    for cursor_products in order_model.return_order_data:
+        if cursor_products.get("imei") == imei:
+            reserve_reserve_result = return_order_items(cursor_products.get("system_code"),
+                                                        cursor_products.get("storage_id"),
+                                                        cursor_products.get("customer_type"),
+                                                        cursor_products.get("order_number"),
+                                                        cursor_products.get("imei"),
+                                                        staff_name
+                                                        )
+            add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+            checked = True
+
+    if checked:
+        try:
+            add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                          add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
     else:
-        return reserve_result
+        return {'success': False, 'message': 'عملیات ناموفقیت امیز بود', "check_data": data_response,
+                'status_code': 200}
+
+
+def return_order(order, staff_name):
+    order_model = OrderModel(dict(order))
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    for cursor_products in order_model.return_order_data:
+        # add quantity per items
+        reserve_reserve_result = return_order_items(cursor_products.get("system_code"),
+                                                    cursor_products.get("storage_id"),
+                                                    cursor_products.get("customer_type"),
+                                                    cursor_products.get("order_number"),
+                                                    cursor_products.get("imei"),
+                                                    staff_name
+                                                    )
+        data_for_check = (cursor_products, reserve_reserve_result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+    # check all items reserved
+    checked = all(elem[1] for elem in check_data)
+    if checked:
+        try:
+            add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                          add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        return {'success': False, 'message': 'عملیات ناموفقیت امیز بود', "check_data": data_response,
+                'status_code': 200}
 
 
 def edit_transfer_form(edit_object):
