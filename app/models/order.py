@@ -52,11 +52,11 @@ def exit_order_handler(order_number: int,
 
         if not imeis_checking(rollback_list):
             rollback_products(rollback_list)
-            return False, "مشکل در چک imei"
+            return False, "خطا در چک imei"
 
         if not update_imeis(rollback_list):
             rollback_products(rollback_list)
-            return False, "مشکل در آپدیت imei"
+            return False, "خطا در آپدیت imei"
         return True, rollback_list
     except:
         return False, "خطای سیستمی رخ داده است"
@@ -77,7 +77,7 @@ def update_quantity(order_number,
             return False, "مغایرت در سیستم کد"
         if flag:
             if not quantity_checking(objects["quantity"], objects["reserved"], count):
-                return False, "مشکل در تعداد موجودی"
+                return False, "مغایرت در تعداد موجودی"
         cardex = create_cardex_object(objects,
                                       order_number,
                                       storage_id,
@@ -89,11 +89,11 @@ def update_quantity(order_number,
                                       flag)
 
         if not cardex:
-            return False, "مشکل در آپدیت کاردکس"
+            return False, "خطا در آپدیت اطلاعات کاردکس"
         if not product_query(system_code, product):
-            return False, "مشکل در بروز رسانی موجودی"
+            return False, "خطا در بروز رسانی موجودی"
         if not cardex_query(cardex):
-            return False, "مشکل در آپدیت کاردکس"
+            return False, "خطا در آپدیت کاردکس"
         return True, "موفق"
     except:
         return False, "خطای سیستمی"
