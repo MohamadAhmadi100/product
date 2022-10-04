@@ -219,3 +219,10 @@ def get_basket_product(system_code, storage_id, customer_type):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_basket_products(system_codes: list, storage_id: str, customer_type: str):
+    result = Product.get_basket_products(system_codes, storage_id, customer_type)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}

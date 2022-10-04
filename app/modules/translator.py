@@ -563,11 +563,46 @@ def update_redis_database():
                 redis_db.client.hset(key, in_key, in_value)
 
 
+# colors = [
+#     {
+#         "color": "Nebula Green",
+#         "fa": "سبز",
+#         "HEX Code": "#80cba4"
+#     },
+#     {
+#         "color": "Space Black",
+#         "fa": "مشکی",
+#         "HEX Code": "#212321"
+#     },
+#     {
+#         "color": "Cosmic White",
+#         "fa": "سفید",
+#         "HEX Code": "#ffffff"
+#     },
+#     {
+#         "color": "Thunder Purple",
+#         "fa": "بنفش",
+#         "HEX Code": "#351374"
+#     },
+#     {
+#         "color": "Deep space blue ",
+#         "fa": "آبی",
+#         "HEX Code": "#237b9e"
+#     },
+#     {
+#         "color": "Nebula Purpel",
+#         "fa": "بنفش کهکشانی ",
+#         "HEX Code": "#351374"
+#     }
+# ]
+#
+#
 # with RedisConnection() as redis_db:
-#     key = "Truffle Black"
-#     value = {"en_us": "Truffle Black", "fa_ir": "مشکی", 'hex': '#413E42'}
-#     for in_key, in_value in value.items():
-#         redis_db.client.hset(key, in_key, in_value)
+#     for color in colors:
+#         key = color.get("color")
+#         value = {"en_us": key, "fa_ir": color.get("fa"), 'hex': color.get("HEX Code")}
+#         for in_key, in_value in value.items():
+#             redis_db.client.hset(key, in_key, in_value)
 
 
 class RamStorageTranslater:
