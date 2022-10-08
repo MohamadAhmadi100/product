@@ -74,6 +74,33 @@ def add_to_reserve_order(system_code, storage_id, count, customer_type, sku, ord
         return {"success": False, "error": f"{system_code}"}
 
 
+def add_to_reserves_reorder(system_code, storage_id, count, customer_type, sku, order_number, staff_name):
+    """
+    order add to reserve
+    """
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type,
+                                                  order_number)
+    if reserve_result.get("success"):
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            incremental_id=order_number,
+            qty=count,
+            sku=sku,
+            type="reorder",
+            old_quantity=reserve_result['cardex'].get('oldQuantity'),
+            new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_reserve=reserve_result['cardex'].get('oldReserve'),
+            new_reserve=reserve_result['cardex'].get('newReserve'),
+            user=staff_name
+        )
+        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        return reserve_result
+    else:
+        return {"success": False, "error": f"{system_code}"}
+
+
 def add_to_reserve_dealership(system_code, storage_id, count, customer_type, sku, order_number):
     """
     dealership add to reserve

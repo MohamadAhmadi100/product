@@ -379,3 +379,26 @@ def edit_transfer_form(edit_object):
             return {'success': True, 'message': 'done', 'status_code': 200}
         else:
             return reserve_result
+
+
+def add_to_reserve_reorder(order, staff_name):
+    order_model = OrderModel(dict(order))
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    for cursor_products in order_model.order_data:
+        # add reserve per items
+        reserve_reserve_result = add_to_reserves_reorder(cursor_products.get("system_code"),
+                                                         cursor_products.get("storage_id"),
+                                                         cursor_products.get("count"),
+                                                         cursor_products.get("customer_type"),
+                                                         cursor_products.get("sku"),
+                                                         cursor_products.get("order_number"), staff_name)
+        data_for_check = (cursor_products, reserve_reserve_result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+
+    try:
+        add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                      add_cardex_to_quantity)
+        return {'success': True, 'message': 'done', 'status_code': 200}
+    except:
+        return {'success': False, 'message': 'log error', 'status_code': 409}
