@@ -332,6 +332,8 @@ class Product:
                         '_id': 0,
                         'warehouse_details': 0
                     }
+                }, {
+                    "$limit": 1
                 }
             ]
             result = list(mongo.product.aggregate(pipe_lines))
