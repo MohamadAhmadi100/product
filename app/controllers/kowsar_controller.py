@@ -33,9 +33,19 @@ def create_system_code(system_code, storage_ids, guaranty):
     data = KowsarGetter.system_code_name_getter(parent_system_code)
     if not data:
         return {"success": False, "status_code": 404, "error": "کالای مورد نظر یافت نشد"}
-    name = data['sub_category'] + " " + data['brand'] + " " + data['model'] + ' (' + data['configs']['ram'] + ' ' + \
-           data['configs']['storage'] + ' ' + data['configs']['network'] + ") " + data['configs']['region'] + " | " + \
-           data['seller'] + " | " + guaranty + " " + f"[{data['color']}]"
+
+    configs = data.get("configs")
+
+    name = data['sub_category'] + " " + data['brand'] + " " + data['model']
+
+    if data.get('sub_category') in ["Mobile", "Tablet"]:
+        name += ' (' + configs['ram'] + ' ' + configs['storage'] + ' ' + configs[
+            'network'] + ") " + configs['region'] + " | " + data[
+                    'seller'] + " | " + guaranty + " " + f"[{data['color']}]"
+    else:
+        name += ' (' + " ".join([v for k, v in configs.items()]) + ') ' + data[
+            'seller'] + " | " + guaranty + " " + f"[{data['color']}]"
+
     result, system_code = kowsar.create_kowsar_part(name, storage_ids, system_code)
     if result:
         if kowsar.create_in_db(data):
