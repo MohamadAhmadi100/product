@@ -89,8 +89,10 @@ def categorized_data(result):
                             'quantity']
                         categorize[index_cat]['dailySales'] += items['dailySales']
                         categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
-                        categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['dailySales'] += items['dailySales']
-                        categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['models'][index_model]['dailySales'] += items['dailySales']
+                        categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['dailySales'] += items[
+                            'dailySales']
+                        categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['models'][index_model][
+                            'dailySales'] += items['dailySales']
                     else:
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"].append(
                             {
@@ -457,3 +459,121 @@ def initial_inv_report(quantity_type):
         else:
             return {"success": True, "stocks": [], "totalPrice": 0,
                     "totalQuantity": 0}
+
+
+def handle_get_product_to_assign_qty(storage_id, system_code, customer_type):
+    try:
+
+        product_object = get_product_query(system_code)
+        if not product_object:
+            return False, "محصولی یافت نشد"
+        customer_type_object = get_customer_type_object(product_object, storage_id, customer_type)
+        if not customer_type_object:
+            return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+    except Exception:
+        return False, "خطای سیستمی رخ داده است"
+
+
+def handle_assign_product_inventory(storage_id, system_code, customer_type, transfer, to_customer_type, quantity,
+                                    min_qty,
+                                    max_qty,
+                                    price):
+    try:
+        product_object = get_product_query(system_code)
+        if not product_object:
+            return False, "محصولی یافت نشد"
+        customer_type_object = get_customer_type_object(product_object, storage_id, customer_type)
+        if not customer_type_object:
+            return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+
+        if transfer:
+            to_customer_type_object = get_customer_type_object(product_object, storage_id, to_customer_type, min_qty,
+                                                               max_qty,
+                                                               price)
+            if not customer_type_object:
+                return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+
+            success, message = transfer_product_inventory(customer_type_object, to_customer_type_object, quantity)
+            if not success:
+                return success, message
+            if not product_query(system_code, product_object):
+                return False, "خطا در بروز رسانی"
+            return True, "عملیات با موفقیت انجام شد"
+
+        success, message = edit_product_inventory(customer_type_object, quantity, min_qty,
+                                                  max_qty)
+        if not success:
+            return success, message
+        if not product_query(system_code, product_object):
+            return False, "خطا در بروز رسانی"
+        return True, "عملیات با موفقیت انجام شد"
+    except Exception:
+        return False, "خطای سیستمی رخ داده است"
+
+
+def transfer_product_inventory(customer_type_object, to_customer_type_object, quantity, min_qty,
+                               max_qty,
+                               price, staff_id, staff_name):
+    try:
+        if customer_type_object["inventory"] - customer_type_object["quantity"] < quantity:
+            return False, "مجاز به انتقال نمی باشید"
+
+        if "inventory" in to_customer_type_object and "quantity" in to_customer_type_object:
+            to_customer_type_object["inventory"] += quantity
+            to_customer_type_object["quantity"] += quantity
+            customer_type_object["inventory"] -= quantity
+            to_customer_type_object["min_qty"] = min_qty
+            to_customer_type_object["max_qty"] = max_qty
+            to_customer_type_object["regular"] = price
+
+            return True, True
+        to_customer_type_object["inventory"] = quantity
+        to_customer_type_object["quantity"] = quantity
+        customer_type_object["inventory"] -= quantity
+        to_customer_type_object["min_qty"] = min_qty
+        to_customer_type_object["max_qty"] = max_qty
+        to_customer_type_object["regular"] = price
+        return True, True
+    except Exception:
+        return False, "خطای سیستمی رخ داده است"
+
+
+def edit_product_inventory(customer_type_object, quantity, min_qty,
+                           max_qty):
+    try:
+        if quantity > customer_type_object["inventory"]:
+            return False, "تعداد تخصیص داده شده بیشتر از موجودی می باشد"
+        if quantity < customer_type_object["quantity"]:
+            if customer_type_object["quantity"] - customer_type_object["reserved"] < quantity:
+                return False, "تغییر موجودی مجاز نمی باشد"
+        customer_type_object["quantity"] = quantity
+        customer_type_object["min_qty"] = min_qty
+        customer_type_object["max_qty"] = max_qty
+        return True, True
+
+    except Exception:
+        return False, "خطا در بروزرسانی"
+
+
+def get_product_query(system_code):
+    with MongoConnection() as mongo:
+        product = mongo.product.find_one({"system_code": system_code})
+    if not product:
+        return False
+    return product
+
+
+def get_customer_type_object(product_object, storage_id, customer_type):
+    qty_object = product_object.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
+    if not qty_object:
+        return False
+    return qty_object
+
+
+def product_query(system_code, product_object):
+    try:
+        with MongoConnection() as mongo:
+            mongo.product.replace_one({"system_code": system_code}, product_object)
+        return True
+    except:
+        return False
