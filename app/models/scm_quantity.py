@@ -1,4 +1,5 @@
 from app.helpers.mongo_connection import MongoConnection
+import jdatetime
 
 
 def balanced_avg():
@@ -477,7 +478,7 @@ def handle_get_product_to_assign_qty(storage_id, system_code, customer_type):
 def handle_assign_product_inventory(storage_id, system_code, customer_type, transfer, to_customer_type, quantity,
                                     min_qty,
                                     max_qty,
-                                    price):
+                                    price, staff_id, staff_name):
     try:
         product_object = get_product_query(system_code)
         if not product_object:
@@ -487,25 +488,47 @@ def handle_assign_product_inventory(storage_id, system_code, customer_type, tran
             return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
 
         if transfer:
-            to_customer_type_object = get_customer_type_object(product_object, storage_id, to_customer_type, min_qty,
-                                                               max_qty,
-                                                               price)
+            to_customer_type_object = get_customer_type_object(product_object, storage_id, to_customer_type)
             if not customer_type_object:
                 return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+            from_cardex = handle_cardex(customer_type_object, storage_id, system_code, quantity, staff_id, staff_name,
+                                        f"transferto_{to_customer_type}", customer_type)
 
-            success, message = transfer_product_inventory(customer_type_object, to_customer_type_object, quantity)
+            to_cardex = handle_cardex(to_customer_type_object, storage_id, system_code, quantity, staff_id, staff_name,
+                                      f"transferfrom_{customer_type}", to_customer_type)
+
+            success, message = transfer_product_inventory(customer_type_object, to_customer_type_object, quantity,
+                                                          min_qty,
+                                                          max_qty,
+                                                          price)
             if not success:
                 return success, message
             if not product_query(system_code, product_object):
                 return False, "خطا در بروز رسانی"
+            from_cardex["new_quantity"] = customer_type_object["quantity"]
+            from_cardex["new_reserve"] = customer_type_object["reserved"]
+            from_cardex["new_inventory"] = customer_type_object["inventory"]
+            cardex_query(from_cardex)
+
+            to_cardex["new_quantity"] = customer_type_object["quantity"]
+            to_cardex["new_reserve"] = customer_type_object["reserved"]
+            to_cardex["new_inventory"] = customer_type_object["inventory"]
+            cardex_query(to_cardex)
+
             return True, "عملیات با موفقیت انجام شد"
 
+        cardex = handle_cardex(customer_type_object, storage_id, system_code, quantity, staff_id, staff_name,
+                               "editQuantity", customer_type)
         success, message = edit_product_inventory(customer_type_object, quantity, min_qty,
                                                   max_qty)
         if not success:
             return success, message
         if not product_query(system_code, product_object):
             return False, "خطا در بروز رسانی"
+        cardex["new_quantity"] = customer_type_object["quantity"]
+        cardex["new_reserve"] = customer_type_object["reserved"]
+        cardex["new_inventory"] = customer_type_object["inventory"]
+        cardex_query(cardex)
         return True, "عملیات با موفقیت انجام شد"
     except Exception:
         return False, "خطای سیستمی رخ داده است"
@@ -513,7 +536,7 @@ def handle_assign_product_inventory(storage_id, system_code, customer_type, tran
 
 def transfer_product_inventory(customer_type_object, to_customer_type_object, quantity, min_qty,
                                max_qty,
-                               price, staff_id, staff_name):
+                               price):
     try:
         if customer_type_object["inventory"] - customer_type_object["quantity"] < quantity:
             return False, "مجاز به انتقال نمی باشید"
@@ -544,11 +567,13 @@ def edit_product_inventory(customer_type_object, quantity, min_qty,
         if quantity > customer_type_object["inventory"]:
             return False, "تعداد تخصیص داده شده بیشتر از موجودی می باشد"
         if quantity < customer_type_object["quantity"]:
-            if customer_type_object["quantity"] - customer_type_object["reserved"] < quantity:
+            if customer_type_object["reserved"] > quantity:
+            # if customer_type_object["quantity"] - customer_type_object["reserved"] < quantity:
                 return False, "تغییر موجودی مجاز نمی باشد"
         customer_type_object["quantity"] = quantity
         customer_type_object["min_qty"] = min_qty
         customer_type_object["max_qty"] = max_qty
+
         return True, True
 
     except Exception:
@@ -576,4 +601,46 @@ def product_query(system_code, product_object):
             mongo.product.replace_one({"system_code": system_code}, product_object)
         return True
     except:
+        return False
+
+
+def handle_cardex(qty_object,
+                  storage_id,
+                  system_code,
+                  count,
+                  staff_id,
+                  staff_name,
+                  service_name,
+                  customer_type):
+    try:
+        quantity_cardex_data = {
+            "staff_id": staff_id,
+            "staff_user": staff_name,
+            "incremental_id": "",
+            "storage_id": storage_id,
+            "stockName": "",
+            "system_code": system_code,
+            "sku": "",
+            "type": service_name,
+            "qty": count,
+            "old_quantity": qty_object.get("quantity",0),
+            "old_reserve": qty_object.get("reserved",0),
+            "edit_date": str(jdatetime.datetime.now()).split(".")[0],
+            "customer_type": customer_type,
+            "old_inventory": qty_object.get("inventory",0),
+            "biFlag": False
+        }
+
+        return quantity_cardex_data
+
+    except Exception:
+        return False
+
+
+def cardex_query(quantity_cardex_data):
+    try:
+        with MongoConnection() as mongo:
+            mongo.db.cardex.insert_one(quantity_cardex_data)
+        return True
+    except Exception:
         return False
