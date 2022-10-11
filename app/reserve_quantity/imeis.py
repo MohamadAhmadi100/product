@@ -151,6 +151,44 @@ def export_transfer_archive(products, dst_warehouse, referral_number, staff_name
         return {"success": True}
 
 
+def export_transfer_dealership(system_code, imeis, dealership_detail, referral_number):
+    with MongoConnection() as client:
+        count_imei = client.imeis.count_documents({"system_code": system_code, "storage_id": "2000"})
+        if count_imei == 0:
+            transfer_object = client.imeis.find_one({"system_code": system_code}, {"_id": False})
+            transfer_object['stock_label'] = "نماینده"
+            transfer_object['storage_id'] = "2000"
+            transfer_object['imeis'] = []
+            client.imeis.insert_one(transfer_object)
+        transfer_stocks = []
+        for imei in imeis:
+            client.product_archive.update_one({"articles.first": imei}, {"$set": {
+                "articles.$.dealership_detail":
+                    [{
+                        "to_dealership": dealership_detail['dealershipId'],
+                        "referral_number": referral_number,
+                        "export_time": str(jdatetime.datetime.now()).split(".")[0],
+                    }]
+                ,
+                "articles.$.status": "dealership",
+                "articles.$.exist": False
+            }})
+            client.imeis.update_one({"imeis.imei": imei}, {"$pull": {"imeis": {"imei": imei}}})
+            transfer_stocks.append(
+                {"imei": imei, "to_storage": "2000", "referral_number": referral_number})
+        client.imeis.update_one({"system_code": system_code, "storage_id": "2000"},
+                                {"$push": {"imeis": {"$each": transfer_stocks}}})
+        return {"success": True}
+
+
+"""
+dealership_detail = {
+    "dealershipPhoneNumber": str,
+    "dealershipId": str,
+
+}"""
+
+
 def import_transfer_archive(products, src_warehouse, dst_warehouse, referral_number, staff_name):
     with MongoConnection() as client:
         transfer_stocks = []
@@ -270,4 +308,3 @@ def return_order(imei, system_code, storage_id):
                 {"system_code": system_code, "storage_id": storage_id},
                 {"$push": {"imeis": {"$each": [{"imei": imei}]}}})
         return {"success": True}
-

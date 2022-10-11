@@ -85,6 +85,36 @@ def remove_from_reserve(order):
                 'status_code': 200}
 
 
+def add_to_reserve_edit_order(product, customer_type, order_number, staff_name):
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    checked = False
+    reserve_reserve_result = add_to_reserve_order(product.get("systemCode"),
+                                                  product.get("storageId"),
+                                                  product.get("count"),
+                                                  customer_type,
+                                                  product.get("name"),
+                                                  order_number)
+    add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+    if reserve_reserve_result.get("success"):
+        checked = True
+    if checked:
+        try:
+            add_to_cardex(None, staff_name, order_number, add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        # roll back
+        reserve_result = remove_reserve_rollback(product.get("systemCode"),
+                                                 product.get("storageId"),
+                                                 product.get("count"),
+                                                 customer_type,
+                                                 order_number)
+        if reserve_result.get("success") is False:
+            return reserve_result
+        return {'success': False, 'message': 'operation unsuccessful', 'status_code': 400}
+
+
 def remove_reserve_edit(edited_object, order_number, customer_id, customer_type, customer_name):
     add_cardex_to_quantity, check_data, data_response = list(), list(), list()
 
@@ -133,11 +163,87 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
     check_data, data_response, add_cardex_to_quantity = list(), list(), list()
     for cursor_products in data.get("products"):
         # add reserve per items
-        reserve_result = add_to_reserve_dealership(cursor_products.get("system_code"),
-                                                   cursor_products.get("storage_id"),
-                                                   cursor_products.get("count"),
-                                                   customer_type[0], cursor_products.get("name"),
-                                                   referral_number)
+        reserve_result = add_to_reserves_dealership(cursor_products.get("system_code"),
+                                                    cursor_products.get("storage_id"),
+                                                    cursor_products.get("count"),
+                                                    customer_type[0], cursor_products.get("name"),
+                                                    referral_number)
+
+        data_for_check = (cursor_products, reserve_result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+    # check all items reserved
+    checked = all(elem[1] for elem in check_data)
+    if checked:
+        try:
+            add_to_cardex(customer_id, None, referral_number, add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        # roll back
+        for reserved_products in check_data:
+            if reserved_products[1] is True:
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
+                                                         reserved_products[0].get("storageId"),
+                                                         reserved_products[0].get("count"),
+                                                         reserved_products[0].get("customer_type"),
+                                                         referral_number)
+                if reserve_result.get("success") is False:
+                    return reserve_result
+            else:
+                data_response.append(reserved_products)
+        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 200}
+
+
+def remove_reserve_dealership(referral_number, customer_id, customer_type, data):
+    check_data, data_response, add_cardex_to_quantity = list(), list(), list()
+    for cursor_products in data.get("products"):
+        # add reserve per items
+        reserve_result = remove_reserves_dealership(cursor_products.get("system_code"),
+                                                    cursor_products.get("storage_id"),
+                                                    cursor_products.get("count"),
+                                                    customer_type[0], cursor_products.get("name"),
+                                                    referral_number)
+
+        data_for_check = (cursor_products, reserve_result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+    # check all items reserved
+    checked = all(elem[1] for elem in check_data)
+    if checked:
+        try:
+            add_to_cardex(customer_id, None, referral_number, add_cardex_to_quantity)
+            return {'success': True, 'message': 'done', 'status_code': 200}
+        except:
+            return {'success': False, 'message': 'log error', 'status_code': 409}
+    else:
+        # roll back
+        for reserved_products in check_data:
+            if reserved_products[1] is True:
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
+                                                         reserved_products[0].get("storageId"),
+                                                         reserved_products[0].get("count"),
+                                                         reserved_products[0].get("customer_type"),
+                                                         referral_number)
+                if reserve_result.get("success") is False:
+                    return reserve_result
+            else:
+                data_response.append(reserved_products)
+        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 200}
+
+
+def remove_product_dealership_from_inv(referral_number, customer_id, customer_type, dealership_form, dealership_detail):
+    check_data, data_response, add_cardex_to_quantity = list(), list(), list()
+    for cursor_products in dealership_form.get("products"):
+        # add reserve per items
+        reserve_result = remove_products_dealership_from_inv(cursor_products.get("system_code"),
+                                                             cursor_products.get("imeis"),
+                                                             dealership_detail,
+                                                             cursor_products.get("storage_id"),
+                                                             cursor_products.get("count"),
+                                                             customer_type[0], cursor_products.get("name"),
+                                                             referral_number)
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
@@ -350,3 +456,25 @@ def edit_transfer_form(edit_object):
         else:
             return reserve_result
 
+
+def add_to_reserve_reorder(order, staff_name):
+    order_model = OrderModel(dict(order))
+    check_data, add_cardex_to_quantity, data_response = list(), list(), list()
+    for cursor_products in order_model.order_data:
+        # add reserve per items
+        reserve_reserve_result = add_to_reserves_reorder(cursor_products.get("system_code"),
+                                                         cursor_products.get("storage_id"),
+                                                         cursor_products.get("count"),
+                                                         cursor_products.get("customer_type"),
+                                                         cursor_products.get("sku"),
+                                                         cursor_products.get("order_number"), staff_name)
+        data_for_check = (cursor_products, reserve_reserve_result.get("success"))
+        check_data.append(data_for_check)
+        add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+
+    try:
+        add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                      add_cardex_to_quantity)
+        return {'success': True, 'message': 'done', 'status_code': 200}
+    except:
+        return {'success': False, 'message': 'log error', 'status_code': 409}

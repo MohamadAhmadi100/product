@@ -28,6 +28,54 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def get_basket_products(system_codes, storage_id, customer_type):
+        with MongoConnection() as mongo:
+            warehouse_query_string = f"$warehouse_details.{customer_type}.storages.{storage_id}"
+            pipe_lines = [
+                {
+                    '$match': {
+                        'system_code': {"$in": system_codes}
+                    }
+                }, {
+                    '$addFields': {
+                        'regular': f'{warehouse_query_string}.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                f'{warehouse_query_string}.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                f'{warehouse_query_string}.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, f'{warehouse_query_string}.special', None
+                            ]
+                        },
+                        "quantity": {"$subtract": [f"{warehouse_query_string}.quantity",
+                                                   f"{warehouse_query_string}.reserved"]},
+                        "min_qty": f"{warehouse_query_string}.min_qty",
+                        "max_qty": f"{warehouse_query_string}.max_qty"
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'warehouse_details': 0
+                    }
+                }
+            ]
+            result = list(mongo.product.aggregate(pipe_lines))
+            if result:
+                return result
+            return None
+
+    @staticmethod
     def price_list_all(customer_type, sub_category, brand, model, allowed_storages):
         with MongoConnection() as mongo:
             pipe_lines = [
@@ -284,6 +332,8 @@ class Product:
                         '_id': 0,
                         'warehouse_details': 0
                     }
+                }, {
+                    "$limit": 1
                 }
             ]
             result = list(mongo.product.aggregate(pipe_lines))

@@ -74,7 +74,34 @@ def add_to_reserve_order(system_code, storage_id, count, customer_type, sku, ord
         return {"success": False, "error": f"{system_code}"}
 
 
-def add_to_reserve_dealership(system_code, storage_id, count, customer_type, sku, order_number):
+def add_to_reserves_reorder(system_code, storage_id, count, customer_type, sku, order_number, staff_name):
+    """
+    order add to reserve
+    """
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type,
+                                                  order_number)
+    if reserve_result.get("success"):
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            incremental_id=order_number,
+            qty=count,
+            sku=sku,
+            type="reorder",
+            old_quantity=reserve_result['cardex'].get('oldQuantity'),
+            new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_reserve=reserve_result['cardex'].get('oldReserve'),
+            new_reserve=reserve_result['cardex'].get('newReserve'),
+            user=staff_name
+        )
+        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        return reserve_result
+    else:
+        return {"success": False, "error": f"{system_code}"}
+
+
+def add_to_reserves_dealership(system_code, storage_id, count, customer_type, sku, order_number):
     """
     dealership add to reserve
     """
@@ -88,11 +115,68 @@ def add_to_reserve_dealership(system_code, storage_id, count, customer_type, sku
             incremental_id=order_number,
             qty=count,
             sku=sku,
-            type="dealership",
+            type="dealership reserve",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
+        )
+        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        return reserve_result
+    else:
+        return {"success": False, "error": f"{system_code}"}
+
+
+def remove_reserves_dealership(system_code, storage_id, count, customer_type, sku, order_number):
+    """
+    dealership add to reserve
+    """
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type,
+                                                     order_number)
+    if reserve_result.get("success"):
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            incremental_id=order_number,
+            qty=count,
+            sku=sku,
+            type="dealership remove reserve",
+            old_quantity=reserve_result['cardex'].get('oldQuantity'),
+            new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_reserve=reserve_result['cardex'].get('oldReserve'),
+            new_reserve=reserve_result['cardex'].get('newReserve')
+        )
+        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        return reserve_result
+    else:
+        return {"success": False, "error": f"{system_code}"}
+
+
+def remove_products_dealership_from_inv(system_code, imeis, dealership_detail, storage_id, count, customer_type, sku,
+                                        referral_number):
+    """
+    dealership remove product from inv0
+    """
+    add_remove_model = AddRemoveQtyReserve()
+    reserve_result = add_remove_model.remove_reserve_quantity(system_code, storage_id, count, customer_type,
+                                                              )
+    if reserve_result.get("success"):
+        add_remove_model.add_quantity_dealership(system_code, 2000, count, customer_type,
+                                                 )
+        export_transfer_dealership(system_code, imeis, dealership_detail, referral_number)
+        quantity_cardex_data = cardex(
+            storage_id=storage_id,
+            system_code=system_code,
+            incremental_id=referral_number,
+            qty=count,
+            sku=sku,
+            type="dealership transfer",
+            old_quantity=reserve_result['cardex'].get('oldQuantity'),
+            new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_reserve=reserve_result['cardex'].get('oldReserve'),
+            new_reserve=reserve_result['cardex'].get('newReserve'),
+            imeis=imeis
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
