@@ -231,6 +231,3 @@ class AddRemoveQtyReserve:
                 return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد",
                         "status_code": 404}
 
-
-a = AddRemoveQtyReserve()
-a.add_quantity('2000010010001001001001001', '2', 2, "B2B", 1000000000)
