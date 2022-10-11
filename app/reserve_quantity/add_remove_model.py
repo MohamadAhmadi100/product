@@ -86,8 +86,9 @@ class AddRemoveQtyReserve:
                     self.cardex['name'] = products['name']
                     found_storage = False
                     for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)['storages'].items():
-                        if cusrsor == storage_id:
+                        if cusrsor == storage_id and storage_dict.get("quantity") is not None:
                             found_storage = True
+                            break
                     if found_storage:
                         for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)[
                             'storages'].items():
@@ -229,3 +230,4 @@ class AddRemoveQtyReserve:
                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
                 return {"success": False, "error": "سیستم کد مورد نظر در دیتابیس پروداکت وجود ندارد",
                         "status_code": 404}
+
