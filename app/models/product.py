@@ -430,7 +430,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'storage_id': storage_id
+                        'storage_id': storage_id if storage_id else {"$in": allowed_storages}
                     }
                 },
                 {
