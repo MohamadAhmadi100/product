@@ -430,7 +430,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'storage_id': storage_id
+                        'storage_id': storage_id if storage_id else {"$in": allowed_storages}
                     }
                 },
                 {
@@ -602,7 +602,7 @@ class Product:
                 _filter['label'] = kowsar_data.get('sub_category_label', _filter.get("name"))
 
             warehouses = list(
-                mongo.warehouses_collection.find(
+                mongo.warehouses.find(
                     {"isActive": True, "warehouse_id": {"$in": [int(storage) for storage in allowed_storages]}},
                     {"_id": 0}))
 
@@ -728,7 +728,7 @@ class Product:
     @staticmethod
     def get_product_by_name(name, user_allowed_storages, customer_type):
         with MongoConnection() as mongo:
-            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
+            warehouses = list(mongo.warehouses.find({}, {"_id": 0}))
             storages_labels = list()
             for allowed_storage in user_allowed_storages:
                 obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
@@ -1477,7 +1477,7 @@ class Product:
                 db_data = mongo.kowsar_collection.find_one(query, {"_id": 0})
                 return db_data if db_data else {}
 
-            warehouses = list(mongo.warehouses_collection.find({}, {"_id": 0}))
+            warehouses = list(mongo.warehouses.find({}, {"_id": 0}))
             storages_labels = list()
             for allowed_storage in user_allowed_storages:
                 obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
@@ -2195,7 +2195,7 @@ class Product:
             total_products = total_products.next().get("count", 0) if total_products.alive else 0
 
             products_list = result.get("list", [])
-            warehouses_list = list(mongo.warehouses_collection.find({"isActive": True}, {"_id": 0,
+            warehouses_list = list(mongo.warehouses.find({"isActive": True}, {"_id": 0,
                                                                                          "storage_id": "$warehouse_id",
                                                                                          "storage_label": "$warehouse_name",
                                                                                          }))
@@ -2285,7 +2285,7 @@ class Price:
     def set_product_price(self):
         with MongoConnection() as client:
             db_query = dict()
-            warehouses = list(client.warehouses_collection.find({}, {"_id": 0}))
+            warehouses = list(client.warehouses.find({}, {"_id": 0}))
             for key, value in self.customer_type.items():
                 if value.get("storages"):
                     for storage_data in value.get("storages"):
@@ -2341,7 +2341,7 @@ class Price:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.special_to_date": special_to_date
                 })
-            warehouses = list(client.warehouses_collection.find({}, {"_id": 0}))
+            warehouses = list(client.warehouses.find({}, {"_id": 0}))
             obj = [i for i in warehouses if str(i['warehouse_id']) == storage_id]
             update_data.update(
                 {f"warehouse_details.{customer_type}.storages.{storage_id}.warehouse_state": obj[0].get("state"),
@@ -2417,7 +2417,7 @@ class Quantity:
             for stock in db_stocks:
                 quantity = stock["quantity"] - stock["reserve"]
                 result["total"] += quantity
-                wearhouses = client.warehouses_collection.find_one({"warehouse_id": int(stock["stockId"])}, {"_id": 0})
+                wearhouses = client.warehouses.find_one({"warehouse_id": int(stock["stockId"])}, {"_id": 0})
                 result["storages"].append({"storage_id": stock["stockId"],
                                            "storage_label": wearhouses["warehouse_name"],
                                            "stock": quantity})
@@ -2429,7 +2429,7 @@ class Quantity:
         get all stocks
         """
         with MongoConnection() as client:
-            return list(client.warehouses_collection.find({"isActive": True}, {"_id": 0,
+            return list(client.warehouses.find({"isActive": True}, {"_id": 0,
                                                                                "storage_id": "$warehouse_id",
                                                                                "storage_label": "$warehouse_name",
                                                                                }))
@@ -2453,7 +2453,7 @@ class Quantity:
                 "min_qty": min_qty,
                 "max_qty": max_qty
             }
-            warehouses = list(client.warehouses_collection.find({}, {"_id": 0}))
+            warehouses = list(client.warehouses.find({}, {"_id": 0}))
             obj = [i for i in warehouses if str(i['warehouse_id']) == storage['storage_id']]
             storage.update({"warehouse_state": obj[0].get("state"), "warehouse_city": obj[0].get("city"),
                             "warehouse_state_id": obj[0].get("state_id"),
