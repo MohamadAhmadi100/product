@@ -43,10 +43,11 @@ def create_system_code(system_code, storage_ids, guaranty):
             'network'] + ") " + configs['region'] + " | " + data[
                     'seller'] + " | " + guaranty + " " + f"[{data['color']}]"
     else:
-        name += ' (' + " ".join([v for k, v in configs.items()]) + ') ' + data[
+        name += ' (' + " ".join([v for k, v in configs.items() if v]) + ') ' + data[
             'seller'] + " | " + guaranty + " " + f"[{data['color']}]"
 
-    result, system_code = kowsar.create_kowsar_part(name, storage_ids, system_code)
+    result, response = kowsar.create_kowsar_part(name, storage_ids, system_code)
+    kowsar.log(response, result)
     if result:
         if kowsar.create_in_db(data):
             return {"success": True, "message": {
@@ -75,8 +76,10 @@ def create_kowsar_group(system_code, name, parent_system_code, configs):
         else:
             kowsar.name = parent_data['model'] + ' (' + " ".join([v for k, v in configs.items()]) + ')'
     result = True
+    response = None
     if len(system_code) <= 16:
-        result = kowsar.create_kowsar_group(parent_data)
+        result, response = kowsar.create_kowsar_group(parent_data)
+    kowsar.log(response, result)
     if result:
         complete_data = kowsar.category_name_getter(parent_data)
         mongo_result = kowsar.create_in_db(complete_data)
