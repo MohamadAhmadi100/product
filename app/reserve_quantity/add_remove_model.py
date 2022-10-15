@@ -202,7 +202,7 @@ class AddRemoveQtyReserve:
                             if cusrsor == storage_id:
                                 self.cardex['qty'] = count
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
-                                self.cardex['inventory'] = storage_dict["inventory"]
+                                self.cardex['oldInventory'] = storage_dict["inventory"]
                                 storage_dict["quantity"] += count
                                 storage_dict["inventory"] += count
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
