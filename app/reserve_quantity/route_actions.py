@@ -364,6 +364,8 @@ def add_buying_form(product, dst_warehouse, customer_type, referral_number, supp
                 imeis=product['imeis'],
                 old_quantity=reserve_result['cardex'].get('oldQuantity'),
                 new_quantity=reserve_result['cardex'].get('newQuantity'),
+                old_inventory=reserve_result['cardex'].get('oldInventory'),
+                new_inventory=reserve_result['cardex'].get('newInventory'),
                 old_reserve=reserve_result['cardex'].get('oldReserve'),
                 new_reserve=reserve_result['cardex'].get('newReserve')
             )
@@ -393,6 +395,8 @@ def return_order_items(system_code, storage_id, customer_type, order_number, ime
                 imeis=imei,
                 old_quantity=reserve_result['cardex'].get('oldQuantity'),
                 new_quantity=reserve_result['cardex'].get('newQuantity'),
+                old_inventory=reserve_result['cardex'].get('oldInventory'),
+                new_inventory=reserve_result['cardex'].get('newInventory'),
                 old_reserve=reserve_result['cardex'].get('oldReserve'),
                 new_reserve=reserve_result['cardex'].get('newReserve'),
                 user=staff_name
@@ -422,6 +426,8 @@ def remove_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
             type="edit transfer form",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_inventory=reserve_result['cardex'].get('oldInventory'),
+            new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
@@ -448,6 +454,8 @@ def add_to_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
             type="edit transfer form",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
+            old_inventory=reserve_result['cardex'].get('oldInventory'),
+            new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
