@@ -115,3 +115,15 @@ def assign_system_code_to_seller(system_code: str, seller: str, seller_code: str
             "message": "با موفقیت ایجاد شد"
         }, "status_code": 200}
     return {"success": False, "error": "ساخت گروه با خطا مواجه شد", "status_code": 500}
+
+
+def get_kowsar_logs():
+    result = KowsarGetter.get_kowsar_logs()
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 500}
+
+
+def kowsar_redo(func_name, request):
+    response = globals().get(func_name)(**request)
+    return response

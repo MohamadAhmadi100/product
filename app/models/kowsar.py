@@ -6,6 +6,12 @@ from app.helpers.mongo_connection import MongoConnection
 
 class KowsarGetter:
     @staticmethod
+    def get_kowsar_logs():
+        with MongoConnection() as mongo:
+            result = mongo.kowsar_log.find({}, {"_id": 0}).sort("time", -1)
+            return list(result)
+
+    @staticmethod
     def get_kowsar_system_code(system_code: str):
         """
         return items in the system_code
