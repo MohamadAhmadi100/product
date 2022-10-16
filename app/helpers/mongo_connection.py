@@ -24,11 +24,10 @@ class MongoConnection:
 
         self.archive = self.db['archive']
         self.kowsar_collection = self.db['kowsar']
-        self.kowsar_config = self.db['kowsar_config']
-        self.parent_col = self.db['kowsar-parent']
         self.custom_category = self.db['custom-category']
         self.attributes_collection = self.db['attributes']
         self.quantity_log = self.db['quantity_log']
+        self.kowsar_log = self.db['kowsar_log']
         """
         reserves
         """

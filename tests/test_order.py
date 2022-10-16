@@ -361,10 +361,8 @@ class OrderTest(TestCase):
                     mongo.archive.insert_one(arch)
                 for pro in self.products:
                     mongo.product.insert_one(pro)
-                x = mongo.archive.find_one({"system_code": "12345"})
-                x2 = mongo.archive.find_one({"system_code": "678910"})
-                print(x)
-                print(x2)
+
+
 
     def test_exit_order(self):
         self.insert_initial_data()
@@ -415,7 +413,8 @@ class OrderTest(TestCase):
                 "count": 5,
                 "staffId": "1221",
                 "staffName": "dalam",
-                "imeis": ["1", "2", "3", "4", "5"]
+                "imeis": ["1", "2", "3", "4", "5"],
+                'customerType': 'B2B',
             },
                 {"orderNumber": 111,
                  "storageId": "1",
@@ -423,20 +422,21 @@ class OrderTest(TestCase):
                  "count": 5,
                  "staffId": "1221",
                  "staffName": "dalam",
-                 "imeis": ["6", "7", "8", "9", "10"]
+                 "imeis": ["6", "7", "8", "9", "10"],
+                 'customerType': 'B2B',
                  }
             ]
 
             self.assertEqual(
-                exit_order(111, "1", exit_product, "1221", "dalam"),
-                {"message": "مشکل در چک imei", "success": False, "status_code": 417}
+                exit_order(111, "1", exit_product, "1221", "dalam","B2B"),
+                {"message": "خطا در چک imei", "success": False, "status_code": 417}
             )
             self.assertEqual(
-                exit_order(111, "1", exit_product2, "1221", "dalam"),
+                exit_order(111, "1", exit_product2, "1221", "dalam","B2B"),
                 {"message": "مغایرت در سیستم کد", "success": False, "status_code": 417}
             )
             self.assertEqual(
-                exit_order(111, "1", exit_product3, "1221", "dalam"),
+                exit_order(111, "1", exit_product3, "1221", "dalam","B2B"),
                 {"message": rollback_obj, "success": True, "status_code": 200}
 
             )
@@ -468,7 +468,8 @@ class OrderTest(TestCase):
             "count": 5,
             "staffId": 54545,
             "staffName": "dalam",
-            "imeis": ["1", "2", "3", "4", "5"]
+            "imeis": ["1", "2", "3", "4", "5"],
+            'customerType': 'B2B',
         }
         self.assertEqual(
             create_rollback(
@@ -478,7 +479,8 @@ class OrderTest(TestCase):
                 5,
                 54545,
                 "dalam",
-                ["1", "2", "3", "4", "5"]
+                ["1", "2", "3", "4", "5"],
+                'B2B',
             ),
             qty_object
         )
@@ -571,59 +573,65 @@ class OrderTest(TestCase):
             )
     #
     def test_update_imeis(self):
-        rollback_list1 = [
-            {
+        self.insert_initial_data()
+        with self.mongo_mock:
+            rollback_list1 = [
+                {
 
-                "orderNumber": 11,
-                "storageId": "1",
-                "systemCode": "12345",
-                "count": 5,
-                "staffId": 54545,
-                "staffName": "dalam",
-                "imeis": ["1", "2", "3", "4", "5"]
-            },
-            {
+                    "orderNumber": 11,
+                    "storageId": "1",
+                    "systemCode": "12345",
+                    "count": 5,
+                    "staffId": 54545,
+                    "staffName": "dalam",
+                    "imeis": ["1", "2", "3", "4", "5"],
+                    "customer_type":"B2B"
+                },
+                {
 
-                "orderNumber": 11,
-                "storageId": "1",
-                "systemCode": "678910",
-                "count": 5,
-                "staffId": 54545,
-                "staffName": "dalam",
-                "imeis": ["6", "7", "8", "9", "10"]
-            }
-        ]
+                    "orderNumber": 11,
+                    "storageId": "1",
+                    "systemCode": "678910",
+                    "count": 5,
+                    "staffId": 54545,
+                    "staffName": "dalam",
+                    "imeis": ["6", "7", "8", "9", "10"],
+                    "customer_type": "B2B"
+                }
+            ]
 
-        rollback_list2 = [
-            {
+            rollback_list2 = [
+                {
 
-                "orderNumber": 11,
-                "storageId": "1",
-                "systemCode": "12345",
-                "count": 5,
-                "staffId": 54545,
-                "staffName": "dalam",
-                "imeis": ["1", "2", "3", "4", "5"]
-            },
-            {
+                    "orderNumber": 11,
+                    "storageId": "1",
+                    "systemCode": "12345",
+                    "count": 5,
+                    "staffId": 54545,
+                    "staffName": "dalam",
+                    "imeis": ["1", "2", "3", "4", "5"],
+                    "customer_type": "B2B"
+                },
+                {
 
-                "orderNumber": 11,
-                "storageId": "1",
-                "systemCode": "678910",
-                "count": 5,
-                "staffId": 54545,
-                "staffName": "dalam",
-                "imeis": ["6", "7", "8", "91", "10"]
-            }
-        ]
+                    "orderNumber": 11,
+                    "storageId": "1",
+                    "systemCode": "678910",
+                    "count": 5,
+                    "staffId": 54545,
+                    "staffName": "dalam",
+                    "imeis": ["6", "7", "8", "91", "10"],
+                    "customer_type": "B2B"
+                }
+            ]
 
-        self.assertEqual(
-            update_imeis(rollback_list1),
-            True
-        )
+            self.assertEqual(
+                update_imeis(rollback_list1),
+                True
+            )
 
-        self.assertEqual(
-            update_imeis(rollback_list2),
-            False
-        )
+            self.assertEqual(
+                update_imeis(rollback_list2),
+                False
+            )
 

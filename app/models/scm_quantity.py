@@ -470,7 +470,8 @@ def handle_get_product_to_assign_qty(storage_id, system_code, customer_type):
             return False, "محصولی یافت نشد"
         customer_type_object = get_customer_type_object(product_object, storage_id, customer_type)
         if not customer_type_object:
-            return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+            return False, "محصولی با نوع مشتری ویا کد انبار مورد نظر یافت نشد"
+        return True, customer_type_object
     except Exception:
         return False, "خطای سیستمی رخ داده است"
 
@@ -485,12 +486,12 @@ def handle_assign_product_inventory(storage_id, system_code, customer_type, tran
             return False, "محصولی یافت نشد"
         customer_type_object = get_customer_type_object(product_object, storage_id, customer_type)
         if not customer_type_object:
-            return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+            return False, "محصولی با نوع مشتری ویا کد انبار مورد نظر یافت نشد"
 
         if transfer:
             to_customer_type_object = get_customer_type_object(product_object, storage_id, to_customer_type)
             if not customer_type_object:
-                return False, "محصولی با نوع مشتری مورد نظر پیدا نشد"
+                return False, "محصولی با نوع مشتری ویا کد انبار مورد نظر یافت نشد"
             from_cardex = handle_cardex(customer_type_object, storage_id, system_code, quantity, staff_id, staff_name,
                                         f"transferto_{to_customer_type}", customer_type)
 

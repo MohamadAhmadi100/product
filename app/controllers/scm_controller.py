@@ -19,11 +19,11 @@ def get_product_to_assign_qty(storage_id, system_code, customer_type):
     success, message = handle_get_product_to_assign_qty(storage_id, system_code, customer_type)
 
     if success:
-        return {"message": message, "success": True, "status_code": 200}
+        return {"message": message, "success": success, "status_code": 200}
     elif not success:
-        return {"message": "محصولی یافت نشد", "success": False, "status_code": 417}
+        return {"message": message, "success": success, "status_code": 417}
     else:
-        return {"message": message, "success": False, "status_code": 500}
+        return {"message": message, "success": success, "status_code": 500}
 
 
 def assign_product_inventory(storage_id, system_code, customer_type, transfer, to_customer_type, quantity, min_qty,

@@ -14,6 +14,8 @@ def cardex(**kwargs):
         "qty": kwargs.get("qty"),
         "old_quantity": kwargs.get("old_quantity"),
         "new_quantity": kwargs.get("new_quantity"),
+        "old_inventory": kwargs.get("old_inventory"),
+        "new_inventory": kwargs.get("new_inventory"),
         "old_reserve": kwargs.get("old_reserve"),
         "new_reserve": kwargs.get("new_reserve"),
         "edit_date": str(jdatetime.datetime.now()).split(".")[0],

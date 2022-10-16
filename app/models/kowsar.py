@@ -1,3 +1,4 @@
+import jdatetime
 import requests
 
 from app.helpers.mongo_connection import MongoConnection
@@ -184,6 +185,16 @@ class KowsarPart:
         self.parent_system_code = parent_system_code
         self.guaranty = guaranty
 
+    def log(self, response, success):
+        with MongoConnection() as mongo:
+            mongo.kowsar_log.insert_one({
+                "log_type": "create_system_code",
+                "success": success,
+                "request": self.__dict__,
+                "response": response,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+
     def create_kowsar_part(self, name, storage_ids, system_code):
         request_data = {
             "PartPartStoreDTOLst": [{"inv_Store_Code": str(i)} for i in storage_ids],
@@ -202,18 +213,19 @@ class KowsarPart:
             "prt_Part_Sellable": "1"
         }
         try:
-            result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data,
-                                   headers={
-                                       "UserName": "Site",
-                                       "Password": "Site@3333"
-                                   }).json()
-        except Exception as e:
-            result = {
-                "HasError": True,
-            }
-        if not result.get("HasError", True):
-            return True, result.get("prt_Part_Code")
-        return False, None
+            response = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPart2", json=request_data,
+                                     headers={
+                                         "UserName": "Site",
+                                         "Password": "Site@3333"
+                                     })
+            response = response.json()
+            result = True
+        except:
+            result = False
+            response = response.text[1522:response.text.index(" The exception stack trace is:")]
+        if result:
+            return True, response
+        return False, response
 
     def is_unique(self):
         with MongoConnection() as mongo:
@@ -237,12 +249,12 @@ class KowsarPart:
     def create_in_db(self, parent_data):
         with MongoConnection() as mongo:
             del parent_data["system_code"]
-            result = mongo.kowsar_collection.insert_one(
+            result = mongo.kowsar_collection.update_one(
+                {"system_code": self.system_code},
                 {
-                    "system_code": self.system_code,
                     **parent_data,
                     "guaranty": self.guaranty,
-                }
+                }, upsert=True
             )
         if result.inserted_id:
             return True
@@ -262,6 +274,16 @@ class KowsarGroup:
             if result:
                 return False
             return True
+
+    def log(self, response, success):
+        with MongoConnection() as mongo:
+            mongo.kowsar_log.insert_one({
+                "log_type": "create_kowsar_group",
+                "success": success,
+                "request": self.__dict__,
+                "response": response,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
 
     def create_kowsar_group(self, parent_data):
         request_data = {
@@ -283,6 +305,7 @@ class KowsarGroup:
             "Memory Card/Stick": "200024", "PowerBank": "200025", "Speaker": "200026",
             "Charger": "200027", "Mouse": "200028", "Keyboard": "200029",
             "Keyboard & Mouse": "200030", "Headphone/Headset/Hands Free": "200031",
+            "Headphones": "200031",
             "BackPack/HandyBag": "200032", "Cover/Case": "200033", "Screen Protector": "200034",
             "Stand/Holder": "200035", "USB HUB": "200036", "Cable": "200037",
             "Converter": "200038", "WebCam": "200039", "Mouse Pad": "200040",
@@ -303,18 +326,19 @@ class KowsarGroup:
             request_data['acc_FormalGrouping_NameMain'] = "گروهای کالا"
             request_data['acc_FormalAcc_Code'] = codes.get(accformal_name)
         try:
-            result = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPartGroup", json=request_data,
-                                   headers={
-                                       "UserName": "Site",
-                                       "Password": "Site@3333"
-                                   }).json()
+            response = requests.post("http://31.47.52.130:8099/PartService/Web/TryInsertPartGroup", json=request_data,
+                                     headers={
+                                         "UserName": "Site",
+                                         "Password": "Site@3333"
+                                     })
+            response = response.json()
+            result = True
         except:
-            result = {
-                "HasError": True,
-            }
-        if not result.get("HasError", True):
-            return True
-        return False
+            result = False
+            response = response.text[1522:response.text.index(" The exception stack trace is:")]
+        if result:
+            return True, response
+        return False, response
 
     def category_name_getter(self, parent_data):
         if parent_data:
@@ -349,7 +373,8 @@ class KowsarGroup:
 
     def create_in_db(self, data):
         with MongoConnection() as mongo:
-            result = mongo.kowsar_collection.insert_one(data)
+            result = mongo.kowsar_collection.update_one({"system_code": data.get("system_code")}, {"$set": data},
+                                                        upsert=True)
         if result.inserted_id:
             return True
         return False

@@ -204,12 +204,14 @@ def create_cardex_object(qty_object,
             "type": service_name,
             "qty": count,
             "old_quantity": qty_object["quantity"],
+            "old_inventory": qty_object["inventory"],
             "old_reserve": qty_object["reserved"],
             "edit_date": str(jdatetime.datetime.now()).split(".")[0],
             "biFlag": False
         }
         update_reserve_qty(qty_object, count, flag)
         quantity_cardex_data["new_quantity"] = qty_object["quantity"]
+        quantity_cardex_data["new_inventory"] = qty_object["inventory"]
         quantity_cardex_data["new_reserve"] = qty_object["reserved"]
         return quantity_cardex_data
 
@@ -261,9 +263,11 @@ def update_reserve_qty(qty_object, count, flag):
     try:
         if flag:
             qty_object["quantity"] -= count
+            qty_object["inventory"] -= count
             qty_object["reserved"] -= count
         else:
             qty_object["quantity"] += count
+            qty_object["inventory"] += count
             qty_object["reserved"] += count
         return True
     except:
@@ -349,6 +353,7 @@ def get_product_query(storage_id, system_code, customer_type):
 def update_archive_query(imei, new_object):
     try:
         with MongoConnection() as mongo:
+            x = list(mongo.db.archive.find())
             query = mongo.db.archive.update_one({"articles.first": imei},
                                                 {"$set": new_object})
         if query.matched_count > 0:
