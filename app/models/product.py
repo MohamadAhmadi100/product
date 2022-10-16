@@ -607,11 +607,12 @@ class Product:
                     {"_id": 0}))
 
             storages_labels = list()
+            storage_id = int(storage_id) if storage_id else ...
             for storage in warehouses:
                 storages_labels.append({
                     "storage_id": storage.get("warehouse_id"),
                     "label": storage.get('warehouse_name'),
-                    "active": True if int(storage_id) == storage.get("warehouse_id") else False
+                    "active": True if storage_id == storage.get("warehouse_id") else False
                 })
 
             with RedisConnection() as redis:
@@ -2196,9 +2197,9 @@ class Product:
 
             products_list = result.get("list", [])
             warehouses_list = list(mongo.warehouses.find({"isActive": True}, {"_id": 0,
-                                                                                         "storage_id": "$warehouse_id",
-                                                                                         "storage_label": "$warehouse_name",
-                                                                                         }))
+                                                                              "storage_id": "$warehouse_id",
+                                                                              "storage_label": "$warehouse_name",
+                                                                              }))
             filters = [
                 {
                     "name": "brands",
@@ -2430,9 +2431,9 @@ class Quantity:
         """
         with MongoConnection() as client:
             return list(client.warehouses.find({"isActive": True}, {"_id": 0,
-                                                                               "storage_id": "$warehouse_id",
-                                                                               "storage_label": "$warehouse_name",
-                                                                               }))
+                                                                    "storage_id": "$warehouse_id",
+                                                                    "storage_label": "$warehouse_name",
+                                                                    }))
 
     @staticmethod
     def update_quantity(system_code: str, customer_type: str, storage_id: str, quantity: int,

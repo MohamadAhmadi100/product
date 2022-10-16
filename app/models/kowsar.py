@@ -1,3 +1,4 @@
+import jdatetime
 import requests
 
 from app.helpers.mongo_connection import MongoConnection
@@ -190,7 +191,8 @@ class KowsarPart:
                 "log_type": "create_system_code",
                 "success": success,
                 "request": self.__dict__,
-                "response": response
+                "response": response,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
 
     def create_kowsar_part(self, name, storage_ids, system_code):
@@ -247,12 +249,12 @@ class KowsarPart:
     def create_in_db(self, parent_data):
         with MongoConnection() as mongo:
             del parent_data["system_code"]
-            result = mongo.kowsar_collection.insert_one(
+            result = mongo.kowsar_collection.update_one(
+                {"system_code": self.system_code},
                 {
-                    "system_code": self.system_code,
                     **parent_data,
                     "guaranty": self.guaranty,
-                }
+                }, upsert=True
             )
         if result.inserted_id:
             return True
@@ -279,7 +281,8 @@ class KowsarGroup:
                 "log_type": "create_kowsar_group",
                 "success": success,
                 "request": self.__dict__,
-                "response": response
+                "response": response,
+                "time": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
 
     def create_kowsar_group(self, parent_data):
@@ -370,7 +373,8 @@ class KowsarGroup:
 
     def create_in_db(self, data):
         with MongoConnection() as mongo:
-            result = mongo.kowsar_collection.insert_one(data)
+            result = mongo.kowsar_collection.update_one({"system_code": data.get("system_code")}, {"$set": data},
+                                                        upsert=True)
         if result.inserted_id:
             return True
         return False
