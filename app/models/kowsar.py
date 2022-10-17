@@ -6,6 +6,12 @@ from app.helpers.mongo_connection import MongoConnection
 
 class KowsarGetter:
     @staticmethod
+    def get_kowsar_logs():
+        with MongoConnection() as mongo:
+            result = mongo.kowsar_log.find({}, {"_id": 0}).sort("time", -1)
+            return list(result)
+
+    @staticmethod
     def get_kowsar_system_code(system_code: str):
         """
         return items in the system_code
@@ -222,7 +228,7 @@ class KowsarPart:
             result = True
         except:
             result = False
-            response = response.text[1522:response.text.index(" The exception stack trace is:")]
+            response = response.text[1578:response.text.index(" See server logs for more details.")]
         if result:
             return True, response
         return False, response
@@ -251,12 +257,13 @@ class KowsarPart:
             del parent_data["system_code"]
             result = mongo.kowsar_collection.update_one(
                 {"system_code": self.system_code},
-                {
-                    **parent_data,
-                    "guaranty": self.guaranty,
-                }, upsert=True
+                {"$set":
+                    {
+                        **parent_data,
+                        "guaranty": self.guaranty,
+                    }}, upsert=True
             )
-        if result.inserted_id:
+        if result.modified_count or result.upserted_id:
             return True
         return False
 
@@ -335,7 +342,7 @@ class KowsarGroup:
             result = True
         except:
             result = False
-            response = response.text[1522:response.text.index(" The exception stack trace is:")]
+            response = response.text[1578:response.text.index(" See server logs for more details.")]
         if result:
             return True, response
         return False, response
@@ -375,6 +382,6 @@ class KowsarGroup:
         with MongoConnection() as mongo:
             result = mongo.kowsar_collection.update_one({"system_code": data.get("system_code")}, {"$set": data},
                                                         upsert=True)
-        if result.inserted_id:
+        if result.modified_count or result.upserted_id:
             return True
         return False
