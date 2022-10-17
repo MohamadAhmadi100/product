@@ -228,7 +228,7 @@ class KowsarPart:
             result = True
         except:
             result = False
-            response = response.text[1522:response.text.index(" The exception stack trace is:")]
+            response = response.text[1578:response.text.index(" See server logs for more details.")]
         if result:
             return True, response
         return False, response
@@ -257,12 +257,13 @@ class KowsarPart:
             del parent_data["system_code"]
             result = mongo.kowsar_collection.update_one(
                 {"system_code": self.system_code},
-                {
-                    **parent_data,
-                    "guaranty": self.guaranty,
-                }, upsert=True
+                {"$set":
+                    {
+                        **parent_data,
+                        "guaranty": self.guaranty,
+                    }}, upsert=True
             )
-        if result.inserted_id:
+        if result.modified_count or result.upserted_id:
             return True
         return False
 
@@ -341,7 +342,7 @@ class KowsarGroup:
             result = True
         except:
             result = False
-            response = response.text[1522:response.text.index(" The exception stack trace is:")]
+            response = response.text[1578:response.text.index(" See server logs for more details.")]
         if result:
             return True, response
         return False, response
@@ -381,6 +382,6 @@ class KowsarGroup:
         with MongoConnection() as mongo:
             result = mongo.kowsar_collection.update_one({"system_code": data.get("system_code")}, {"$set": data},
                                                         upsert=True)
-        if result.inserted_id:
+        if result.modified_count or result.upserted_id:
             return True
         return False

@@ -74,7 +74,7 @@ def create_kowsar_group(system_code, name, parent_system_code, configs):
             kowsar.name = parent_data['model'] + ' (' + configs['ram'] + ' ' + configs['storage'] + ' ' + configs[
                 'network'] + ") " + configs['region']
         else:
-            kowsar.name = parent_data['model'] + ' (' + " ".join([v for k, v in configs.items()]) + ')'
+            kowsar.name = parent_data['model'] + ' (' + " ".join([v for k, v in configs.items() if v]) + ')'
     result = True
     response = None
     if len(system_code) <= 16:
