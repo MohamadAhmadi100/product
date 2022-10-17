@@ -252,6 +252,7 @@ class OrderTest(TestCase):
                     "type": "B2B",
                     "storages": {
                         "1": {
+                            "inventory":10,
                             "storage_id": "1",
                             "regular": 31231,
                             "reserved": 5,
@@ -327,6 +328,7 @@ class OrderTest(TestCase):
                     "type": "B2B",
                     "storages": {
                         "1": {
+                            "inventory": 10,
                             "storage_id": "1",
                             "regular": 31231,
                             "reserved": 5,
