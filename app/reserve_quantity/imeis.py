@@ -284,6 +284,12 @@ def check_transfer_imei(imei, transfer_object):
                             else:
                                 return {"success": False, "error": "کد مورد نظر در انبار دیگری موجود است",
                                         "status_code": 400}
+                        else:
+                            return {"success": False, "error": "کد مورد نظر در قسمت خروج به مشکل خورده است",
+                                    "status_code": 400}
+                    else:
+                        return {"success": False, "error": "کد مورد نظر در قسمت خروج به مشکل خورده است",
+                                "status_code": 400}
             else:
                 return {"success": False, "error": "کد مورد نظر قبلا خروج خورده است", "status_code": 400}
         else:
