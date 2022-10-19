@@ -1,4 +1,3 @@
-from app.helpers.warehouses import warehouses
 from app.reserve_quantity.cardex import add_to_cardex
 from app.reserve_quantity.route_actions import *
 
@@ -363,14 +362,6 @@ def check_transfer_imeis(imei, transfer_object):
         return {'success': False, 'error': 'root exception error', 'status_code': 400}
 
 
-def all_warehouses():
-    return warehouses()
-
-
-def warehouse(storage_id):
-    return find_warehouse(storage_id)
-
-
 def return_imei(order, imei, staff_name):
     order_model = OrderModel(dict(order))
     check_data, add_cardex_to_quantity, data_response = list(), list(), list()
@@ -478,3 +469,4 @@ def add_to_reserve_reorder(order, staff_name):
         return {'success': True, 'message': 'done', 'status_code': 200}
     except:
         return {'success': False, 'message': 'log error', 'status_code': 409}
+
