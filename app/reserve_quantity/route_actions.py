@@ -309,7 +309,7 @@ def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
 
 def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number, quantity_type, staff_name):
     add_remove_model = AddRemoveQtyReserve()
-    reserve_result = add_remove_model.add_quantity(product['system_code'], src_warehouse['storage_id'],
+    reserve_result = add_remove_model.add_quantity(product['system_code'], dst_warehouse['storage_id'],
                                                    product['count'],
                                                    quantity_type, product['sell_price'])
 
@@ -343,7 +343,6 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
                                                   product['count'], quantity_type, referral_number)
 
     if reserve_result.get("success"):
-        import_transfer_archive(product, src_warehouse, dst_warehouse, referral_number, staff_name)
         quantity_cardex_data = cardex(
             storage_id=dst_warehouse,
             system_code=product['system_code'],
@@ -357,7 +356,8 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
             # old_inventory=reserve_result['cardex'].get('oldInventory'),
             # new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
-            new_reserve=reserve_result['cardex'].get('newReserve')
+            new_reserve=reserve_result['cardex'].get('newReserve'),
+            user=staff_name
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result

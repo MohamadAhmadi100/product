@@ -470,37 +470,3 @@ def add_to_reserve_reorder(order, staff_name):
     except:
         return {'success': False, 'message': 'log error', 'status_code': 409}
 
-
-transfer_object = {'referral_number': 8, 'src_warehouse': {'storage_name': 'string', 'storage_id': '1'},
-                   'dst_warehouse': {'storage_name': 'string', 'storage_id': '10'}, 'status_type': 'submit',
-                   'quantity_type': 'B2B', 'store_type': 'فیزیکی', 'to_store_type': 'فیزیکی',
-                   'insert_date': '1401-07-26 11:16:05', 'products': [
-        {'system_code': '2000010030001001001001002', 'name': 'Mobile Nokia 105 (2019) (4M 4M 2G) FA', 'brand': 'Nokia',
-         'model': 'Nokia 105 (2019)', 'color': 'Black', 'seller': 'ASD', 'guaranty': 'Sherkati', 'count': 70,
-         'unit_price': 0, 'sell_price': 0, 'description': 'string',
-         'imeis': [353833174883543, 353833174886546, 353833174883717, 353833174881786, 353833174881752, 353833174886512,
-                   353833174886843, 353833174886892, 353833174886777, 353833174886561, 353833175723771, 353833175723789,
-                   353833175723763, 353833175723805, 353833175723821, 353833175723888, 353833175723920, 353833175723854,
-                   353833175723722, 353833175723847, 352874814442721, 352874814443158, 352874814442127, 352874814442226,
-                   352874814442879, 352874814442523, 352874814443091, 352874814443083, 352874814442358, 352874814442408,
-                   352874814440279, 352874814440865, 352874814440774, 352874814440949, 352874814440667, 352874814440352,
-                   352874814440477, 352874814440592, 352874814440097, 352874814439925, 353833175736575, 353833175736674,
-                   353833175736617, 353833175736690, 353833175736781, 353833175736765, 353833175736849, 353833175736856,
-                   353833175736831, 353833175737052, 352413465207792, 352413465207743, 352413465207750, 352413465207768,
-                   352413465207628, 352413465207693, 352413465207685, 352413465207602, 352413465207677, 352413465207669,
-                   352413465222759, 352413465222775, 352413465222791, 352413465222783, 352413465222734, 352413465222593,
-                   352413465222585, 352413465222577, 352413465222742, 352413465222726], 'accepted_imeis': [],
-         'imei_import': False, 'imei_export': True, 'imeiLabel': ''},
-        {'system_code': '2000010050008002001001002', 'name': 'Mobile POCO X4 GT (8GB 256GB 5G) Global', 'brand': 'POCO',
-         'model': 'POCO X4 GT', 'color': 'Black', 'seller': 'ASD', 'guaranty': 'Sherkati', 'count': 1, 'unit_price': 0,
-         'sell_price': 0, 'description': 'string', 'imeis': [861508063609812], 'accepted_imeis': [],
-         'imei_import': False, 'imei_export': False, 'imeiLabel': ''},
-        {'system_code': '2000010050011002001105002', 'name': 'Mobile POCO F4 (8GB 256GB 5G) Global', 'brand': 'POCO',
-         'model': 'POCO F4', 'color': 'Night Black', 'seller': 'ASD', 'guaranty': 'Sherkati', 'count': 1,
-         'unit_price': 0, 'sell_price': 0, 'description': 'string', 'imeis': [865998065398900], 'accepted_imeis': [],
-         'imei_import': False, 'imei_export': False, 'imeiLabel': ''}], 'total_items': 3, 'total_count': 72,
-                   'total_sel_price': 0, 'total_price': 0}
-system_code = '2000010050008002001001002'
-staff_name = 'staff'
-
-transfer_products(transfer_object, system_code, staff_name)
