@@ -430,7 +430,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'storage_id': storage_id if storage_id else {"$in": allowed_storages}
+                        'storage_id': storage_id if storage_id else allowed_storages[0]
                     }
                 },
                 {
@@ -607,7 +607,7 @@ class Product:
                     {"_id": 0}))
 
             storages_labels = list()
-            storage_id = int(storage_id) if storage_id else ...
+            storage_id = int(storage_id) if storage_id else int(allowed_storages[0])
             for storage in warehouses:
                 storages_labels.append({
                     "storage_id": storage.get("warehouse_id"),

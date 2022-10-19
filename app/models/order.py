@@ -1,3 +1,9 @@
+"""
+- we have a master function(exit_order_handler) for handle logics thats called other functions
+- in this route we need to check and update 3 collection that should have any state for handled rollback for any exeption
+- created "rollback_object" after update in any product then use of that for update other collection and backe to befor state
+
+"""
 import jdatetime
 from app.helpers.mongo_connection import MongoConnection
 
@@ -8,6 +14,7 @@ def exit_order_handler(order_number: int,
                        staff_id: int,
                        staff_name: str,
                        customer_type: str) -> tuple:
+
     try:
         rollback_list = []
         rollback_flag = True
@@ -16,7 +23,7 @@ def exit_order_handler(order_number: int,
             imeis = product["imeis"]
             count = len(imeis)
             system_code = product["system_code"]
-
+            # check and update product
             success, message = update_quantity(order_number,
                                                storage_id,
                                                system_code,
@@ -28,7 +35,7 @@ def exit_order_handler(order_number: int,
                                                customer_type)
 
             if success:
-
+                # create list of updated any product
                 rollback_object = create_rollback(order_number,
                                                   storage_id,
                                                   system_code,
@@ -41,15 +48,17 @@ def exit_order_handler(order_number: int,
                 rollback_list.append(rollback_object)
             else:
                 rollback_flag = False
-                error_message = message
+                # error_message = message
                 break
+
         if not rollback_flag:
             if len(rollback_list) > 0:
+                # rolllbacking updated products and return error message
                 rollback_products(rollback_list)
-                return False, error_message
+                return False, message
 
-            return False, error_message
-
+            return False, message
+        # checking "archive" & "imeis" collection and rollback هn case of problem
         if not imeis_checking(rollback_list):
             rollback_products(rollback_list)
             return False, "خطا در چک imei"
@@ -71,10 +80,15 @@ def update_quantity(order_number: int,
                     service_name: str,
                     flag: bool,
                     customer_type) -> tuple:
+    """
+    this function called in update and rollback action
+    """
     try:
+        # get product and object by storage_id and customer_type
         product, objects = get_product_query(storage_id, system_code, customer_type)
         if not objects:
             return False, "مغایرت در سیستم کد"
+        # flag is False whene callled this func by rollback
         if flag:
             if not quantity_checking(objects["quantity"], objects["reserved"], count):
                 return False, "مغایرت در تعداد موجودی"
@@ -87,7 +101,7 @@ def update_quantity(order_number: int,
                                       staff_name,
                                       service_name,
                                       flag)
-
+        # create cardex loge in any update for update and rollback
         if not cardex:
             return False, "خطا در آپدیت اطلاعات کاردکس"
         if not product_query(system_code, product):
@@ -153,6 +167,9 @@ def rollback_products(products: list) -> bool:
 
 
 def update_imeis(rollback_list: list) -> bool:
+    """
+    in this func update two collection (archive&imeis) and create list of updated object to rturn to befor state in case of problem
+    """
     try:
         imei_list = []
         archive_list = []
@@ -210,6 +227,7 @@ def create_cardex_object(qty_object: dict,
             "edit_date": str(jdatetime.datetime.now()).split(".")[0],
             "biFlag": False
         }
+        # first creted object befor updated db and add updated field after update db for cardex log
         update_reserve_qty(qty_object, count, flag)
         quantity_cardex_data["new_quantity"] = qty_object["quantity"]
         quantity_cardex_data["new_inventory"] = qty_object["inventory"]
@@ -220,7 +238,10 @@ def create_cardex_object(qty_object: dict,
         return {}
 
 
-def create_archive_obj(imeis: list) -> dict:
+def create_imeis_obj(imeis: list) -> dict:
+    """
+    create object for imei collection and use of that in add to collection in rollback
+    """
     try:
         imei_obj = []
         for i in imeis:
@@ -252,8 +273,8 @@ def imeis_rollback(imeis: list, archives: list) -> bool:
 
 
 def update_archive(imeis: list, flag: bool) -> bool:
-    try:
 
+    try:
         for imei in imeis:
             response = update_archive_query(imei, {"articles.$.exist": flag})
             if not response:
@@ -266,10 +287,12 @@ def update_archive(imeis: list, flag: bool) -> bool:
 def update_reserve_qty(qty_object: dict, count: int, flag: bool) -> bool:
     try:
         if flag:
+            # for update
             qty_object["quantity"] -= count
             qty_object["inventory"] -= count
             qty_object["reserved"] -= count
         else:
+            # for rollaback
             qty_object["quantity"] += count
             qty_object["inventory"] += count
             qty_object["reserved"] += count
@@ -329,9 +352,9 @@ def quantity_checking(quantity: int, reserved: int, count: int) -> bool:
 
 # query functions
 
-def add_imei_query(imei: list, system_code: str, storage_id: str, record_type: str) -> bool:
+def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: str) -> bool:
     try:
-        imei_list = create_archive_obj(imei)
+        imei_list = create_imeis_obj(imeis)
         if not imei_list:
             return False
         with MongoConnection() as mongo:
@@ -368,7 +391,6 @@ def get_product_query(storage_id: str, system_code: str, customer_type: str) -> 
 def update_archive_query(imei: str, new_object: dict) -> bool:
     try:
         with MongoConnection() as mongo:
-            x = list(mongo.db.archive.find())
             query = mongo.db.archive.update_one({"articles.first": imei},
                                                 {"$set": new_object})
         if query.matched_count > 0:
@@ -501,8 +523,8 @@ def handle_imei_checking(system_code: str, storage_id: str, imei: str) -> tuple:
         archive_check = check_archive_query(system_code, storage_id, imei)
 
         if imei_check and archive_check:
-            return True, "موفق"
-        return False, "ناموفق"
+            return True, "کد معتبر است"
+        return False, "کد نامعتبر است"
     except Exception:
         return False, "مشکل سیستمی رخ داده است"
 
