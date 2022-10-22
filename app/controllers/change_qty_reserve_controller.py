@@ -308,8 +308,7 @@ def transfer_products(transfer_object, system_code, staff_name):
                                         transfer_object['referral_number'],
                                         transfer_object['quantity_type'], 'staff')
         elif transfer_object['status_type'] == "transfer":
-            return import_transfer_form(products, transfer_object['dst_warehouse'],
-                                        transfer_object['src_warehouse'],
+            return import_transfer_form(products, transfer_object['src_warehouse'], transfer_object['dst_warehouse'],
                                         transfer_object['referral_number'],
                                         transfer_object['quantity_type'], 'staff')
         return {'success': False, 'error': 'status not fount', 'status_code': 400}
@@ -469,4 +468,3 @@ def add_to_reserve_reorder(order, staff_name):
         return {'success': True, 'message': 'done', 'status_code': 200}
     except:
         return {'success': False, 'message': 'log error', 'status_code': 409}
-
