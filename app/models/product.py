@@ -619,7 +619,9 @@ class Product:
                 for group in db_data:
                     kowsar_data = mongo.kowsar_collection.find_one({"system_code": group["system_code"][:9]},
                                                                    {"_id": 0})
-                    group['name'] = kowsar_data.get('sub_category_label', '') + ' ' + kowsar_data.get('brand_label', '')
+                    group['name'] = kowsar_data.get('sub_category_label',
+                                                    kowsar_data.get("sub_category")) + ' ' + kowsar_data.get(
+                        'brand_label', kowsar_data.get("brand"))
                     for model in group['models']:
                         for product in model['products']:
                             product['guaranty'] = {"value": product['guaranty'],

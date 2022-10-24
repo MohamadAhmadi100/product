@@ -132,7 +132,7 @@ class KowsarGetter:
         """
         with MongoConnection() as client:
             if system_code == "00":
-                regex = ".{2}$"
+                regex = "^[0-9]{2}$"
                 label = "main_category"
             elif len(system_code) == 2:
                 label = "sub_category"
