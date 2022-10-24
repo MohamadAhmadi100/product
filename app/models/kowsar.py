@@ -132,7 +132,7 @@ class KowsarGetter:
         """
         with MongoConnection() as client:
             if system_code == "00":
-                regex = ".{2}$"
+                regex = "^[0-9]{2}$"
                 label = "main_category"
             elif len(system_code) == 2:
                 label = "sub_category"
@@ -360,7 +360,7 @@ class KowsarGroup:
             if parent_system_code_len == 2:
                 parent_data['sub_category'] = self.name
             elif parent_system_code_len == 6:
-                parent_data['brand'] = self.name
+                parent_data['brand'] = self.name if ' ' not in self.name else " ".join(self.name.split(" ")[1:])
             elif parent_system_code_len == 9:
                 parent_data['model'] = self.name
             elif parent_system_code_len == 13:
