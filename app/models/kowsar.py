@@ -360,7 +360,7 @@ class KowsarGroup:
             if parent_system_code_len == 2:
                 parent_data['sub_category'] = self.name
             elif parent_system_code_len == 6:
-                parent_data['brand'] = self.name
+                parent_data['brand'] = self.name if ' ' not in self.name else " ".join(self.name.split(" ")[1:])
             elif parent_system_code_len == 9:
                 parent_data['model'] = self.name
             elif parent_system_code_len == 13:
