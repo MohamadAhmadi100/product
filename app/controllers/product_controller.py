@@ -214,6 +214,13 @@ def price_list_all(customer_type, sub_category, brand, model, allowed_storages):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
+def price_list_tehran(customer_type, sub_category, brand, model, allowed_storages):
+    result = Product.price_list_tehran(customer_type, sub_category, brand, model, allowed_storages)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
 def get_basket_product(system_code, storage_id, customer_type):
     result = Product.get_basket_product(system_code, storage_id, customer_type)
     if result:
