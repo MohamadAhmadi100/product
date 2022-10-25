@@ -300,48 +300,51 @@ def inv_report(storages, system_code, name, daily_system_code, daily_result):
                             pass
                         else:
                             data['customer_type'] = key
-                            for storage_key, storage_value, in value['storages'].items():
-                                if storage_value['storage_id'] in storages:
-                                    if storage_value.get('quantity') is not None and storage_value.get('quantity') > 0:
-                                        total_count += storage_value['quantity']
-                                        total_price += storage_value['regular'] * storage_value['quantity']
-                                        # daily sales
-                                        if {"systemCode": items['system_code'],
-                                            "stockId": storage_value['storage_id']} in daily_system_code:
-                                            index = daily_system_code.index(
-                                                {"systemCode": items['system_code'],
-                                                 "stockId": storage_value['storage_id']})
-                                            daily_sale = daily_result[index]['count']
-                                        else:
-                                            daily_sale = 0
-                                        # balanced avg
-                                        if items['system_code'] in bavg_system_code:
-                                            index_bavg = bavg_system_code.index(items['system_code'])
-                                            bavg_sale = bavg_result[index_bavg]['result']
-                                        else:
-                                            bavg_sale = 0
+                            try:
+                                for storage_key, storage_value, in value['storages'].items():
+                                    if storage_value['storage_id'] in storages:
+                                        if storage_value.get('quantity') is not None and storage_value.get('quantity') > 0:
+                                            total_count += storage_value['quantity']
+                                            total_price += storage_value['regular'] * storage_value['quantity']
+                                            # daily sales
+                                            if {"systemCode": items['system_code'],
+                                                "stockId": storage_value['storage_id']} in daily_system_code:
+                                                index = daily_system_code.index(
+                                                    {"systemCode": items['system_code'],
+                                                     "stockId": storage_value['storage_id']})
+                                                daily_sale = daily_result[index]['count']
+                                            else:
+                                                daily_sale = 0
+                                            # balanced avg
+                                            if items['system_code'] in bavg_system_code:
+                                                index_bavg = bavg_system_code.index(items['system_code'])
+                                                bavg_sale = bavg_result[index_bavg]['result']
+                                            else:
+                                                bavg_sale = 0
 
-                                        result.append({
-                                            "systemCode": items['system_code'],
-                                            "sku": items['name'],
-                                            "model": items['model'],
-                                            "seller": items['seller'],
-                                            "color": items['color'],
-                                            "brand": items['brand'],
-                                            "cat": items['main_category'],
-                                            "subCat": items['sub_category'],
-                                            "guaranty": items['guaranty'],
-                                            "stockId": storage_value['storage_id'],
-                                            "quantity": storage_value['quantity'],
-                                            "reserve": storage_value['reserved'],
-                                            "salable": storage_value['quantity'] - storage_value['reserved'],
-                                            "dailySales": daily_sale,
-                                            "balancedAvg": bavg_sale,
-                                            "price": storage_value['regular'],
-                                            "customer_type": key
-                                        })
-                                    else:
-                                        pass
+                                            result.append({
+                                                "systemCode": items['system_code'],
+                                                "sku": items['name'],
+                                                "model": items['model'],
+                                                "seller": items['seller'],
+                                                "color": items['color'],
+                                                "brand": items['brand'],
+                                                "cat": items['main_category'],
+                                                "subCat": items['sub_category'],
+                                                "guaranty": items['guaranty'],
+                                                "stockId": storage_value['storage_id'],
+                                                "quantity": storage_value['quantity'],
+                                                "reserve": storage_value['reserved'],
+                                                "salable": storage_value['quantity'] - storage_value['reserved'],
+                                                "dailySales": daily_sale,
+                                                "balancedAvg": bavg_sale,
+                                                "price": storage_value['regular'],
+                                                "customer_type": key
+                                            })
+                                        else:
+                                            pass
+                            except:
+                                pass
                 else:
                     pass
             # build object for response
@@ -569,7 +572,7 @@ def edit_product_inventory(customer_type_object, quantity, min_qty,
             return False, "تعداد تخصیص داده شده بیشتر از موجودی می باشد"
         if quantity < customer_type_object["quantity"]:
             if customer_type_object["reserved"] > quantity:
-            # if customer_type_object["quantity"] - customer_type_object["reserved"] < quantity:
+                # if customer_type_object["quantity"] - customer_type_object["reserved"] < quantity:
                 return False, "تغییر موجودی مجاز نمی باشد"
         customer_type_object["quantity"] = quantity
         customer_type_object["min_qty"] = min_qty
@@ -624,11 +627,11 @@ def handle_cardex(qty_object,
             "sku": "",
             "type": service_name,
             "qty": count,
-            "old_quantity": qty_object.get("quantity",0),
-            "old_reserve": qty_object.get("reserved",0),
+            "old_quantity": qty_object.get("quantity", 0),
+            "old_reserve": qty_object.get("reserved", 0),
             "edit_date": str(jdatetime.datetime.now()).split(".")[0],
             "customer_type": customer_type,
-            "old_inventory": qty_object.get("inventory",0),
+            "old_inventory": qty_object.get("inventory", 0),
             "biFlag": False
         }
 
