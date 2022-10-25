@@ -502,6 +502,9 @@ class Product:
                         ],
                         "products": [
                             {
+                                "$match": {}
+                            },
+                            {
                                 '$group': {
                                     '_id': {
                                         'system_code': {
@@ -618,11 +621,11 @@ class Product:
                 }
             ]
             if sub_category:
-                pipe_lines[7]['$match']["root_obj.sub_category"] = sub_category
+                pipe_lines[7]["$facet"]['products'][0]['$match']["root_obj.sub_category"] = sub_category
             if brand:
-                pipe_lines[7]['$match']["root_obj.brand"] = brand
+                pipe_lines[7]["$facet"]['products'][0]['$match']["root_obj.brand"] = brand
             if model:
-                pipe_lines[7]['$match']["root_obj.model"] = model
+                pipe_lines[7]["$facet"]['products'][0]['$match']["root_obj.model"] = model
             db_data = list(mongo.product.aggregate(pipe_lines))
             return db_data[0]
 
