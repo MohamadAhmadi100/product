@@ -98,13 +98,11 @@ class KowsarGetter:
                 configs = client.kowsar_collection.find_one(
                     {"system_code": {"$regex": "^%s.{10}$" % (system_code[:6])}},
                     {"configs_keys": {
-                        '$setIntersection': {
-                            '$reduce': {
-                                'input': {"$objectToArray": "$configs"},
-                                'initialValue': [],
-                                'in': {
-                                    '$concatArrays': ['$$value', ['$$this.k']]
-                                }
+                        '$reduce': {
+                            'input': {"$objectToArray": "$configs"},
+                            'initialValue': [],
+                            'in': {
+                                '$concatArrays': ['$$value', ['$$this.k']]
                             }
                         }
                     }})
