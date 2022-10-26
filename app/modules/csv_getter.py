@@ -71,7 +71,7 @@ def get_csv(storage_id):
             writer.writerow(["system_code", "name", "color", "guaranty", "storage_id", "quantity", "reserved"])
             for row in result:
                 writer.writerow([row['system_code'], row['name'], row['color'], row['guaranty'], row['storage_id'],
-                                 row['quantity'], row['reserved']])
+                                 row.get('quantity'), row.get("reserved")])
 
         with open('Products.csv', 'rb') as f:
             data = f.read()
