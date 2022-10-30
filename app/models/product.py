@@ -603,7 +603,32 @@ class Product:
             if model:
                 pipe_lines[7]["$facet"]['products'][0]['$match']["root_obj.model"] = model
             db_data = list(mongo.product.aggregate(pipe_lines))
-            return db_data[0]
+            db_data = db_data[0] if db_data else {}
+            filters = db_data.get('filters')
+            db_data = db_data.get("products")
+            for _filter in filters:
+                for brand in _filter.get("brands", []):
+                    kowsar_data = mongo.kowsar_collection.find_one(
+                        {"brand": brand.get("brand"), "sub_category": _filter.get("name"),
+                         "system_code": {"$regex": ".{25}"}})
+                    brand['label'] = kowsar_data.get('brand_label', brand.get('brand'))
+                _filter['label'] = kowsar_data.get('sub_category_label', _filter.get("name"))
+
+            with RedisConnection() as redis:
+                for group in db_data:
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": group["system_code"][:9]},
+                                                                   {"_id": 0})
+                    group['name'] = kowsar_data.get('sub_category_label',
+                                                    kowsar_data.get("sub_category")) + ' ' + kowsar_data.get(
+                        'brand_label', kowsar_data.get("brand"))
+                    for model in group['models']:
+                        for product in model['products']:
+                            product['guaranty'] = {"value": product['guaranty'],
+                                                   "label": redis.client.hget(product['guaranty'], "fa_ir")}
+                            product['color'] = {"value": product['color'],
+                                                "label": redis.client.hget(product['color'], "fa_ir")}
+
+            return {'data': db_data, "filters": filters}
 
     @staticmethod
     def price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages):
@@ -848,7 +873,6 @@ class Product:
             ]
             if storage_id or allowed_storages:
                 pipe_lines[6]['$match']["storage_id"] = storage_id if storage_id else allowed_storages[0]
-
             if sub_category:
                 pipe_lines[7]['$facet']['products'][0]['$match']["root_obj.sub_category"] = sub_category
             if brand:
