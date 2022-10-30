@@ -143,8 +143,9 @@ def get_product_by_system_code(system_code: str, lang: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type):
-    result = Product.get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type)
+def get_product_list_by_system_code(system_code, page, per_page, storages, user_allowed_storages, customer_type):
+    result = Product.get_product_list_by_system_code(system_code, page, per_page, storages, user_allowed_storages,
+                                                     customer_type)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
@@ -160,10 +161,10 @@ def get_product_page(system_code: str, user_allowed_storages: list, customer_typ
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_product_by_name(name: str, user_allowed_storages: list, customer_type: str):
+def get_product_by_name(name: str, storages: list, user_allowed_storages: list, customer_type: str):
     """
     """
-    result = Product.get_product_by_name(name, user_allowed_storages, customer_type)
+    result = Product.get_product_by_name(name, storages, user_allowed_storages, customer_type)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
