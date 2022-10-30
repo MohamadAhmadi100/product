@@ -157,18 +157,17 @@ class Product:
                         'root_obj': 1
                     }
                 }, {
-                    '$match': {
+                    '$match': dict({
                         'customer_type': customer_type,
                         'qty': {
                             '$gt': 0
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        'storage_id': {
-                            '$in': allowed_storages
                         }
-                    }
+                    }, **({} if not allowed_storages else {'storage_id': {
+                        '$in': allowed_storages
+                    }}))
                 }, {
                     '$group': {
                         '_id': {
@@ -511,9 +510,7 @@ class Product:
                                             '$substr': [
                                                 '$system_code', 0, 16
                                             ]
-                                        },
-                                        'storage_id': '$storage_id',
-                                        'storage_label': '$storage_label'
+                                        }
                                     },
                                     'header': {
                                         '$push': {
@@ -594,27 +591,6 @@ class Product:
                                 '$sort': {
                                     'system_code': 1
                                 }
-                            }, {
-                                '$group': {
-                                    '_id': {
-                                        'storage_id': '$storage_id',
-                                        'storage_label': '$storage_label'
-                                    },
-                                    'data': {
-                                        '$push': {
-                                            'system_code': '$system_code',
-                                            'name': '$name',
-                                            'models': '$models'
-                                        }
-                                    }
-                                }
-                            }, {
-                                '$project': {
-                                    'storage_id': '$_id.storage_id',
-                                    'storage_label': '$_id.storage_label',
-                                    '_id': 0,
-                                    'data': 1
-                                }
                             }
                         ]
                     }
@@ -627,7 +603,32 @@ class Product:
             if model:
                 pipe_lines[7]["$facet"]['products'][0]['$match']["root_obj.model"] = model
             db_data = list(mongo.product.aggregate(pipe_lines))
-            return db_data[0]
+            db_data = db_data[0] if db_data else {}
+            filters = db_data.get('filters')
+            db_data = db_data.get("products")
+            for _filter in filters:
+                for brand in _filter.get("brands", []):
+                    kowsar_data = mongo.kowsar_collection.find_one(
+                        {"brand": brand.get("brand"), "sub_category": _filter.get("name"),
+                         "system_code": {"$regex": ".{25}"}})
+                    brand['label'] = kowsar_data.get('brand_label', brand.get('brand'))
+                _filter['label'] = kowsar_data.get('sub_category_label', _filter.get("name"))
+
+            with RedisConnection() as redis:
+                for group in db_data:
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": group["system_code"][:9]},
+                                                                   {"_id": 0})
+                    group['name'] = kowsar_data.get('sub_category_label',
+                                                    kowsar_data.get("sub_category")) + ' ' + kowsar_data.get(
+                        'brand_label', kowsar_data.get("brand"))
+                    for model in group['models']:
+                        for product in model['products']:
+                            product['guaranty'] = {"value": product['guaranty'],
+                                                   "label": redis.client.hget(product['guaranty'], "fa_ir")}
+                            product['color'] = {"value": product['color'],
+                                                "label": redis.client.hget(product['color'], "fa_ir")}
+
+            return {'data': db_data, "filters": filters}
 
     @staticmethod
     def price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages):
@@ -718,7 +719,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'storage_id': storage_id if storage_id else allowed_storages[0]
+                        "storage_id": '1'
                     }
                 },
                 {
@@ -870,6 +871,8 @@ class Product:
                     }
                 }
             ]
+            if storage_id or allowed_storages:
+                pipe_lines[6]['$match']["storage_id"] = storage_id if storage_id else allowed_storages[0]
             if sub_category:
                 pipe_lines[7]['$facet']['products'][0]['$match']["root_obj.sub_category"] = sub_category
             if brand:
@@ -889,19 +892,18 @@ class Product:
                     brand['label'] = kowsar_data.get('brand_label', brand.get('brand'))
                 _filter['label'] = kowsar_data.get('sub_category_label', _filter.get("name"))
 
-            warehouses = list(
-                mongo.warehouses.find(
-                    {"isActive": True, "warehouse_id": {"$in": [int(storage) for storage in allowed_storages]}},
-                    {"_id": 0}))
+            storages_query = {
+                "isActive": True
+            }
+            if allowed_storages:
+                storages_query.update({"warehouse_id": {"$in": list(map(int, allowed_storages))}})
 
-            storages_labels = list()
-            storage_id = int(storage_id) if storage_id else int(allowed_storages[0])
-            for storage in warehouses:
-                storages_labels.append({
-                    "storage_id": storage.get("warehouse_id"),
-                    "label": storage.get('warehouse_name'),
-                    "active": True if storage_id == storage.get("warehouse_id") else False
-                })
+            storages_labels = list(
+                mongo.warehouses.find(
+                    storages_query,
+                    {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name",
+                     "active": {"$cond": [{"$eq": ["$warehouse_id", int(storage_id) if storage_id else int(
+                         allowed_storages[0]) if allowed_storages else 1]}, True, False]}}))
 
             with RedisConnection() as redis:
                 for group in db_data:
@@ -1017,16 +1019,14 @@ class Product:
             return list(result)
 
     @staticmethod
-    def get_product_by_name(name, user_allowed_storages, customer_type):
+    def get_product_by_name(name, storages, user_allowed_storages, customer_type):
         with MongoConnection() as mongo:
-            warehouses = list(mongo.warehouses.find({}, {"_id": 0}))
-            storages_labels = list()
-            for allowed_storage in user_allowed_storages:
-                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
-                storages_labels.append({
-                    "storage_id": allowed_storage,
-                    "label": obj[0]['warehouse_name'] if obj else None
-                })
+            warehouses_query = dict({"isActive": True}, **(
+                {} if not user_allowed_storages else {"warehouse_id": {"$in": list(map(int, user_allowed_storages))}}))
+            storages_labels = list(
+                mongo.warehouses.find(warehouses_query,
+                                      {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name"}))
+
             pipe_lines = [
                 {
                     '$match': {
@@ -1090,8 +1090,7 @@ class Product:
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        "storage_id": {"$in": user_allowed_storages}
+                        }
                     }
                 }, {
                     '$group': {
@@ -1183,6 +1182,8 @@ class Product:
                     }
                 }
             ]
+            if storages or user_allowed_storages:
+                pipe_lines[6]['$match']["storage_id"] = {"$in": storages if storages else user_allowed_storages}
             result = mongo.product.aggregate(pipe_lines + [{"$limit": 50}])
 
             product_list = list()
@@ -1287,16 +1288,15 @@ class Product:
                         'root_obj': 1
                     }
                 }, {
-                    '$match': {
+                    '$match': dict({
                         'customer_type': customer_type,
                         'qty': {
                             '$gt': 0
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        "storage_id": {"$in": user_allowed_storages}
-                    }
+                        }
+                    }, **({"storage_id": {"$in": user_allowed_storages}} if user_allowed_storages else {}))
                 }, {
                     '$group': {
                         '_id': '$_id',
@@ -1554,16 +1554,16 @@ class Product:
                         'root_obj': 1
                     }
                 }, {
-                    '$match': {
+                    '$match': dict({
                         'customer_type': customer_type,
                         'qty': {
                             '$gt': 0
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        "storage_id": {"$in": user_allowed_storages}
-                    }
+                        }
+                    }, **({} if not user_allowed_storages else {
+                        "storage_id": {"$in": user_allowed_storages}}))
                 }, {
                     '$group': {
                         '_id': '$_id',
@@ -1762,20 +1762,19 @@ class Product:
             return False
 
     @staticmethod
-    def get_product_list_by_system_code(system_code, page, per_page, user_allowed_storages, customer_type):
+    def get_product_list_by_system_code(system_code, page, per_page, storages, user_allowed_storages, customer_type):
         with MongoConnection() as mongo:
             def db_data_getter(query):
                 db_data = mongo.kowsar_collection.find_one(query, {"_id": 0})
                 return db_data if db_data else {}
 
-            warehouses = list(mongo.warehouses.find({}, {"_id": 0}))
-            storages_labels = list()
-            for allowed_storage in user_allowed_storages:
-                obj = [i for i in warehouses if str(i['warehouse_id']) == allowed_storage]
-                storages_labels.append({
-                    "storage_id": allowed_storage,
-                    "label": obj[0]['warehouse_name'] if obj else None
-                })
+            warehouses_query = dict({"isActive": True}, **(
+                {} if not user_allowed_storages else {
+                    "warehouse_id": {"$in": list(map(int, user_allowed_storages))}}))
+            storages_labels = list(
+                mongo.warehouses.find(warehouses_query,
+                                      {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name"}))
+
             skips = per_page * (page - 1)
             brands_pipe_line = [
                 {
@@ -1835,8 +1834,7 @@ class Product:
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        "storage_id": {"$in": user_allowed_storages}
+                        }
                     }
                 }, {
                     '$group': {
@@ -1884,6 +1882,8 @@ class Product:
                     }
                 }
             ]
+            if storages or user_allowed_storages:
+                brands_pipe_line[6]['$match']["storage_id"] = {"$in": storages if storages else user_allowed_storages}
             brands_list_db = mongo.product.aggregate(brands_pipe_line)
             brands_list_db = brands_list_db if brands_list_db.alive else []
             brands_list = list()
@@ -1980,8 +1980,7 @@ class Product:
                         },
                         'min': {
                             '$gte': 0
-                        },
-                        "storage_id": {"$in": user_allowed_storages}
+                        }
                     }
                 }, {
                     '$group': {
@@ -2077,6 +2076,8 @@ class Product:
                     }
                 }
             ]
+            if storages or user_allowed_storages:
+                pipe_lines[6]['$match']["storage_id"] = {"$in": storages if storages else user_allowed_storages}
             result = mongo.product.aggregate(pipe_lines + [{
                 '$skip': skips
             }, {
@@ -2752,7 +2753,7 @@ class Quantity:
                             "warehouse_label": obj[0].get("warehouse_name"),
                             })
             db_query = {f"warehouse_details.{customer_type}.storages.{storage_id}.{key}": value for key, value in
-                        storage.items() if value}
+                        storage.items() if value is not None}
 
             db_query.update({
                 "step": {"$cond": [{"$eq": ["$step", 3]}, 4, "$step"]}
