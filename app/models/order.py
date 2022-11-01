@@ -9,8 +9,7 @@ from app.helpers.mongo_connection import MongoConnection
 from pymongo import errors
 import json
 from app.helpers.telegram import admin_handler
-
-
+import os
 
 def exit_order_handler(order_number: int,
                        storage_id: str,
@@ -349,7 +348,7 @@ def check_in_archive(system_code: str, storage_id: str, imeis: list) -> bool:
 
 
 def insert_qty_log(new_data, record_type):
-    with open('../../qty_logs.json', 'r+') as file:
+    with open(f"{os.getcwd()}/static_files/qty_logs.json", 'r+') as file:
         # First we load existing data into a dict.
         file_data = json.load(file)
         # Join new_data with file_data inside emp_details
@@ -361,7 +360,7 @@ def insert_qty_log(new_data, record_type):
 
 
 def insert_error_log(new_error):
-    with open('../error_logs.json', 'r+') as file:
+    with open(f"{os.getcwd()}/static_files/error_logs.json", 'r+') as file:
         # First we load existing data into a dict.
         file_data = json.load(file)
         # Join new_data with file_data inside emp_details
@@ -370,7 +369,6 @@ def insert_error_log(new_error):
         file.seek(0)
         # convert back to json.
         json.dump(file_data, file, indent=4)
-insert_error_log({"hj":9})
 
 def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: str) -> bool:
     try:
