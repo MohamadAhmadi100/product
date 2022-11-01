@@ -901,7 +901,8 @@ class Product:
             storages_labels = list(
                 mongo.warehouses.find(
                     storages_query,
-                    {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name",
+                    {"_id": 0, "storage_id": {"$convert": {"input": "$warehouse_id", "to": "string"}},
+                     "label": "$warehouse_name",
                      "active": {"$cond": [{"$eq": ["$warehouse_id", int(storage_id) if storage_id else int(
                          allowed_storages[0]) if allowed_storages else 1]}, True, False]}}))
 
@@ -1025,7 +1026,8 @@ class Product:
                 {} if not user_allowed_storages else {"warehouse_id": {"$in": list(map(int, user_allowed_storages))}}))
             storages_labels = list(
                 mongo.warehouses.find(warehouses_query,
-                                      {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name"}))
+                                      {"_id": 0, "storage_id": {"$convert": {"input": "$warehouse_id", "to": "string"}},
+                                       "label": "$warehouse_name"}))
 
             pipe_lines = [
                 {
@@ -1773,7 +1775,8 @@ class Product:
                     "warehouse_id": {"$in": list(map(int, user_allowed_storages))}}))
             storages_labels = list(
                 mongo.warehouses.find(warehouses_query,
-                                      {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name"}))
+                                      {"_id": 0, "storage_id": {"$convert": {"input": "$warehouse_id", "to": "string"}},
+                                       "label": "$warehouse_name"}))
 
             skips = per_page * (page - 1)
             brands_pipe_line = [
@@ -2488,7 +2491,9 @@ class Product:
 
             products_list = result.get("list", [])
             warehouses_list = list(mongo.warehouses.find({"isActive": True}, {"_id": 0,
-                                                                              "storage_id": "$warehouse_id",
+                                                                              "storage_id": {
+                                                                                  "$convert": {"input": "$warehouse_id",
+                                                                                               "to": "string"}},
                                                                               "storage_label": "$warehouse_name",
                                                                               }))
             filters = [

@@ -443,50 +443,6 @@ class OrderTest(TestCase):
 
             )
 
-    def test_quantity_checking(self):
-        self.assertEqual(
-            quantity_checking(10, 10, 15),
-            False
-        )
-        self.assertEqual(
-            quantity_checking(10, 15, 15),
-            False
-        )
-        self.assertEqual(
-            quantity_checking(15, 10, 15),
-            False
-        )
-        self.assertEqual(
-            quantity_checking(10, 10, 10),
-            True
-        )
-#
-    def test_create_rollback(self):
-        qty_object = {
-
-            "orderNumber": 11,
-            "storageId": "2",
-            "systemCode": "123",
-            "count": 5,
-            "staffId": 54545,
-            "staffName": "dalam",
-            "imeis": ["1", "2", "3", "4", "5"],
-            'customerType': 'B2B',
-        }
-        self.assertEqual(
-            create_rollback(
-                11,
-                "2",
-                "123",
-                5,
-                54545,
-                "dalam",
-                ["1", "2", "3", "4", "5"],
-                'B2B',
-            ),
-            qty_object
-        )
-
     def test_checking_imeis(self):
         self.insert_initial_data()
         with self.mongo_mock:
@@ -628,12 +584,13 @@ class OrderTest(TestCase):
             ]
 
             self.assertEqual(
+                update_imeis(rollback_list2),
+                False
+            )
+
+            self.assertEqual(
                 update_imeis(rollback_list1),
                 True
             )
 
-            self.assertEqual(
-                update_imeis(rollback_list2),
-                False
-            )
 

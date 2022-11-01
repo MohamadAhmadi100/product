@@ -33,5 +33,9 @@ class Settings:
     RECIPIENTS: list = os.getenv("RECIPIENTS")
     TEMPLATE: str = os.getenv("TEMPLATE")
 
+    # telegram
+    TELEGRAM_REQUEST_URL: str = os.getenv("TELEGRAM_REQUEST_URL")
+    TELEGRAM_ID: list = os.getenv("TELEGRAM_ID")
+    DEBUG_MODE: bool = int(os.getenv("DEBUG_MODE"))
 
 settings = Settings()
