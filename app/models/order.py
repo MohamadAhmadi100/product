@@ -6,6 +6,10 @@
 """
 import jdatetime
 from app.helpers.mongo_connection import MongoConnection
+from pymongo import errors
+import json
+from app.helpers.telegram import admin_handler
+
 
 
 def exit_order_handler(order_number: int,
@@ -14,7 +18,6 @@ def exit_order_handler(order_number: int,
                        staff_id: int,
                        staff_name: str,
                        customer_type: str) -> tuple:
-
     try:
         rollback_list = []
         rollback_flag = True
@@ -36,23 +39,23 @@ def exit_order_handler(order_number: int,
 
             if success:
                 # create list of updated any product
-                rollback_object = create_rollback(order_number,
-                                                  storage_id,
-                                                  system_code,
-                                                  count,
-                                                  staff_id,
-                                                  staff_name,
-                                                  imeis,
-                                                  customer_type
-                                                  )
+                rollback_object = {
+
+                    "orderNumber": order_number,
+                    "storageId": storage_id,
+                    "systemCode": system_code,
+                    "count": count,
+                    "staffId": staff_id,
+                    "staffName": staff_name,
+                    "imeis": imeis,
+                    "customerType": customer_type
+                }
                 rollback_list.append(rollback_object)
             else:
                 rollback_flag = False
-                # error_message = message
                 break
-
         if not rollback_flag:
-            if len(rollback_list) > 0:
+            if rollback_list:
                 # rolllbacking updated products and return error message
                 rollback_products(rollback_list)
                 return False, message
@@ -85,12 +88,16 @@ def update_quantity(order_number: int,
     """
     try:
         # get product and object by storage_id and customer_type
-        product, objects = get_product_query(storage_id, system_code, customer_type)
-        if not objects:
+        product = get_product_query(storage_id, system_code, customer_type)
+        if not product:
             return False, "مغایرت در سیستم کد"
+        qty_object = product.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
+        if not qty_object:
+            return False, "مغایرت در اطلاعات"
+        return product, qty_object
         # flag is False whene callled this func by rollback
         if flag:
-            if not quantity_checking(objects["quantity"], objects["reserved"], count):
+            if objects["quantity"] < count or objects["reserved"] < count:
                 return False, "مغایرت در تعداد موجودی"
         cardex = create_cardex_object(objects,
                                       order_number,
@@ -109,60 +116,52 @@ def update_quantity(order_number: int,
         if not cardex_query(cardex):
             return False, "خطا در آپدیت کاردکس"
         return True, "موفق"
-    except:
-        return False, "خطای سیستمی"
-
-
-def create_rollback(order_number: int,
-                    storage_id: str,
-                    system_code: str,
-                    count: int,
-                    staff_id: int,
-                    staff_name: str,
-                    imeis: list,
-                    customer_type: str
-                    ) -> dict:
-    try:
-        rollback_object = {
-
-            "orderNumber": order_number,
-            "storageId": storage_id,
-            "systemCode": system_code,
-            "count": count,
-            "staffId": staff_id,
-            "staffName": staff_name,
-            "imeis": imeis,
-            "customerType": customer_type
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "update_quantity",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
         }
-        return rollback_object
-    except Exception:
-        return {}
+        insert_error_log(error)
+
+        return False, "خطای سیستمی رخ داده است"
 
 
 def rollback_products(products: list) -> bool:
-    # TOdo with code reviewer
     try:
         for product in products:
-            order_number = product["orderNumber"]
-            storage_id = product["storageId"]
-            system_code = product["systemCode"]
-            count = product["count"]
-            staff_id = product["staffId"]
-            staff_name = product["staffName"]
-            customer_type = product["customerType"]
+            success, message = update_quantity(
+                product["orderNumber"],
+                product["storageId"],
+                product["systemCode"],
+                product["count"],
+                product["staffId"],
+                product["staffName"],
+                "rollbackExitOrder",
+                False,
+                product["customerType"]
+            )
+            if not success:
+                log = {
+                    "type": "rollbackExitOrder",
+                    "systemCode": product["systemCode"],
+                    "customerType": product["customerType"],
+                    "storageId": product["storageId"],
+                    "count": product["count"],
+                    "date": str(jdatetime.datetime.now()).split(".")[0],
+                }
+                insert_qty_log(log, "products")
+                admin_handler("rollbackExitOrder")
 
-            update_quantity(order_number,
-                            storage_id,
-                            system_code,
-                            count,
-                            staff_id,
-                            staff_name,
-                            "rollbackExitOrder",
-                            False,
-                            customer_type
-                            )
-        return True
-    except Exception:
+
+
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "rollback_products",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -176,28 +175,32 @@ def update_imeis(rollback_list: list) -> bool:
         update_flag = True
         for pro in rollback_list:
             pro_imeis = pro["imeis"]
-            if not delete_imei_query(pro_imeis):
+            success, returned_imeis = delete_imei_query(pro_imeis)
+            if not success:
+                add_imei_query(returned_imeis, pro["systemCode"], pro["storageId"], "imeis")
                 update_flag = False
                 break
             imei_list.append(pro)
 
-            if not update_archive(pro_imeis, False):
+            success, returned_archive = update_archive_query(pro_imeis, False)
+            if not success:
+                update_archive_query(returned_archive, True)
                 update_flag = False
                 break
             archive_list.append(pro)
 
-        if not update_flag:
-            if len(archive_list) > 0 or len(imei_list) > 0:
-                if not imeis_rollback(imei_list, archive_list):
-                    # TOdo insert log
-                    return False
+        if update_flag:
+            return True
+        imeis_rollback(imei_list, archive_list)
 
-                return False
-            else:
-                return False
-
-        return True
-    except Exception:
+        return False
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "update_imeis",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -234,53 +237,31 @@ def create_cardex_object(qty_object: dict,
         quantity_cardex_data["new_reserve"] = qty_object["reserved"]
         return quantity_cardex_data
 
-    except Exception:
-        return {}
-
-
-def create_imeis_obj(imeis: list) -> dict:
-    """
-    create object for imei collection and use of that in add to collection in rollback
-    """
-    try:
-        imei_obj = []
-        for i in imeis:
-            obj = {
-                "imei": i
-            }
-            imei_obj.append(obj)
-        return imei_obj
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "create_cardex_object",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return {}
 
 
 def imeis_rollback(imeis: list, archives: list) -> bool:
     try:
-        if len(imeis) > 0:
-
+        if imeis:
             for imei in imeis:
-                if not add_imei_query(imei["imeis"], imei["systemCode"], imei["storageId"], "imeis"):
-                    # TOdo insert log
-                    return False
-        if len(archives) > 0:
+                add_imei_query(imei["imeis"], imei["systemCode"], imei["storageId"], "imeis")
+        if archives:
             for pro in archives:
-                if not update_archive(pro["imeis"], True):
-                    # TOdo insert log
-                    return False
-        return True
-    except:
-        return False
-
-
-def update_archive(imeis: list, flag: bool) -> bool:
-
-    try:
-        for imei in imeis:
-            response = update_archive_query(imei, {"articles.$.exist": flag})
-            if not response:
-                return False
-        return True
-    except:
+                update_archive_query(pro["imeis"], True)
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "imeis_rollback",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -297,27 +278,38 @@ def update_reserve_qty(qty_object: dict, count: int, flag: bool) -> bool:
             qty_object["inventory"] += count
             qty_object["reserved"] += count
         return True
-    except Exception:
-        return False
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "update_reserve_qty",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return
+
+    # checking functions
 
 
-# checking functions
 def imeis_checking(rollback_list: list) -> bool:
     try:
-        flag = True
         for pro in rollback_list:
             pro_imeis = pro["imeis"]
             storage_id = pro["storageId"]
             system_code = pro["systemCode"]
-            check_imei_collection = check_is_imei(system_code, storage_id, pro_imeis)
-            check_archive_collection = check_in_archive(system_code, storage_id, pro_imeis)
-            if not check_imei_collection or not check_archive_collection:
-                flag = False
-                break
-        if flag:
-            return True
-        return False
-    except Exception:
+
+            for imei in pro_imeis:
+                if not check_imei_query(system_code, storage_id, imei, "imeis") or not check_archive_query(system_code,
+                                                                                                           storage_id,
+                                                                                                           imei):
+                    return False
+        return True
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "imeis_checking",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -327,7 +319,13 @@ def check_is_imei(system_code: str, storage_id: str, imeis: list) -> bool:
             if not check_imei_query(system_code, storage_id, imei, "imeis"):
                 return False
         return True
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "check_is_imei",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -337,26 +335,52 @@ def check_in_archive(system_code: str, storage_id: str, imeis: list) -> bool:
             if not check_archive_query(system_code, storage_id, imei):
                 return False
         return True
-    except Exception:
-        return False
-
-
-def quantity_checking(quantity: int, reserved: int, count: int) -> bool:
-    try:
-        if quantity < count or reserved < count:
-            return False
-        return True
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "check_in_archive",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
 # query functions
 
+
+def insert_qty_log(new_data, record_type):
+    with open('../../qty_logs.json', 'r+') as file:
+        # First we load existing data into a dict.
+        file_data = json.load(file)
+        # Join new_data with file_data inside emp_details
+        file_data[record_type].append(new_data)
+        # Sets file's current position at offset.
+        file.seek(0)
+        # convert back to json.
+        json.dump(file_data, file, indent=4)
+
+
+def insert_error_log(new_error):
+    with open('../error_logs.json', 'r+') as file:
+        # First we load existing data into a dict.
+        file_data = json.load(file)
+        # Join new_data with file_data inside emp_details
+        file_data["errors"].append(new_error)
+        # Sets file's current position at offset.
+        file.seek(0)
+        # convert back to json.
+        json.dump(file_data, file, indent=4)
+insert_error_log({"hj":9})
+
 def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: str) -> bool:
     try:
-        imei_list = create_imeis_obj(imeis)
-        if not imei_list:
-            return False
+        imei_list = []
+        for imei in imeis:
+            obj = {
+                "imei": imei
+            }
+            imei_list.append(obj)
+
         with MongoConnection() as mongo:
             query = mongo.db.imeis.update_one(
                 {"system_code": system_code, "storage_id": storage_id, "type": record_type},
@@ -365,10 +389,32 @@ def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: 
                         "$each": imei_list}}}
             )
 
-        if query.matched_count > 0:
-            return True
+        if query.matched_count == 0:
+            log = {
+                "type": "addImei",
+                "systemCode": system_code,
+                "storageId": storage_id,
+                "imeis": imei_list,
+                "date": str(jdatetime.datetime.now()).split(".")[0],
+            }
+            insert_qty_log(log, "imeis")
+            admin_handler("addImei")
+
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "add_imei_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
-    except Exception:
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "add_imei_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -378,42 +424,107 @@ def get_product_query(storage_id: str, system_code: str, customer_type: str) -> 
             product = mongo.product.find_one({"system_code": system_code})
         if not product:
             # insert_bug_log(None, objects)
-            return {}, {}
-        qty_object = product.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
-        if not qty_object:
+            return {}
+
             # insert_bug_log(None, objects)
-            return {}, {}
-        return product, qty_object
-    except Exception:
-        return {}, {}
+        return product
+
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "get_product_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return {}
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "get_product_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return {}
 
 
-def update_archive_query(imei: str, new_object: dict) -> bool:
+def update_archive_query(imeis: list, flag: bool) -> bool:
     try:
-        with MongoConnection() as mongo:
-            query = mongo.db.archive.update_one({"articles.first": imei},
-                                                {"$set": new_object})
-        if query.matched_count > 0:
-            return True
-        return False
-    except Exception:
-        return False
+        check_flag = True
+        archive_returned = []
+        for imei in imeis:
+            with MongoConnection() as mongo:
+                query = mongo.db.archive.update_one({"articles.first": imei},
+                                                    {"$set": {"articles.$.exist": flag}})
+            if query.matched_count > 0:
+                archive_returned.append(imei)
+            else:
+                if flag:
+                    log = {
+                        "type": "archive",
+                        "imei": imei,
+                        "date": str(jdatetime.datetime.now()).split(".")[0],
+                    }
+                    insert_qty_log(log, "archive")
+                    admin_handler("archive")
+                    pass
+
+                else:
+                    check_flag = False
+                    break
+        return check_flag, archive_returned
+
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "update_archive_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False, []
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "update_archive_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False, []
 
 
 def delete_imei_query(imeis: list) -> bool:
-    # ToDo check wirth code reviewer
     try:
+        flag = True
+        imeis_returned = []
         for imei in imeis:
             with MongoConnection() as mongo:
-                mongo.db.imeis.update_one({"imeis.imei": imei},
-                                          {"$pull": {
-                                              "imeis": {
-                                                  "imei": imei
-                                              }}}
-                                          )
+                query = mongo.db.imeis.update_one({"imeis.imei": imei},
+                                                  {"$pull": {
+                                                      "imeis": {
+                                                          "imei": imei
+                                                      }}}
+                                                  )
+                if query.matched_count > 0:
+                    imeis_returned.append(imei)
+                else:
+                    flag = False
+                    break
+        return flag, imeis_returned
 
-        return True
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "delete_imei_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "delete_imei_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -422,7 +533,22 @@ def product_query(system_code: str, product_object: dict) -> bool:
         with MongoConnection() as mongo:
             mongo.product.replace_one({"system_code": system_code}, product_object)
         return True
-    except Exception:
+
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "product_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "product_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -431,7 +557,21 @@ def cardex_query(quantity_cardex_data: dict) -> bool:
         with MongoConnection() as mongo:
             mongo.db.cardex.insert_one(quantity_cardex_data)
         return True
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "cardex_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "cardex_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -471,7 +611,21 @@ def check_imei_query(system_code: str, storage_id: str, imei: str, type: str) ->
 
         return False
 
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "check_imei_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "check_imei_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -511,7 +665,21 @@ def check_archive_query(system_code: str, storage_id: str, imei: str) -> bool:
             return False
 
         return False
-    except Exception:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "check_archive_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
+        return False
+    except errors as mongo:
+        error = {
+            "message": str(mongo),
+            "functionName": "check_archive_query",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False
 
 
@@ -519,10 +687,8 @@ def check_archive_query(system_code: str, storage_id: str, imei: str) -> bool:
 
 def handle_imei_checking(system_code: str, storage_id: str, imei: str) -> tuple:
     try:
-        imei_check = check_imei_query(system_code, storage_id, imei, "imeis")
-        archive_check = check_archive_query(system_code, storage_id, imei)
-
-        if imei_check and archive_check:
+        if check_imei_query(system_code, storage_id, imei, "imeis") and check_archive_query(system_code, storage_id,
+                                                                                            imei):
             return True, "کد معتبر است"
         return False, "کد نامعتبر است"
     except Exception:
