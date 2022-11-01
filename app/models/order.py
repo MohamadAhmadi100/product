@@ -369,7 +369,6 @@ def insert_error_log(new_error):
         file.seek(0)
         # convert back to json.
         json.dump(file_data, file, indent=4)
-insert_error_log({"hj":9})
 
 def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: str) -> bool:
     try:
