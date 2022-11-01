@@ -68,7 +68,33 @@ class Product:
                         '_id': 0,
                         'warehouse_details': 0
                     }
-                }
+                }, {
+                    '$addFields': {
+                        'brand': {
+                            'value': '$brand',
+                            'label': '$brand'
+                        },
+                        'color': {
+                            'value': '$color',
+                            'label': '$color'
+                        },
+                        'guaranty': {
+                            'value': '$guaranty',
+                            'label': '$guaranty'
+                        },
+                        'main_category': {
+                            'value': '$main_category',
+                            'label': '$main_category'
+                        },
+                        'seller': {
+                            'value': '$seller',
+                            'label': '$seller'
+                        },
+                        'sub_category': {
+                            'value': '$sub_category',
+                            'label': '$sub_category'
+                        }
+                    }}
             ]
             result = list(mongo.product.aggregate(pipe_lines))
             if result:
