@@ -349,7 +349,7 @@ def check_in_archive(system_code: str, storage_id: str, imeis: list) -> bool:
 
 
 def insert_qty_log(new_data, record_type):
-    with open('../../qty_logs.json', 'r+') as file:
+    with open('qty_logs.json', 'r+') as file:
         # First we load existing data into a dict.
         file_data = json.load(file)
         # Join new_data with file_data inside emp_details
@@ -361,7 +361,7 @@ def insert_qty_log(new_data, record_type):
 
 
 def insert_error_log(new_error):
-    with open('../error_logs.json', 'r+') as file:
+    with open('error_logs.json', 'r+') as file:
         # First we load existing data into a dict.
         file_data = json.load(file)
         # Join new_data with file_data inside emp_details
