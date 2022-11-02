@@ -26,7 +26,9 @@ class AddRemoveQtyReserve:
                                 storage_dict["reserved"] += count
                                 self.cardex['newReserve'] = storage_dict["reserved"]
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
+                                self.cardex['oldInventory'] = storage_dict["inventory"]
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
+                                self.cardex['newInventory'] = storage_dict["inventory"]
                                 client.product.replace_one({"system_code": system_code}, products)
                                 return {"success": True, "cardex": self.cardex}
                             else:
@@ -95,11 +97,11 @@ class AddRemoveQtyReserve:
                             if cusrsor == storage_id:
                                 self.cardex['qty'] = count
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
-                                # self.cardex['oldInventory'] = storage_dict["inventory"]
+                                self.cardex['oldInventory'] = storage_dict["inventory"]
                                 storage_dict["quantity"] += count
-                                # storage_dict["inventory"] += count
+                                storage_dict["inventory"] += count
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
-                                # self.cardex['newInventory'] = storage_dict["inventory"]
+                                self.cardex['newInventory'] = storage_dict["inventory"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 self.cardex['newReserve'] = storage_dict["reserved"]
                                 if price is not None:
@@ -109,9 +111,9 @@ class AddRemoveQtyReserve:
                     else:
                         self.cardex['qty'] = count
                         self.cardex['oldQuantity'] = 0
-                        # self.cardex['oldInventory'] = 0
+                        self.cardex['oldInventory'] = 0
                         self.cardex['newQuantity'] = count
-                        # self.cardex['newInventory'] = count
+                        self.cardex['newInventory'] = count
                         self.cardex['oldReserve'] = 0
                         self.cardex['newReserve'] = 0
                         warehouse_detail = find_warehouse(storage_id)
@@ -122,7 +124,7 @@ class AddRemoveQtyReserve:
                                 "regular": price,
                                 "reserved": 0,
                                 "quantity": count,
-                                # "inventory": count,
+                                "inventory": count,
                                 "min_qty": 1,
                                 "max_qty": 1,
                                 "warehouse_state": warehouse_detail['warehouses'].get('state'),
@@ -155,11 +157,11 @@ class AddRemoveQtyReserve:
                             if storage_dict["quantity"] > 0 or storage_dict["reserved"] > 0:
                                 self.cardex['qty'] = count
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
-                                # self.cardex['oldInventory'] = storage_dict["inventory"]
+                                self.cardex['oldInventory'] = storage_dict["inventory"]
                                 storage_dict["quantity"] -= count
-                                # storage_dict["inventory"] -= count
+                                storage_dict["inventory"] -= count
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
-                                # self.cardex['newInventory'] = storage_dict["inventory"]
+                                self.cardex['newInventory'] = storage_dict["inventory"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] -= count
                                 self.cardex['newReserve'] = storage_dict["reserved"]
@@ -202,11 +204,11 @@ class AddRemoveQtyReserve:
                             if cusrsor == storage_id:
                                 self.cardex['qty'] = count
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
-                                # self.cardex['oldInventory'] = storage_dict["inventory"]
+                                self.cardex['oldInventory'] = storage_dict["inventory"]
                                 storage_dict["quantity"] += count
-                                # storage_dict["inventory"] += count
+                                storage_dict["inventory"] += count
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
-                                # self.cardex['newInventory'] = storage_dict["inventory"]
+                                self.cardex['newInventory'] = storage_dict["inventory"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 self.cardex['newReserve'] = storage_dict["reserved"]
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
@@ -214,9 +216,9 @@ class AddRemoveQtyReserve:
                     else:
                         self.cardex['qty'] = count
                         self.cardex['oldQuantity'] = 0
-                        # self.cardex['oldInventory'] = 0
+                        self.cardex['oldInventory'] = 0
                         self.cardex['newQuantity'] = count
-                        # self.cardex['newInventory'] = count
+                        self.cardex['newInventory'] = count
                         self.cardex['oldReserve'] = 0
                         self.cardex['newReserve'] = 0
                         warehouse_detail = find_warehouse(storage_id)
@@ -227,7 +229,7 @@ class AddRemoveQtyReserve:
                                 "regular": 0,
                                 "reserved": 0,
                                 "quantity": count,
-                                # "inventory": count,
+                                "inventory": count,
                                 "min_qty": 1,
                                 "max_qty": 1,
                                 "warehouse_state": warehouse_detail['warehouses'].get('state'),
