@@ -493,7 +493,7 @@ def handle_assign_product_inventory(storage_id, system_code, customer_type, tran
 
         if transfer:
             to_customer_type_object = get_customer_type_object(product_object, storage_id, to_customer_type)
-            if not customer_type_object:
+            if not to_customer_type_object:
                 return False, "محصولی با نوع مشتری ویا کد انبار مورد نظر یافت نشد"
             from_cardex = handle_cardex(customer_type_object, storage_id, system_code, quantity, staff_id, staff_name,
                                         f"transferto_{to_customer_type}", customer_type)
@@ -560,6 +560,7 @@ def transfer_product_inventory(customer_type_object, to_customer_type_object, qu
         to_customer_type_object["min_qty"] = min_qty
         to_customer_type_object["max_qty"] = max_qty
         to_customer_type_object["regular"] = price
+        to_customer_type_object["reserved"] = 0
         return True, True
     except Exception:
         return False, "خطای سیستمی رخ داده است"
@@ -593,7 +594,7 @@ def get_product_query(system_code):
 
 
 def get_customer_type_object(product_object, storage_id, customer_type):
-    qty_object = product_object.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
+    qty_object = product_object.get("warehouse_details",{}).get(customer_type,{}).get("storages",{}).get(storage_id,{})
     if not qty_object:
         return False
     return qty_object

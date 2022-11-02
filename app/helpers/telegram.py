@@ -14,23 +14,26 @@ def send_telegram_message(msg):
 
 
 def exception_handler():
+    telegram_id = settings.TELEGRAM_ID.split(",")[0]
+
     now = strftime("%Y-%m-%d %H:%M", localtime())
     message = f'<b>{settings.APP_NAME} | {now}</b>\n\n<pre language="python">' \
-              f'Failed with exception:\n{traceback.format_exc()}</pre>\n{settings.TELEGRAM_ID} 💩'
+              f'Failed with exception:\n{traceback.format_exc()}</pre>\n{telegram_id} 💩'
     logging.error(message)
     if not settings.DEBUG_MODE:
         send_telegram_message(message)
 
 
 def admin_handler(data):
-    x = settings.TELEGRAM_ID
-    s = []
-    s.append(x.split(",")[1])
-    s.append(x.split(",")[0])
-    for id in s:
+    telegram_ids = settings.TELEGRAM_ID
+    id_list = []
+    id_list.append(telegram_ids.split(",")[1])
+    id_list.append(telegram_ids.split(",")[2])
+    for id in id_list:
         now = strftime("%Y-%m-%d %H:%M", localtime())
         message = f'<b> {now}</b>\n\n<pre language="python">' \
-                  f'please check new error about:\n{data} type</pre>\n{id} 🙏'
+                  f'please check new error about:\n{data}type</pre>\n{id} 🙏'
         logging.error(message)
         if not settings.DEBUG_MODE:
             send_telegram_message(message)
+

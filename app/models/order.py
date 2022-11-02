@@ -35,7 +35,7 @@ def exit_order_handler(order_number: int,
                                                "exitOrder",
                                                True,
                                                customer_type)
-
+            error_message = message
             if success:
                 # create list of updated any product
                 rollback_object = {
@@ -53,13 +53,14 @@ def exit_order_handler(order_number: int,
             else:
                 rollback_flag = False
                 break
+
         if not rollback_flag:
             if rollback_list:
                 # rolllbacking updated products and return error message
                 rollback_products(rollback_list)
-                return False, message
+                return False, error_message
 
-            return False, message
+            return False, error_message
         # checking "archive" & "imeis" collection and rollback هn case of problem
         if not imeis_checking(rollback_list):
             rollback_products(rollback_list)
@@ -69,7 +70,13 @@ def exit_order_handler(order_number: int,
             rollback_products(rollback_list)
             return False, "خطا در آپدیت imei"
         return True, rollback_list
-    except:
+    except Exception as e:
+        error = {
+            "message": str(e),
+            "functionName": "update_quantity",
+            "date": str(jdatetime.datetime.now()).split(".")[0],
+        }
+        insert_error_log(error)
         return False, "خطای سیستمی رخ داده است"
 
 
@@ -87,18 +94,17 @@ def update_quantity(order_number: int,
     """
     try:
         # get product and object by storage_id and customer_type
-        product = get_product_query(storage_id, system_code, customer_type)
+        product = get_product_query(system_code)
         if not product:
             return False, "مغایرت در سیستم کد"
         qty_object = product.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
         if not qty_object:
             return False, "مغایرت در اطلاعات"
-        return product, qty_object
         # flag is False whene callled this func by rollback
         if flag:
-            if objects["quantity"] < count or objects["reserved"] < count:
+            if qty_object["quantity"] < count or qty_object["reserved"] < count:
                 return False, "مغایرت در تعداد موجودی"
-        cardex = create_cardex_object(objects,
+        cardex = create_cardex_object(qty_object,
                                       order_number,
                                       storage_id,
                                       system_code,
@@ -124,7 +130,6 @@ def update_quantity(order_number: int,
         insert_error_log(error)
 
         return False, "خطای سیستمی رخ داده است"
-
 
 def rollback_products(products: list) -> bool:
     try:
@@ -416,7 +421,7 @@ def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: 
         return False
 
 
-def get_product_query(storage_id: str, system_code: str, customer_type: str) -> tuple:
+def get_product_query(system_code: str) -> dict:
     try:
         with MongoConnection() as mongo:
             product = mongo.product.find_one({"system_code": system_code})
