@@ -1,3 +1,4 @@
+from app.helpers.basket_calculator import Basket
 from app.models.product import Product, AddAttributes, Price, Quantity
 from app.modules import csv_getter
 
@@ -223,14 +224,37 @@ def price_list_tehran(customer_type, sub_category, brand, model, allowed_storage
 
 
 def get_basket_product(system_code, storage_id, customer_type):
-    result = Product.get_basket_product(system_code, storage_id, customer_type)
-    if result:
+    if result := Product.get_basket_product(system_code, storage_id, customer_type):
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_basket_products(system_codes: list, storage_id: str, customer_type: str):
-    result = Product.get_basket_products(system_codes, storage_id, customer_type)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "product not found", "status_code": 404}
+def get_basket_products(data: list, customer_type: str = "B2B"):
+    for index, basket in enumerate(data):
+        system_codes = [mandatory_product.get("systemCode") for mandatory_product in basket.get("mandatoryProducts")]
+        if products := Product.get_basket_products(system_codes, basket.get("storageId"), customer_type):
+            result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products)
+            if not active:
+                del data[index]
+                continue
+            data[index]["mandatoryProducts"] = result
+        selective_system_codes = [selective_product.get("systemCode") for selective_product in
+                                  basket.get("selectiveProducts")]
+        if selective_products := Product.get_basket_products(selective_system_codes, basket.get("storageId"),
+                                                             customer_type):
+            result, active = Basket().set_selective_products(basket.get("selectiveProducts"), selective_products,
+                                                             basket.get("minSelectiveProductsQuantity"))
+            if not active:
+                del data[index]
+                continue
+            data[index]["selectiveProducts"] = result
+        optional_system_codes = [optional_product.get("systemCode") for optional_product in
+                                 basket.get("optionalProducts")]
+        if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
+                                                            customer_type):
+            data[index]["optionalProducts"] = Basket().set_optional_products(basket.get("optionalProducts"),
+                                                                             optional_products)
+    print(data)
+    if not len(data):
+        return {"success": False, "error": "سبدی برای نمایش وجود ندارد", "status_code": 404}
+    return {"success": True, "message": data, "status_code": 200}
