@@ -1616,7 +1616,11 @@ class Product:
                             'color': 1,
                             'guaranty': 1,
                             'name': 1,
-                            'seller': 1
+                            'seller': 1,
+                            "brand": 1,
+                            'main_category': 1,
+                            'model': 1,
+                            'sub_category': 1,
                         },
                         'warehouse_details': {
                             '$filter': {
@@ -1700,6 +1704,10 @@ class Product:
                             'guaranty': 1,
                             'name': 1,
                             'seller': 1,
+                            "brand": 1,
+                            'main_category': 1,
+                            'model': 1,
+                            'sub_category': 1,
                             'warehouse_details': '$a'
                         }
                     }
