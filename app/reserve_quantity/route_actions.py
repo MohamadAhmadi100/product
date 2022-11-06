@@ -65,8 +65,8 @@ def add_to_reserve_order(system_code, storage_id, count, customer_type, sku, ord
             type="new cart",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
-            # old_inventory=reserve_result['cardex'].get('oldInventory'),
-            # new_inventory=reserve_result['cardex'].get('newInventory'),
+            old_inventory=reserve_result['cardex'].get('oldInventory'),
+            new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
@@ -93,8 +93,8 @@ def add_to_reserves_reorder(system_code, storage_id, count, customer_type, sku, 
             type="reorder",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
-            # old_inventory=reserve_result['cardex'].get('oldInventory'),
-            # new_inventory=reserve_result['cardex'].get('newInventory'),
+            old_inventory=reserve_result['cardex'].get('oldInventory'),
+            new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve'),
             user=staff_name
@@ -122,8 +122,8 @@ def add_to_reserves_dealership(system_code, storage_id, count, customer_type, sk
             type="dealership reserve",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
-            # old_inventory=reserve_result['cardex'].get('oldInventory'),
-            # new_inventory=reserve_result['cardex'].get('newInventory'),
+            old_inventory=reserve_result['cardex'].get('oldInventory'),
+            new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
@@ -150,8 +150,8 @@ def remove_reserves_dealership(system_code, storage_id, count, customer_type, sk
             type="dealership remove reserve",
             old_quantity=reserve_result['cardex'].get('oldQuantity'),
             new_quantity=reserve_result['cardex'].get('newQuantity'),
-            # old_inventory=reserve_result['cardex'].get('oldInventory'),
-            # new_inventory=reserve_result['cardex'].get('newInventory'),
+            old_inventory=reserve_result['cardex'].get('oldInventory'),
+            new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
