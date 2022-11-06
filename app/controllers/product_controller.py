@@ -248,6 +248,8 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
                 del data[index]
                 continue
             data[index]["selectiveProducts"] = result
+        if not basket.get("optionalProducts"):
+            continue
         optional_system_codes = [optional_product.get("systemCode") for optional_product in
                                  basket.get("optionalProducts")]
         if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
