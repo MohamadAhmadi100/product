@@ -1,6 +1,5 @@
-import jdatetime
-
 from app.helpers.mongo_connection import MongoConnection
+import jdatetime
 
 
 def balanced_avg():
@@ -276,7 +275,7 @@ def categorized_data(result):
     return categorize
 
 
-def inv_report(storages, system_code, name, daily_system_code, daily_result, customer_type):
+def inv_report(storages, system_code, name, daily_system_code, daily_result):
     """
     get data from products where quantity above 0
     """
@@ -297,13 +296,14 @@ def inv_report(storages, system_code, name, daily_system_code, daily_result, cus
                 total_price = 0
                 if items['step'] == 4:
                     for key, value in items['warehouse_details'].items():
-                        if key == customer_type and value is not None:
+                        if value.get("storages") is None:
+                            pass
+                        else:
                             data['customer_type'] = key
                             try:
                                 for storage_key, storage_value, in value['storages'].items():
                                     if storage_value['storage_id'] in storages:
-                                        if storage_value.get('quantity') is not None and storage_value.get(
-                                                'quantity') > 0:
+                                        if storage_value.get('quantity') is not None and storage_value.get('quantity') > 0:
                                             total_count += storage_value['quantity']
                                             total_price += storage_value['regular'] * storage_value['quantity']
                                             # daily sales
