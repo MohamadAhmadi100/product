@@ -260,3 +260,10 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
     if not len(data):
         return {"success": False, "error": "سبدی برای نمایش وجود ندارد", "status_code": 404}
     return {"success": True, "message": data, "status_code": 200}
+
+
+def price_list_bot(customer_type, system_code, initial=False):
+    result = Product.price_list_bot(customer_type, system_code, initial)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
