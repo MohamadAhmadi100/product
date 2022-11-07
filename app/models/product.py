@@ -28,6 +28,230 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def price_list_bot(customer_type, system_code, initial):
+        with MongoConnection() as mongo:
+            pipe_lines = [{
+                '$match': {
+                    'visible_in_site': True
+                }
+            }, {
+                '$project': {
+                    'system_code': 1,
+                    'keys': {
+                        '$objectToArray': '$warehouse_details'
+                    },
+                    'root_obj': '$$ROOT'
+                }
+            }, {
+                '$unwind': '$keys'
+            }, {
+                '$project': {
+                    'system_code': 1,
+                    'customer_type': '$keys.k',
+                    'zz': {
+                        '$objectToArray': '$keys.v.storages'
+                    },
+                    'root_obj': 1
+                }
+            }, {
+                '$unwind': '$zz'
+            }, {
+                '$project': {
+                    'system_code': 1,
+                    'storage_id': '$zz.k',
+                    'customer_type': 1,
+                    'qty': {
+                        '$subtract': [
+                            '$zz.v.quantity', '$zz.v.reserved'
+                        ]
+                    },
+                    'min': {
+                        '$subtract': [
+                            {
+                                '$subtract': [
+                                    '$zz.v.quantity', '$zz.v.reserved'
+                                ]
+                            }, '$zz.v.min_qty'
+                        ]
+                    },
+                    'min_qty': "$zz.v.min_qty",
+                    'max_qty': {
+                        '$cond': [
+                            {
+                                '$gt': [
+                                    '$zz.v.quantity', '$zz.v.max_qty'
+                                ]
+                            }, '$zz.v.max_qty', '$zz.v.quantity'
+                        ]
+                    },
+                    'regular': '$zz.v.regular',
+                    'special': {
+                        '$cond': [
+                            {
+                                '$and': [
+                                    {
+                                        '$gt': [
+                                            jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            '$zz.v.special_from_date'
+                                        ]
+                                    }, {
+                                        '$lt': [
+                                            jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            '$zz.v.special_to_date'
+                                        ]
+                                    }
+                                ]
+                            }, '$zz.v.special', None
+                        ]
+                    },
+                    'root_obj': 1
+                }
+            }, {
+                '$match': {
+                    'customer_type': customer_type,
+                    'qty': {
+                        '$gt': 0
+                    },
+                    'min': {
+                        '$gte': 0
+                    },
+                    "storage_id": '1'
+                }
+            }]
+            if initial:
+                pipe_lines.extend([{
+                    '$replaceRoot': {
+                        'newRoot': '$root_obj'
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 6
+                            ]
+                        },
+                        'fieldN': {
+                            '$addToSet': '$sub_category'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'system_code': '$_id',
+                        '_id': 0,
+                        'name': {
+                            '$first': '$fieldN'
+                        }
+                    }
+                }, {
+                    '$sort': {
+                        'system_code': 1
+                    }
+                }])
+            else:
+                pipe_lines.extend([{"$match": {"system_code": {"$regex": "^" + system_code}}},
+                                   {
+                                       '$group': {
+                                           '_id': {
+                                               '$substr': [
+                                                   '$system_code', 0, 16
+                                               ]
+                                           },
+                                           'header': {
+                                               '$push': {
+                                                   '$concat': [
+                                                       '$root_obj.sub_category', '-', '$root_obj.brand'
+                                                   ]
+                                               }
+                                           },
+                                           'name': {
+                                               '$push': '$root_obj.name'
+                                           },
+                                           'products': {
+                                               '$push': {
+                                                   'storage_id': '$storage_id',
+                                                   'customer_type': '$customer_type',
+                                                   'color': '$root_obj.color',
+                                                   'guaranty': '$root_obj.guaranty',
+                                                   'regular': '$regular',
+                                                   'special': '$special',
+                                                   'system_code': '$system_code',
+                                                   "min_qty": "$min_qty",
+                                                   "max_qty": "$max_qty"
+                                               }
+                                           }
+                                       }
+                                   }, {
+                                       '$project': {
+                                           'system_code': '$_id',
+                                           '_id': 0,
+                                           'header': {
+                                               '$first': '$header'
+                                           },
+                                           'name': {
+                                               '$first': '$name'
+                                           },
+                                           'products': 1
+                                       }
+                                   }, {
+                                       '$sort': {
+                                           'name': 1
+                                       }
+                                   }, {
+                                       '$group': {
+                                           '_id': '$header',
+                                           'system_code': {
+                                               '$push': '$system_code'
+                                           },
+                                           'models': {
+                                               '$push': {
+                                                   'system_code': '$system_code',
+                                                   'name': '$name',
+                                                   'products': '$products'
+                                               }
+                                           }
+                                       }
+                                   }, {
+                                       '$project': {
+                                           'name': '$_id',
+                                           'system_code': {
+                                               '$substr': [
+                                                   {
+                                                       '$first': '$system_code'
+                                                   }, 0, 9
+                                               ]
+                                           },
+                                           '_id': 0,
+                                           'models': 1
+                                       }
+                                   }, {
+                                       '$sort': {
+                                           'system_code': 1
+                                       }
+                                   }])
+            result = list(mongo.product.aggregate(pipe_lines))
+            if initial:
+                for category in result:
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": category.get('system_code')})
+                    kowsar_data = kowsar_data if kowsar_data else {}
+                    category['label'] = kowsar_data.get('sub_category_label') if kowsar_data.get(
+                        "sub_category_label") else category.get('sub_category')
+            else:
+                with RedisConnection() as redis:
+                    for group in result:
+                        kowsar_data = mongo.kowsar_collection.find_one({"system_code": group["system_code"][:9]},
+                                                                       {"_id": 0})
+                        group['label'] = kowsar_data.get('sub_category_label',
+                                                         kowsar_data.get("sub_category")) + ' ' + kowsar_data.get(
+                            'brand_label', kowsar_data.get("brand"))
+                        for model in group['models']:
+                            for product in model['products']:
+                                product['guaranty'] = {"value": product['guaranty'],
+                                                       "label": redis.client.hget(product['guaranty'], "fa_ir")}
+                                product['color'] = {"value": product['color'],
+                                                    "label": redis.client.hget(product['color'], "fa_ir")}
+            return result
+
+    @staticmethod
     def get_basket_products(system_codes, storage_id, customer_type):
         with MongoConnection() as mongo:
             warehouse_query_string = f"$warehouse_details.{customer_type}.storages.{storage_id}"
