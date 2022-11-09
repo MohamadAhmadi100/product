@@ -39,38 +39,50 @@ def get_csv(storage_id):
                 }
             }, {
                 '$match': {
-                    'customer_type': 'B2B',
                     'quantity': {
                         '$gt': 0
-                    }
+                    },
+                    'storage_id': storage_id
                 }
             }, {
                 '$group': {
-                    '_id': '$storage_id',
-                    'products': {
-                        '$push': {
-                            'system_code': '$system_code',
-                            'storage_id': '$storage_id',
-                            'quantity': '$quantity',
-                            'reserved': '$reserved',
-                            'name': '$root_obj.name',
-                            'color': '$root_obj.color',
-                            'guaranty': '$root_obj.guaranty'
-                        }
+                    '_id': '$root_obj.system_code',
+                    'fieldN': {
+                        '$push': '$$ROOT'
+                    },
+                    'quantity': {
+                        '$sum': '$quantity'
+                    },
+                    'reserved': {
+                        '$sum': '$reserved'
                     }
                 }
             }, {
-                '$match': {
-                    '_id': storage_id
+                '$project': {
+                    'fieldN': {
+                        '$first': '$fieldN'
+                    },
+                    'quantity': 1,
+                    'reserved': 1
+                }
+            }, {
+                '$project': {
+                    'system_code': '$_id',
+                    '_id': 0,
+                    'quantity': '$quantity',
+                    'reserved': '$reserved',
+                    'name': '$fieldN.root_obj.name',
+                    'color': '$fieldN.root_obj.color',
+                    'guaranty': '$fieldN.root_obj.guaranty'
                 }
             }
         ])
-        result = list(result)[0]['products']
+        result = list(result)
         with open('Products.csv', 'w', encoding="utf-8-sig") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(["system_code", "name", "color", "guaranty", "storage_id", "quantity", "reserved"])
             for row in result:
-                writer.writerow([row['system_code'], row['name'], row['color'], row['guaranty'], row['storage_id'],
+                writer.writerow([row['system_code'], row['name'], row['color'], row['guaranty'],
                                  row.get('quantity'), row.get("reserved")])
 
         with open('Products.csv', 'rb') as f:
