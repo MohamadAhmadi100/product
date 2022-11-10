@@ -568,7 +568,7 @@ class Product:
                             ]
                         },
                         'min_qty': '$zz.v.min_qty',
-                        'max_qty ': {
+                        'max_qty': {
                             '$cond': [
                                 {
                                     '$gt': [
