@@ -80,7 +80,7 @@ def get_csv(storage_id):
         result = list(result)
         with open('Products.csv', 'w', encoding="utf-8-sig") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["system_code", "name", "color", "guaranty", "storage_id", "quantity", "reserved"])
+            writer.writerow(["system_code", "name", "color", "guaranty", "quantity", "reserved"])
             for row in result:
                 writer.writerow([row['system_code'], row['name'], row['color'], row['guaranty'],
                                  row.get('quantity'), row.get("reserved")])
