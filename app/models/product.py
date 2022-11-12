@@ -1339,12 +1339,36 @@ class Product:
             ]
             if storage_id or allowed_storages:
                 pipe_lines[6]['$match']["storage_id"] = storage_id if storage_id else allowed_storages[0]
+            if storage_id == '-1':
+                del pipe_lines[6]['$match']["storage_id"]
+                pipe_lines[7]['$facet']['products'][1]['$group']["_id"] = {
+                    'a': {
+                        '$substr': [
+                            '$system_code', 0, 16
+                        ]
+                    },
+                    'b': '$root_obj.color',
+                    'c': '$root_obj.guaranty'
+                }
+                pipe_lines[7]['$facet']['products'].insert(2, {"$group": {
+                    "_id": "$_id.a",
+                    "products": {
+                        "$push": {"$first": "$products"}
+                    },
+                    "header": {
+                        "$first": "$header"
+                    },
+                    "name": {
+                        "$first": "$name"
+                    }
+                }})
             if sub_category:
                 pipe_lines[7]['$facet']['products'][0]['$match']["root_obj.sub_category"] = sub_category
             if brand:
                 pipe_lines[7]['$facet']['products'][0]['$match']["root_obj.brand"] = brand
             if model:
                 pipe_lines[7]['$facet']['products'][0]['$match']["root_obj.model"] = model
+
             db_data = list(mongo.product.aggregate(pipe_lines))
             db_data = db_data[0]
             filters = db_data.get('filters')

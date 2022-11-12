@@ -204,11 +204,6 @@ def get_csv(storage_id: str) -> dict:
 
 def price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages):
     result = Product.price_list(customer_type, storage_id, sub_category, brand, model, allowed_storages)
-    # -1 is all storages
-    if storage_id == '-1':
-        storage_filters = result.get('storages')
-        result = Product.price_list_tehran(customer_type, sub_category, brand, model, allowed_storages)
-        result['storages'] = storage_filters
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
