@@ -889,9 +889,6 @@ class Product:
                         'min': {
                             '$gte': 0
                         },
-                        'storage_id': {
-                            '$in': allowed_storages
-                        }
                     }
                 },
                 {
@@ -1055,6 +1052,8 @@ class Product:
                     }
                 }
             ]
+            if allowed_storages:
+                pipe_lines[6]['$match']['storage_id'] = {'$in': allowed_storages}
             if sub_category:
                 pipe_lines[7]["$facet"]['products'][0]['$match']["root_obj.sub_category"] = sub_category
             if brand:
@@ -1372,6 +1371,11 @@ class Product:
                      "label": "$warehouse_name",
                      "active": {"$cond": [{"$eq": ["$warehouse_id", int(storage_id) if storage_id else int(
                          allowed_storages[0]) if allowed_storages else 1]}, True, False]}}))
+            storages_labels.append({
+                "storage_id": "-1",
+                "label": "تمام انبار ها",
+                "active": True if storage_id == '-1' else False
+            })
 
             with RedisConnection() as redis:
                 for group in db_data:
