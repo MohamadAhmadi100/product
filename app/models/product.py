@@ -79,9 +79,17 @@ class Product:
                         '$cond': [
                             {
                                 '$gt': [
-                                    '$zz.v.quantity', '$zz.v.max_qty'
+                                    {
+                                        '$subtract': [
+                                            '$zz.v.quantity', '$zz.v.reserved'
+                                        ]
+                                    }, '$zz.v.max_qty'
                                 ]
-                            }, '$zz.v.max_qty', '$zz.v.quantity'
+                            }, '$zz.v.max_qty', {
+                                '$subtract': [
+                                    '$zz.v.quantity', '$zz.v.reserved'
+                                ]
+                            }
                         ]
                     },
                     'regular': '$zz.v.regular',
@@ -326,6 +334,191 @@ class Product:
             return None
 
     @staticmethod
+    def get_items(system_code, customer_type):
+        with MongoConnection() as mongo:
+            pipe_line = [{
+                '$match': {
+                    'visible_in_site': True
+                }
+            }, {
+                '$project': {
+                    'system_code': 1,
+                    'keys': {
+                        '$objectToArray': '$warehouse_details'
+                    },
+                    'root_obj': '$$ROOT'
+                }
+            }, {
+                '$unwind': '$keys'
+            }, {
+                '$project': {
+                    'system_code': 1,
+                    'customer_type': '$keys.k',
+                    'zz': {
+                        '$objectToArray': '$keys.v.storages'
+                    },
+                    'root_obj': 1
+                }
+            }, {
+                '$unwind': '$zz'
+            }, {
+                '$project': {
+                    'system_code': 1,
+                    'storage_id': '$zz.k',
+                    "storage_label": "$zz.v.warehouse_label",
+                    'customer_type': 1,
+                    'qty': {
+                        '$subtract': [
+                            '$zz.v.quantity', '$zz.v.reserved'
+                        ]
+                    },
+                    'min': {
+                        '$subtract': [
+                            {
+                                '$subtract': [
+                                    '$zz.v.quantity', '$zz.v.reserved'
+                                ]
+                            }, '$zz.v.min_qty'
+                        ]
+                    },
+                    'min_qty': '$zz.v.min_qty',
+                    'max_qty': {
+                        '$cond': [
+                            {
+                                '$gt': [
+                                    {
+                                        '$subtract': [
+                                            '$zz.v.quantity', '$zz.v.reserved'
+                                        ]
+                                    }, '$zz.v.max_qty'
+                                ]
+                            }, '$zz.v.max_qty', {
+                                '$subtract': [
+                                    '$zz.v.quantity', '$zz.v.reserved'
+                                ]
+                            }
+                        ]
+                    },
+                    'regular': '$zz.v.regular',
+                    'special': {
+                        '$cond': [
+                            {
+                                '$and': [
+                                    {
+                                        '$gt': [
+                                            jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            '$zz.v.special_from_date'
+                                        ]
+                                    }, {
+                                        '$lt': [
+                                            jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            '$zz.v.special_to_date'
+                                        ]
+                                    }
+                                ]
+                            }, '$zz.v.special', None
+                        ]
+                    },
+                    'root_obj': 1
+                }
+            }, {
+                '$match': {
+                    'customer_type': customer_type,
+                    'qty': {
+                        '$gt': 0
+                    },
+                    'min': {
+                        '$gte': 0
+                    }
+                }
+            }]
+            if len(system_code) != 25:
+                if system_code == '00':
+                    index = 2
+                    name = '$root_obj.main_category'
+                elif len(system_code) == 2:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 6
+                    name = '$root_obj.sub_category'
+                elif len(system_code) == 6:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 9
+                    name = '$root_obj.brand'
+                elif len(system_code) == 9:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 13
+                    name = '$root_obj.model'
+                elif len(system_code) == 13:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 16
+                    name = {'$reduce': {
+                        'input': {"$objectToArray": "$root_obj.configs"},
+                        'initialValue': '',
+                        'in': {
+                            '$concat': [
+                                '$$value',
+                                {'$cond': [{'$eq': ['$$value', '']}, '', ' ']},
+                                '$$this.v']
+                        }
+                    }}
+                elif len(system_code) == 16:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 19
+                    name = '$root_obj.seller'
+                elif len(system_code) == 19:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 22
+                    name = '$root_obj.color'
+                elif len(system_code) == 22:
+                    pipe_line[0]['$match']['system_code'] = {"$regex": "^" + system_code}
+                    index = 25
+                    name = '$root_obj.guaranty'
+
+                pipe_line.extend([{
+                    "$group": {
+                        "_id": None,
+                        "fieldN": {
+                            "$addToSet": {
+                                "system_code": {"$substr": ["$root_obj.system_code", 0, index]},
+                                "name": name
+                            },
+                        }
+                    }
+                }, {
+                    '$unwind': '$fieldN'
+                }, {
+                    '$replaceRoot': {
+                        'newRoot': '$fieldN'
+                    }
+                }, {
+                    '$sort': {
+                        'system_code': 1
+                    }
+                }])
+            else:
+                pipe_line[0]['$match']['system_code'] = system_code
+                pipe_line.append({
+                    "$project": {
+                        '_id': 0,
+                        'system_code': "$system_code",
+                        'brand': "$root_obj.brand",
+                        'color': "$root_obj.color",
+                        'guaranty': "$root_obj.guaranty",
+                        'main_category': "$root_obj.main_category",
+                        'seller': "$root_obj.seller",
+                        'sub_category': "$root_obj.sub_category",
+                        'storage_label': "$storage_label",
+                        'price': "$regular",
+                        'special_price': "$special",
+                        'max_qty': "$max_qty",
+                        'min_qty': "$min_qty",
+                        "name": "$root_obj.name",
+                    }
+                })
+            result = mongo.product.aggregate(pipe_line)
+            return list(result)
+
+    @staticmethod
     def price_list_all(customer_type, sub_category, brand, model, allowed_storages):
         with MongoConnection() as mongo:
             pipe_lines = [
@@ -379,9 +572,17 @@ class Product:
                             '$cond': [
                                 {
                                     '$gt': [
-                                        '$zz.v.quantity', '$zz.v.max_qty'
+                                        {
+                                            '$subtract': [
+                                                '$zz.v.quantity', '$zz.v.reserved'
+                                            ]
+                                        }, '$zz.v.max_qty'
                                     ]
-                                }, '$zz.v.max_qty', '$zz.v.quantity'
+                                }, '$zz.v.max_qty', {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }
                             ]
                         },
                         'regular': '$zz.v.regular',
@@ -644,9 +845,17 @@ class Product:
                             '$cond': [
                                 {
                                     '$gt': [
-                                        '$zz.v.quantity', '$zz.v.max_qty'
+                                        {
+                                            '$subtract': [
+                                                '$zz.v.quantity', '$zz.v.reserved'
+                                            ]
+                                        }, '$zz.v.max_qty'
                                     ]
-                                }, '$zz.v.max_qty', '$zz.v.quantity'
+                                }, '$zz.v.max_qty', {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }
                             ]
                         },
                         'regular': '$zz.v.regular',
@@ -933,9 +1142,17 @@ class Product:
                             '$cond': [
                                 {
                                     '$gt': [
-                                        '$zz.v.quantity', '$zz.v.max_qty'
+                                        {
+                                            '$subtract': [
+                                                '$zz.v.quantity', '$zz.v.reserved'
+                                            ]
+                                        }, '$zz.v.max_qty'
                                     ]
-                                }, '$zz.v.max_qty', '$zz.v.quantity'
+                                }, '$zz.v.max_qty', {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }
                             ]
                         },
                         'regular': '$zz.v.regular',
@@ -1998,6 +2215,14 @@ class Product:
                                                "label": redis.client.hget(product['guaranty'], lang)}
                         product['seller'] = {"value": product['seller'],
                                              "label": redis.client.hget(product['seller'], lang)}
+                        product['brand'] = {"value": product['brand'],
+                                            "label": product['brand']}
+                        product['main_category'] = {"value": product['main_category'],
+                                                    "label": product['main_category']}
+                        product['model'] = {"value": product['model'],
+                                            "label": product['model']}
+                        product['sub_category'] = {"value": product['sub_category'],
+                                                   "label": product['sub_category']}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
                 product_result.update({

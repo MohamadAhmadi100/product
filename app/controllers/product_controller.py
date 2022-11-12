@@ -267,3 +267,10 @@ def price_list_bot(customer_type, system_code, initial=False):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_items(system_code, customer_type):
+    result = Product.get_items(system_code, customer_type)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
