@@ -508,6 +508,7 @@ class Product:
                         'seller': "$root_obj.seller",
                         'sub_category': "$root_obj.sub_category",
                         'storage_label': "$storage_label",
+                        'storage_id': "$storage_id",
                         'price': "$regular",
                         'special_price': "$special",
                         'max_qty': "$max_qty",
