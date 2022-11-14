@@ -28,6 +28,167 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def get_data_price_list_pic(customer_type):
+        with MongoConnection() as mongo:
+            result = mongo.product.aggregate([
+                {
+                    '$match': {
+                        'visible_in_site': True,
+                        'system_code': {
+                            '$regex': '^200001'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'min_qty': "$zz.v.min_qty",
+                        'max_qty': {
+                            '$cond': [
+                                {
+                                    '$gt': [
+                                        {
+                                            '$subtract': [
+                                                '$zz.v.quantity', '$zz.v.reserved'
+                                            ]
+                                        }, '$zz.v.max_qty'
+                                    ]
+                                }, '$zz.v.max_qty', {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }
+                            ]
+                        },
+                        'regular': '$zz.v.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, '$zz.v.special', None
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': {
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$root_obj.name',
+                        'root_obj': {
+                            '$first': '$root_obj'
+                        },
+                        'data': {
+                            '$addToSet': {
+                                '$concat': [
+                                    {
+                                        '$convert': {
+                                            'to': 'string',
+                                            'input': '$regular'
+                                        }
+                                    }, '/', {
+                                        '$substr': [
+                                            '$root_obj.color', 0, 1
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$root_obj.brand',
+                        'system_code': {
+                            '$first': {
+                                '$substr': [
+                                    '$root_obj.system_code', 0, 9
+                                ]
+                            }
+                        },
+                        'data': {
+                            '$push': {
+                                'model': '$_id',
+                                'prices': '$data'
+                            }
+                        }
+                    }
+                }, {
+                    '$sort': {
+                        'system_code': 1
+                    }
+                }, {
+                    "$project": {
+                        "brand": "$_id",
+                        "system_code": 1,
+                        "_id": 0,
+                        "data": 1
+                    }
+                }
+            ])
+            result = list(result)
+            for brand in result:
+                kowsar_data = mongo.kowsar_collection.find_one({"system_code": brand.get("system_code")}, {"_id": 0})
+                if kowsar_data:
+                    brand['image'] = kowsar_data.get("image")
+            return result
+
+    @staticmethod
     def price_list_bot(customer_type, system_code, initial):
         with MongoConnection() as mongo:
             pipe_lines = [{
