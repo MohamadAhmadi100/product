@@ -75,6 +75,10 @@ def get_csv(storage_id):
                     'color': '$fieldN.root_obj.color',
                     'guaranty': '$fieldN.root_obj.guaranty'
                 }
+            }, {
+                "$sort": {
+                    "system_code": 1
+                }
             }
         ])
         result = list(result)

@@ -274,3 +274,10 @@ def get_items(system_code, customer_type):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_data_price_list_pic(customer_type):
+    result = Product.get_data_price_list_pic(customer_type)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
