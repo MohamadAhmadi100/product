@@ -675,6 +675,7 @@ class Product:
                         'max_qty': "$max_qty",
                         'min_qty': "$min_qty",
                         "name": "$root_obj.name",
+                        "quantity": "$qty"
                     }
                 })
             result = mongo.product.aggregate(pipe_line)
