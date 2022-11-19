@@ -49,7 +49,7 @@ def create_system_code(system_code, storage_ids, guaranty):
     result, response = kowsar.create_kowsar_part(name, storage_ids, system_code)
     kowsar.log(response, result)
     if result:
-        if kowsar.create_in_db(data):
+        if kowsar.create_in_db(data, name):
             return {"success": True, "message": {
                 "system_code": system_code,
                 "message": "با موفقیت ایجاد شد"
