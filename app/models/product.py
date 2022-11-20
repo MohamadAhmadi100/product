@@ -368,6 +368,7 @@ class Product:
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": brand.get("system_code")}, {"_id": 0})
                 if kowsar_data:
                     brand['image'] = kowsar_data.get("image")
+                    brand['color'] = kowsar_data.get("color")
             return result
 
     @staticmethod
