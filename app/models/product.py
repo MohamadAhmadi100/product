@@ -210,14 +210,14 @@ class Product:
             return mega_menu_data
 
     @staticmethod
-    def get_data_price_list_pic(customer_type):
+    def get_data_price_list_pic(customer_type, system_code):
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
                 {
                     '$match': {
                         'visible_in_site': True,
                         'system_code': {
-                            '$regex': '^200001'
+                            '$regex': f'^{system_code}'
                         }
                     }
                 }, {
