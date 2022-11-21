@@ -323,9 +323,64 @@ class Product:
                             '$gte': 0
                         }
                     }
+                },
+                {
+                    '$addFields': {
+                        'name': {
+                            '$concat': [
+                                '$root_obj.model', ' ', {
+                                    '$reduce': {
+                                        'input': {
+                                            '$objectToArray': '$root_obj.configs'
+                                        },
+                                        'initialValue': '(',
+                                        'in': {
+                                            '$concat': [
+                                                '$$value', {
+                                                    '$cond': [
+                                                        {
+                                                            '$in': [
+                                                                '$$this.v', [
+                                                                    None, 'RX'
+                                                                ]
+                                                            ]
+                                                        }, '', {
+                                                            '$concat': [
+                                                                {
+                                                                    '$substr': [
+                                                                        '$$this.v', 0, {
+                                                                            '$indexOfBytes': [
+                                                                                '$$this.v', 'GB'
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }, ' '
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }, ')'
+                            ]
+                        }
+                    }
                 }, {
                     '$group': {
-                        '_id': '$root_obj.name',
+                        '_id': {
+                            '$concat': [
+                                {
+                                    '$substr': [
+                                        '$name', 0, {
+                                            '$indexOfBytes': [
+                                                '$name', ' )'
+                                            ]
+                                        }
+                                    ]
+                                }, ')'
+                            ]
+                        },
                         'root_obj': {
                             '$first': '$root_obj'
                         },
@@ -335,7 +390,11 @@ class Product:
                                     {
                                         '$convert': {
                                             'to': 'string',
-                                            'input': '$regular'
+                                            'input': {
+                                                '$divide': [
+                                                    '$regular', 1000
+                                                ]
+                                            }
                                         }
                                     }, '/', {
                                         '$substr': [
