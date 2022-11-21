@@ -294,3 +294,10 @@ def get_mega_menu(customer_type, user_allowed_storages):
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_products_seller(seller_id, page, per_page):
+    result = Product.get_products_seller(seller_id, page, per_page)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}

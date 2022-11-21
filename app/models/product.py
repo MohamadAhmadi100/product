@@ -22,6 +22,19 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
+    def get_products_seller(seller_id, page, per_page):
+        skip = (page - 1) * per_page
+        with MongoConnection() as mongo:
+            result = list(mongo.product.find(
+                {"system_code": {"$regex": ".{16}%s.{6}$" % (seller_id)}},
+                {"_id": 0}
+            ).skip(skip).limit(per_page))
+            count = mongo.product.count_documents({"system_code": {"$regex": ".{16}%s.{6}$" % (seller_id)}})
+            if result:
+                return {"data": result, "count": count}
+            return None
+
+    @staticmethod
     def system_code_exists(system_code):
         with MongoConnection() as mongo:
             result = mongo.product.find_one({"system_code": system_code})
