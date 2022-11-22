@@ -170,7 +170,7 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
-        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
     # check all items reserved
     checked = all(elem[1] for elem in check_data)
     if checked:
@@ -186,7 +186,7 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
                 reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
                                                          reserved_products[0].get("storageId"),
                                                          reserved_products[0].get("count"),
-                                                         reserved_products[0].get("customer_type"),
+                                                         customer_type,
                                                          referral_number)
                 if reserve_result.get("success") is False:
                     return reserve_result
