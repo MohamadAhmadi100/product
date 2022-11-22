@@ -365,7 +365,7 @@ class Product:
                                                         {
                                                             '$in': [
                                                                 '$$this.v', [
-                                                                    None, 'RX'
+                                                                    None, 'RX', "?"
                                                                 ]
                                                             ]
                                                         }, '', {
