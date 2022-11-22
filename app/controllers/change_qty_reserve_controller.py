@@ -162,10 +162,10 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
     check_data, data_response, add_cardex_to_quantity = list(), list(), list()
     for cursor_products in data.get("products"):
         # add reserve per items
-        reserve_result = add_to_reserves_dealership(cursor_products.get("system_code"),
-                                                    cursor_products.get("storage_id"),
+        reserve_result = add_to_reserves_dealership(cursor_products.get("systemCode"),
+                                                    cursor_products.get("storageId"),
                                                     cursor_products.get("count"),
-                                                    customer_type[0], cursor_products.get("name"),
+                                                    customer_type, cursor_products.get("name"),
                                                     referral_number)
 
         data_for_check = (cursor_products, reserve_result.get("success"))

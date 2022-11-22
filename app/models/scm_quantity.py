@@ -1,5 +1,6 @@
-from app.helpers.mongo_connection import MongoConnection
 import jdatetime
+
+from app.helpers.mongo_connection import MongoConnection
 
 
 def balanced_avg():
@@ -71,24 +72,41 @@ def categorized_data(result):
                             "dailySales": items.get('dailySales'),
                             "balancedAvg": items['balancedAvg'],
                             "price": items['price'],
+                            "inventory": items['inventory'],
+                            "unassigned": items['inventory'] - items['quantity'],
 
                         })
+                        # model changes
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
                             index_model]['total_count'] += items['quantity']
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
                             index_model]['total_price'] += items['price'] * items['quantity']
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
+                            index_model]['unassigned'] += (items['inventory'] - items['quantity'])
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
+                            index_model]['inventory'] += items['inventory']
+
+                        # brand changes
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['total_count'] += \
                             items['quantity']
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['total_price'] += \
                             items['price'] * items['quantity']
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['unassigned'] += (
+                                items['inventory'] - items['quantity'])
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['inventory'] += items[
+                            'inventory']
+
+                        # sub cartegory changes
                         categorize[index_cat]['total_count'] += items['quantity']
                         categorize[index_cat]['total_price'] += items['price'] * items[
                             'quantity']
+                        categorize[index_cat]['unassigned'] += (items['inventory'] - items['quantity'])
+                        categorize[index_cat]['inventory'] += items['inventory']
+                        categorize[index_cat]['dailySales'] += items['dailySales']
 
                         categorize[index_cat]['subCategories'][index_sub]['total_count'] += items['quantity']
                         categorize[index_cat]['subCategories'][index_sub]['total_price'] += items['price'] * items[
                             'quantity']
-                        categorize[index_cat]['dailySales'] += items['dailySales']
                         categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
                         categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['dailySales'] += items[
                             'dailySales']
@@ -116,6 +134,8 @@ def categorized_data(result):
                                         "dailySales": items['dailySales'],
                                         "balancedAvg": items['balancedAvg'],
                                         "price": items['price'],
+                                        "inventory": items['inventory'],
+                                        "unassigned": items['inventory'] - items['quantity'],
 
                                     }
                                 ]
@@ -143,12 +163,16 @@ def categorized_data(result):
                         "total_count": items['quantity'],
                         "total_price": items['price'],
                         "dailySales": items['dailySales'],
+                        "inventory": items['inventory'],
+                        "unassigned": items['inventory'] - items['quantity'],
                         "models": [
                             {
                                 "model": items["model"],
                                 "total_count": items['quantity'],
                                 "total_price": items['price'],
                                 "dailySales": items['dailySales'],
+                                "inventory": items['inventory'],
+                                "unassigned": items['inventory'] - items['quantity'],
                                 "items": [
                                     {
                                         "systemCode": items['systemCode'],
@@ -164,6 +188,8 @@ def categorized_data(result):
                                         "dailySales": items['dailySales'],
                                         "balancedAvg": items['balancedAvg'],
                                         "price": items['price'],
+                                        "inventory": items['inventory'],
+                                        "unassigned": items['inventory'] - items['quantity'],
 
                                     }
                                 ]
@@ -185,18 +211,24 @@ def categorized_data(result):
                     "total_count": items['quantity'],
                     "total_price": items['price'],
                     "dailySales": items['dailySales'],
+                    "inventory": items['inventory'],
+                    "unassigned": items['inventory'] - items['quantity'],
                     "brands": [
                         {
                             "brand": items["brand"],
                             "total_count": items['quantity'],
                             "total_price": items['price'],
                             "dailySales": items['dailySales'],
+                            "inventory": items['inventory'],
+                            "unassigned": items['inventory'] - items['quantity'],
                             "models": [
                                 {
                                     "model": items["model"],
                                     "total_count": items['quantity'],
                                     "total_price": items['price'],
                                     "dailySales": items['dailySales'],
+                                    "inventory": items['inventory'],
+                                    "unassigned": items['inventory'] - items['quantity'],
                                     "items": [
                                         {
                                             "systemCode": items['systemCode'],
@@ -212,6 +244,8 @@ def categorized_data(result):
                                             "dailySales": items['dailySales'],
                                             "balancedAvg": items['balancedAvg'],
                                             "price": items['price'],
+                                            "inventory": items['inventory'],
+                                            "unassigned": items['inventory'] - items['quantity'],
 
                                         }
                                     ]
@@ -231,23 +265,31 @@ def categorized_data(result):
                 "total_count": items['quantity'],
                 "total_price": items['price'],
                 "dailySales": items['dailySales'],
+                "inventory": items['inventory'],
+                "unassigned": items['inventory'] - items['quantity'],
                 "subCategories": [{
                     "subCategory": items['subCat'],
                     "total_count": items['quantity'],
                     "total_price": items['price'],
                     "dailySales": items['dailySales'],
+                    "inventory": items['inventory'],
+                    "unassigned": items['inventory'] - items['quantity'],
                     "brands": [
                         {
                             "brand": items["brand"],
                             "total_count": items['quantity'],
                             "total_price": items['price'],
                             "dailySales": items['dailySales'],
+                            "inventory": items['inventory'],
+                            "unassigned": items['inventory'] - items['quantity'],
                             "models": [
                                 {
                                     "model": items["model"],
                                     "total_count": items['quantity'],
                                     "total_price": items['price'],
                                     "dailySales": items['dailySales'],
+                                    "inventory": items['inventory'],
+                                    "unassigned": items['inventory'] - items['quantity'],
                                     "items": [
                                         {
                                             "systemCode": items['systemCode'],
@@ -263,7 +305,8 @@ def categorized_data(result):
                                             "dailySales": items['dailySales'],
                                             "balancedAvg": items['balancedAvg'],
                                             "price": items['price'],
-
+                                            "inventory": items['inventory'],
+                                            "unassigned": items['inventory'] - items['quantity'],
                                         }
                                     ]
                                 }
@@ -275,7 +318,7 @@ def categorized_data(result):
     return categorize
 
 
-def inv_report(storages, system_code, name, daily_system_code, daily_result):
+def inv_report(storages, system_code, name, daily_system_code, daily_result, customer_type):
     """
     get data from products where quantity above 0
     """
@@ -296,14 +339,13 @@ def inv_report(storages, system_code, name, daily_system_code, daily_result):
                 total_price = 0
                 if items['step'] == 4:
                     for key, value in items['warehouse_details'].items():
-                        if value.get("storages") is None:
-                            pass
-                        else:
+                        if key == customer_type and value is not None:
                             data['customer_type'] = key
                             try:
                                 for storage_key, storage_value, in value['storages'].items():
                                     if storage_value['storage_id'] in storages:
-                                        if storage_value.get('quantity') is not None and storage_value.get('quantity') > 0:
+                                        if storage_value.get('quantity') is not None and storage_value.get(
+                                                'quantity') > 0:
                                             total_count += storage_value['quantity']
                                             total_price += storage_value['regular'] * storage_value['quantity']
                                             # daily sales
@@ -339,6 +381,7 @@ def inv_report(storages, system_code, name, daily_system_code, daily_result):
                                                 "dailySales": daily_sale,
                                                 "balancedAvg": bavg_sale,
                                                 "price": storage_value['regular'],
+                                                "inventory": storage_value['inventory'],
                                                 "customer_type": key
                                             })
                                         else:
@@ -594,7 +637,8 @@ def get_product_query(system_code):
 
 
 def get_customer_type_object(product_object, storage_id, customer_type):
-    qty_object = product_object.get("warehouse_details",{}).get(customer_type,{}).get("storages",{}).get(storage_id,{})
+    qty_object = product_object.get("warehouse_details", {}).get(customer_type, {}).get("storages", {}).get(storage_id,
+                                                                                                            {})
     if not qty_object:
         return False
     return qty_object
@@ -649,3 +693,6 @@ def cardex_query(quantity_cardex_data):
         return True
     except Exception:
         return False
+
+#
+# print(inv_report(["1"], None, None, [], [], "B2B"))
