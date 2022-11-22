@@ -223,14 +223,15 @@ class Product:
             return mega_menu_data
 
     @staticmethod
-    def get_data_price_list_pic(customer_type, system_code):
+    def get_data_price_list_pic(customer_type, page, per_page):
+        skip = (page - 1) * per_page
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
                 {
                     '$match': {
                         'visible_in_site': True,
                         'system_code': {
-                            '$regex': f'^{system_code}'
+                            '$regex': f'^200001'
                         }
                     }
                 }, {
@@ -429,7 +430,19 @@ class Product:
                             }
                         }
                     }
-                }, {
+                },
+                {
+                    "$sort": {
+                        "root_obj.system_code": 1
+                    }
+                },
+                {
+                    "$skip": skip
+                },
+                {
+                    "$limit": per_page
+                },
+                {
                     '$group': {
                         '_id': '$root_obj.brand',
                         'system_code': {

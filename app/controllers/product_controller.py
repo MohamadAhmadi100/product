@@ -276,16 +276,8 @@ def get_items(system_code, customer_type):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_data_price_list_pic(customer_type, type):
-    if type == "Samsung":
-        system_code = "200001001"
-    elif type == 'Xiaomi':
-        system_code = "200001002"
-    elif type == 'all':
-        system_code = '200001'
-    else:
-        system_code = "200001(?!001|002)"
-    result = Product.get_data_price_list_pic(customer_type, system_code)
+def get_data_price_list_pic(customer_type, page, per_page):
+    result = Product.get_data_price_list_pic(customer_type, page, per_page)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
