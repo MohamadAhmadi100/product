@@ -328,7 +328,31 @@ class Product:
                     '$addFields': {
                         'name': {
                             '$concat': [
-                                '$root_obj.model', ' ', {
+                                {
+                                    '$cond': [
+                                        {
+                                            '$gte': [
+                                                {
+                                                    '$indexOfBytes': [
+                                                        '$root_obj.model', '$root_obj.brand'
+                                                    ]
+                                                }, 0
+                                            ]
+                                        }, {
+                                            '$arrayElemAt': [
+                                                {
+                                                    '$split': [
+                                                        '$root_obj.model', {
+                                                            '$concat': [
+                                                                '$root_obj.brand', ' '
+                                                            ]
+                                                        }
+                                                    ]
+                                                }, 1
+                                            ]
+                                        }, '$root_obj.model'
+                                    ]
+                                }, ' ', {
                                     '$reduce': {
                                         'input': {
                                             '$objectToArray': '$root_obj.configs'

@@ -281,6 +281,8 @@ def get_data_price_list_pic(customer_type, type):
         system_code = "200001001"
     elif type == 'Xiaomi':
         system_code = "200001002"
+    elif type == 'all':
+        system_code = '200001'
     else:
         system_code = "200001(?!001|002)"
     result = Product.get_data_price_list_pic(customer_type, system_code)
