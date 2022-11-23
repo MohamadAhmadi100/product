@@ -339,13 +339,13 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
 def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_number, quantity_type,
                             staff_name):
     add_remove_model = AddRemoveQtyReserve()
-    reserve_result = add_remove_model.add_reserve(product['system_code'], src_warehouse['storage_id'],
+    reserve_result = add_remove_model.add_reserve(product['systemCode'], src_warehouse['storage_id'],
                                                   product['count'], quantity_type, referral_number)
 
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
             storage_id=dst_warehouse,
-            system_code=product['system_code'],
+            system_code=product['systemCode'],
             incremental_id=referral_number,
             qty=product['count'],
             sku=product['name'],
