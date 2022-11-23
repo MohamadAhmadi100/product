@@ -96,11 +96,14 @@ class AddRemoveQtyReserve:
                         for cusrsor, storage_dict in products['warehouse_details'].get(customer_type)[
                             'storages'].items():
                             if cusrsor == storage_id:
+                                if storage_dict.get("inventory") is None:
+                                    storage_dict["inventory"] = count
+                                else:
+                                    storage_dict["inventory"] += count
                                 self.cardex['qty'] = count
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
                                 self.cardex['oldInventory'] = storage_dict["inventory"]
                                 storage_dict["quantity"] += count
-                                storage_dict["inventory"] += count
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
                                 self.cardex['newInventory'] = storage_dict["inventory"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
