@@ -475,15 +475,14 @@ class Product:
             result = list(result)
             rows = list()
             for brand in result:
-                kowsar_data = mongo.kowsar_collection.find_one({"system_code": brand.get("system_code")}, {"_id": 0})
-                if kowsar_data:
-                    brand['image'] = kowsar_data.get("image")
-                    brand['color'] = kowsar_data.get("color")
                 rows.append({
                     "name": "logo",
-                    "image": brand['image'],
-                    "color": brand['color']
+                    "image": f"https://api.aasood.com/gallery_files/iconpl/{brand['brand']}/36x117.jpg",
                 })
+                for i in brand.get("data", []):
+                    i.update({
+                        "brand": brand.get("brand")
+                    })
                 rows.extend(brand.get("data", []))
             return rows
 
