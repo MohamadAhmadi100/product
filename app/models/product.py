@@ -473,13 +473,19 @@ class Product:
                 }
             ])
             result = list(result)
+            rows = list()
             for brand in result:
-                brand['data'] = [brand['data'][i:i + 22] for i in range(0, len(brand['data']), 22)]
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": brand.get("system_code")}, {"_id": 0})
                 if kowsar_data:
                     brand['image'] = kowsar_data.get("image")
                     brand['color'] = kowsar_data.get("color")
-            return result
+                rows.append({
+                    "name": "logo",
+                    "image": brand['image'],
+                    "color": brand['color']
+                })
+                rows.extend(brand.get("data", []))
+            return rows
 
     @staticmethod
     def price_list_bot(customer_type, system_code, initial):
