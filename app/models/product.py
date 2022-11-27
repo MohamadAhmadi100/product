@@ -454,7 +454,7 @@ class Product:
                         },
                         'data': {
                             '$push': {
-                                'model': '$_id',
+                                'name': '$_id',
                                 'prices': '$data'
                             }
                         }
