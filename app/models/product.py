@@ -477,7 +477,7 @@ class Product:
             for brand in result:
                 rows.append({
                     "name": "logo",
-                    "image": f"https://api.aasood.com/gallery_files/iconpl/{brand['brand']}/36x117.jpg",
+                    "image": f"https://api.aasood.com/gallery_files/iconpl/{brand['brand']}/117x36.jpg",
                 })
                 for i in brand.get("data", []):
                     i.update({
