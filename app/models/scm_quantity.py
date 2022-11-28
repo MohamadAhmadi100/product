@@ -716,6 +716,4 @@ def cardex_query(quantity_cardex_data):
     except Exception:
         return False
 
-
-#
-print(inv_report(["1"], None, None, [], [], "B2B"))
+# print(inv_report(["1"], None, None, [], [], "B2B"))
