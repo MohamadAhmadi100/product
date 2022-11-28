@@ -39,3 +39,4 @@ def assign_product_inventory(storage_id, system_code, customer_type, transfer, t
         return {"message": message, "success": success, "status_code": 417}
     else:
         return {"message": message, "success": success, "status_code": 500}
+print(inv_products_report(['1'],None,None,[],[]))
