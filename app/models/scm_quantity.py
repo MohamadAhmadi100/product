@@ -76,42 +76,41 @@ def categorized_data(result):
                             "unassigned": items['inventory'] - items['quantity'],
 
                         })
-                        # model changes
-                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
-                            index_model]['total_count'] += items['quantity']
-                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
-                            index_model]['total_price'] += items['price'] * items['quantity']
-                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
-                            index_model]['unassigned'] += (items['inventory'] - items['quantity'])
-                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
-                            index_model]['inventory'] += items['inventory']
+
+                        # cartegory changes
+                        categorize[index_cat]['total_count'] += items['quantity']
+                        categorize[index_cat]['total_price'] += items['price'] * items[
+                            'quantity']
+                        categorize[index_cat]['dailySales'] += items['dailySales']
+                        categorize[index_cat]['unassigned'] += (items['inventory'] - items['quantity'])
+                        categorize[index_cat]['inventory'] += items['inventory']
+
+                        # sub categoriy changes
+                        categorize[index_cat]['subCategories'][index_sub]['total_count'] += items['quantity']
+                        categorize[index_cat]['subCategories'][index_sub]['total_price'] += items['price'] * items[
+                            'quantity']
+                        categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
 
                         # brand changes
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['total_count'] += \
                             items['quantity']
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['total_price'] += \
                             items['price'] * items['quantity']
-                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['unassigned'] += (
-                                items['inventory'] - items['quantity'])
-                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['inventory'] += items[
-                            'inventory']
-
-                        # sub cartegory changes
-                        categorize[index_cat]['total_count'] += items['quantity']
-                        categorize[index_cat]['total_price'] += items['price'] * items[
-                            'quantity']
-                        categorize[index_cat]['unassigned'] += (items['inventory'] - items['quantity'])
-                        categorize[index_cat]['inventory'] += items['inventory']
-                        categorize[index_cat]['dailySales'] += items['dailySales']
-
-                        categorize[index_cat]['subCategories'][index_sub]['total_count'] += items['quantity']
-                        categorize[index_cat]['subCategories'][index_sub]['total_price'] += items['price'] * items[
-                            'quantity']
-                        categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
                         categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['dailySales'] += items[
                             'dailySales']
+
+                        # model changes
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
+                            index_model]['total_count'] += items['quantity']
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
+                            index_model]['total_price'] += items['price'] * items['quantity']
                         categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['models'][index_model][
                             'dailySales'] += items['dailySales']
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
+                            index_model]['unassigned'] += (items['inventory'] - items['quantity'])
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"][
+                            index_model]['inventory'] += items['inventory']
+
                     else:
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]["models"].append(
                             {
@@ -119,6 +118,8 @@ def categorized_data(result):
                                 "total_count": items['quantity'],
                                 "total_price": items['price'],
                                 "dailySales": items['dailySales'],
+                                "inventory": items['inventory'],
+                                "unassigned": items['inventory'] - items['quantity'],
                                 "items": [
                                     {
                                         "systemCode": items['systemCode'],
@@ -140,22 +141,31 @@ def categorized_data(result):
                                     }
                                 ]
                             })
+
+                        # catogory changes
+                        categorize[index_cat]['total_count'] += items['quantity']
+                        categorize[index_cat]['total_price'] += items['price'] * items['quantity']
+                        categorize[index_cat]['dailySales'] += items['dailySales']
+                        categorize[index_cat]['unassigned'] += (items['inventory'] - items['quantity'])
+                        categorize[index_cat]['inventory'] += items['inventory']
+
+                        # subcategory changes
+                        categorize[index_cat]['subCategories'][index_sub]['total_count'] += items['quantity']
+                        categorize[index_cat]['subCategories'][index_sub]['total_price'] += items['price'] * items[
+                            'quantity']
+                        categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
+
+                        # brand changes
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['total_count'] += \
                             items['quantity']
                         categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['total_price'] += \
                             items['price'] * items['quantity']
-                        categorize[index_cat]['total_count'] += items['quantity']
-                        categorize[index_cat]['total_price'] += items['price'] * items[
-                            'quantity']
-
-                        categorize[index_cat]['subCategories'][index_sub]['total_count'] += items['quantity']
-                        categorize[index_cat]['subCategories'][index_sub]['total_price'] += items['price'] * items[
-                            'quantity']
-
-                        categorize[index_cat]['dailySales'] += items['dailySales']
-                        categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
                         categorize[index_cat]['subCategories'][index_sub]['brands'][index_brand]['dailySales'] += items[
                             'dailySales']
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['unassigned'] += (
+                                items['inventory'] - items['quantity'])
+                        categorize[index_cat]["subCategories"][index_sub]['brands'][index_brand]['inventory'] += items[
+                            'inventory']
 
                 else:
                     categorize[index_cat]["subCategories"][index_sub]['brands'].append({
@@ -196,15 +206,24 @@ def categorized_data(result):
                             }
                         ]
                     })
+                    # category changes
                     categorize[index_cat]['total_count'] += items['quantity']
                     categorize[index_cat]['total_price'] += items['price'] * items[
                         'quantity']
+                    categorize[index_cat]['dailySales'] += items['dailySales']
+                    categorize[index_cat]['unassigned'] += (items['inventory'] - items['quantity'])
+                    categorize[index_cat]['inventory'] += items['inventory']
 
+                    # subcatogory changes
                     categorize[index_cat]['subCategories'][index_sub]['total_count'] += items['quantity']
                     categorize[index_cat]['subCategories'][index_sub]['total_price'] += items['price'] * items[
                         'quantity']
-                    categorize[index_cat]['dailySales'] += items['dailySales']
                     categorize[index_cat]['subCategories'][index_sub]['dailySales'] += items['dailySales']
+                    categorize[index_cat]['subCategories'][index_sub]['unassigned'] += (
+                            items['inventory'] - items['quantity'])
+                    categorize[index_cat]['subCategories'][index_sub]['inventory'] += items['inventory']
+
+
             else:
                 categorize[index_cat]["subCategories"].append({
                     "subCategory": items['subCat'],
@@ -254,11 +273,14 @@ def categorized_data(result):
                         }
                     ]
                 })
+
+                # category changes
                 categorize[index_cat]['total_count'] += items['quantity']
                 categorize[index_cat]['total_price'] += items['price'] * items[
                     'quantity']
                 categorize[index_cat]['dailySales'] += items['dailySales']
-
+                categorize[index_cat]['unassigned'] += (items['inventory'] - items['quantity'])
+                categorize[index_cat]['inventory'] += items['inventory']
         else:
             categorize.append({
                 "category": items["cat"],
@@ -694,5 +716,6 @@ def cardex_query(quantity_cardex_data):
     except Exception:
         return False
 
+
 #
-# print(inv_report(["1"], None, None, [], [], "B2B"))
+print(inv_report(["1"], None, None, [], [], "B2B"))
