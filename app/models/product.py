@@ -22,20 +22,216 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
+    def get_products_seller(seller_id, page, per_page):
+        skip = (page - 1) * per_page
+        with MongoConnection() as mongo:
+            result = list(mongo.product.find(
+                {"system_code": {"$regex": ".{16}%s.{6}$" % (seller_id)}},
+                {"_id": 0}
+            ).skip(skip).limit(per_page))
+            count = mongo.product.count_documents({"system_code": {"$regex": ".{16}%s.{6}$" % (seller_id)}})
+            if result:
+                return {"data": result, "count": count}
+            return None
+
+    @staticmethod
     def system_code_exists(system_code):
         with MongoConnection() as mongo:
             result = mongo.product.find_one({"system_code": system_code})
             return True if result else False
 
     @staticmethod
-    def get_data_price_list_pic(customer_type):
+    def mega_menu(customer_type, user_allowed_storages):
+        with MongoConnection() as mongo:
+            result = mongo.product.aggregate([
+                {
+                    '$match': {
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'min_qty': "$zz.v.min_qty",
+                        'max_qty': {
+                            '$cond': [
+                                {
+                                    '$gt': [
+                                        {
+                                            '$subtract': [
+                                                '$zz.v.quantity', '$zz.v.reserved'
+                                            ]
+                                        }, '$zz.v.max_qty'
+                                    ]
+                                }, '$zz.v.max_qty', {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }
+                            ]
+                        },
+                        'regular': '$zz.v.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, '$zz.v.special', None
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': dict({
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        }
+                    }, **({} if not user_allowed_storages else {
+                        "storage_id": {"$in": user_allowed_storages}}))
+                }, {
+                    '$group': {
+                        '_id': {
+                            'main': '$root_obj.main_category',
+                            'sub': '$root_obj.sub_category',
+                            'brand': '$root_obj.brand',
+                            'syscode': {
+                                '$substr': [
+                                    '$system_code', 0, 9
+                                ]
+                            }
+                        },
+                        'fieldN': {
+                            '$addToSet': '$root_obj'
+                        }
+                    }
+                }, {
+                    '$replaceRoot': {
+                        'newRoot': '$_id'
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$syscode', 0, 6
+                            ]
+                        },
+                        'fieldN': {
+                            '$push': {
+                                'name': '$brand',
+                                'system_code': '$syscode'
+                            }
+                        },
+                        'sub_category': {
+                            '$first': '$sub'
+                        },
+                        'main': {
+                            '$first': '$main'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$_id', 0, 2
+                            ]
+                        },
+                        'subs': {
+                            '$push': {
+                                'name': '$sub_category',
+                                'system_code': '$_id',
+                                'brands': '$fieldN'
+                            }
+                        },
+                        'name': {
+                            '$first': '$main'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'system_code': '$_id',
+                        'subs': 1,
+                        'name': 1,
+                        '_id': 0
+                    }
+                }
+            ])
+            mega_menu_data = list()
+            for category in result:
+                kowsar_data = mongo.kowsar_collection.find_one({"system_code": category.get("system_code")})
+                category['label'] = kowsar_data.get("main_category_label")
+                for sub in category.get("subs", []):
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": sub.get("system_code")})
+                    sub['label'] = kowsar_data.get("sub_category_label")
+                    for brand in sub.get("brands", []):
+                        kowsar_data = mongo.kowsar_collection.find_one({"system_code": brand.get("system_code")})
+                        brand['label'] = kowsar_data.get("brand_label")
+                if category.get("name") == "Device":
+                    mega_menu_data.extend(category.get("subs"))
+                else:
+                    mega_menu_data.append(category)
+            return mega_menu_data
+
+    @staticmethod
+    def get_data_price_list_pic(customer_type, page, per_page):
+        skip = (page - 1) * per_page
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
                 {
                     '$match': {
                         'visible_in_site': True,
                         'system_code': {
-                            '$regex': '^200001'
+                            '$regex': f'^200001'
                         }
                     }
                 }, {
@@ -128,9 +324,88 @@ class Product:
                             '$gte': 0
                         }
                     }
+                },
+                {
+                    '$addFields': {
+                        'name': {
+                            '$concat': [
+                                {
+                                    '$cond': [
+                                        {
+                                            '$gte': [
+                                                {
+                                                    '$indexOfBytes': [
+                                                        '$root_obj.model', '$root_obj.brand'
+                                                    ]
+                                                }, 0
+                                            ]
+                                        }, {
+                                            '$arrayElemAt': [
+                                                {
+                                                    '$split': [
+                                                        '$root_obj.model', {
+                                                            '$concat': [
+                                                                '$root_obj.brand', ' '
+                                                            ]
+                                                        }
+                                                    ]
+                                                }, 1
+                                            ]
+                                        }, '$root_obj.model'
+                                    ]
+                                }, ' ', {
+                                    '$reduce': {
+                                        'input': {
+                                            '$objectToArray': '$root_obj.configs'
+                                        },
+                                        'initialValue': '(',
+                                        'in': {
+                                            '$concat': [
+                                                '$$value', {
+                                                    '$cond': [
+                                                        {
+                                                            '$in': [
+                                                                '$$this.v', [
+                                                                    None, 'RX', "?"
+                                                                ]
+                                                            ]
+                                                        }, '', {
+                                                            '$concat': [
+                                                                {
+                                                                    '$substr': [
+                                                                        '$$this.v', 0, {
+                                                                            '$indexOfBytes': [
+                                                                                '$$this.v', 'GB'
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }, ' '
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }, ')'
+                            ]
+                        }
+                    }
                 }, {
                     '$group': {
-                        '_id': '$root_obj.name',
+                        '_id': {
+                            '$concat': [
+                                {
+                                    '$substr': [
+                                        '$name', 0, {
+                                            '$indexOfBytes': [
+                                                '$name', ' )'
+                                            ]
+                                        }
+                                    ]
+                                }, ')'
+                            ]
+                        },
                         'root_obj': {
                             '$first': '$root_obj'
                         },
@@ -140,7 +415,11 @@ class Product:
                                     {
                                         '$convert': {
                                             'to': 'string',
-                                            'input': '$regular'
+                                            'input': {
+                                                '$divide': [
+                                                    '$regular', 1000
+                                                ]
+                                            }
                                         }
                                     }, '/', {
                                         '$substr': [
@@ -151,7 +430,19 @@ class Product:
                             }
                         }
                     }
-                }, {
+                },
+                {
+                    "$sort": {
+                        "root_obj.system_code": 1
+                    }
+                },
+                {
+                    "$skip": skip
+                },
+                {
+                    "$limit": per_page
+                },
+                {
                     '$group': {
                         '_id': '$root_obj.brand',
                         'system_code': {
@@ -163,7 +454,7 @@ class Product:
                         },
                         'data': {
                             '$push': {
-                                'model': '$_id',
+                                'name': '$_id',
                                 'prices': '$data'
                             }
                         }
@@ -182,11 +473,18 @@ class Product:
                 }
             ])
             result = list(result)
+            rows = list()
             for brand in result:
-                kowsar_data = mongo.kowsar_collection.find_one({"system_code": brand.get("system_code")}, {"_id": 0})
-                if kowsar_data:
-                    brand['image'] = kowsar_data.get("image")
-            return result
+                rows.append({
+                    "name": "logo",
+                    "image": f"https://api.aasood.com/gallery_files/iconpl/{brand['brand']}/117x36.jpg",
+                })
+                for i in brand.get("data", []):
+                    i.update({
+                        "brand": brand.get("brand")
+                    })
+                rows.extend(brand.get("data", []))
+            return rows
 
     @staticmethod
     def price_list_bot(customer_type, system_code, initial):
@@ -675,6 +973,7 @@ class Product:
                         'max_qty': "$max_qty",
                         'min_qty': "$min_qty",
                         "name": "$root_obj.name",
+                        "quantity": "$qty"
                     }
                 })
             result = mongo.product.aggregate(pipe_line)

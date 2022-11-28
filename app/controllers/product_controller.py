@@ -276,8 +276,22 @@ def get_items(system_code, customer_type):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_data_price_list_pic(customer_type):
-    result = Product.get_data_price_list_pic(customer_type)
+def get_data_price_list_pic(customer_type, page, per_page):
+    result = Product.get_data_price_list_pic(customer_type, page, per_page)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_mega_menu(customer_type, user_allowed_storages):
+    result = Product.mega_menu(customer_type, user_allowed_storages)
+    if result:
+        return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def get_products_seller(seller_id, page, per_page):
+    result = Product.get_products_seller(seller_id, page, per_page)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}

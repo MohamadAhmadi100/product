@@ -162,15 +162,15 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
     check_data, data_response, add_cardex_to_quantity = list(), list(), list()
     for cursor_products in data.get("products"):
         # add reserve per items
-        reserve_result = add_to_reserves_dealership(cursor_products.get("system_code"),
-                                                    cursor_products.get("storage_id"),
+        reserve_result = add_to_reserves_dealership(cursor_products.get("systemCode"),
+                                                    cursor_products.get("storageId"),
                                                     cursor_products.get("count"),
-                                                    customer_type[0], cursor_products.get("name"),
+                                                    customer_type, cursor_products.get("name"),
                                                     referral_number)
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
-        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
     # check all items reserved
     checked = all(elem[1] for elem in check_data)
     if checked:
@@ -186,7 +186,7 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
                 reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
                                                          reserved_products[0].get("storageId"),
                                                          reserved_products[0].get("count"),
-                                                         reserved_products[0].get("customer_type"),
+                                                         customer_type,
                                                          referral_number)
                 if reserve_result.get("success") is False:
                     return reserve_result

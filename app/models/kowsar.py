@@ -250,7 +250,7 @@ class KowsarPart:
             count += 1
         return name
 
-    def create_in_db(self, parent_data):
+    def create_in_db(self, parent_data, name):
         with MongoConnection() as mongo:
             del parent_data["system_code"]
             result = mongo.kowsar_collection.update_one(
@@ -261,6 +261,58 @@ class KowsarPart:
                         "guaranty": self.guaranty,
                     }}, upsert=True
             )
+            storages_data = dict()
+            warehouses = mongo.warehouses.find({"isActive": True}, {"_id": 0})
+            for warehouse in warehouses:
+                storages_data.update({
+                    str(warehouse.get("warehouse_id")): {
+                        "storage_id": str(warehouse.get("warehouse_id")),
+                        "regular": 0,
+                        "reserved": 0,
+                        "quantity": 0,
+                        "min_qty": 1,
+                        "max_qty": 1,
+                        "warehouse_state": warehouse.get("state"),
+                        "warehouse_city": warehouse.get("city"),
+                        "warehouse_state_id": warehouse.get("state_id"),
+                        "warehouse_city_id": warehouse.get("city_id"),
+                        "warehouse_label": warehouse.get("warehouse_name"),
+                        "special": None,
+                        "informal_price": None,
+                        "special_from_date": None,
+                        "special_to_date": None,
+                        "inventory": 0
+                    }
+                })
+            mongo.product.insert_one({
+                "system_code": self.system_code,
+                "attributes": {},
+                "brand": parent_data['brand'],
+                "color": parent_data['color'],
+                "configs": parent_data['configs'],
+                "guaranty": self.guaranty,
+                "main_category": parent_data['main_category'],
+                "model": parent_data['model'],
+                "name": name.split(" | ")[0],
+                "seller": parent_data['seller'],
+                "step": 4,
+                "sub_category": parent_data['sub_category'],
+                "date": jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "warehouse_details": {
+                    "B2B": {
+                        "type": "B2B",
+                        "storages": storages_data
+                    },
+                    "B2C": {
+                        "type": "B2C",
+                        "storages": storages_data
+                    },
+                    "B2G": {
+                        "type": "B2G",
+                        "storages": storages_data
+                    }
+                }
+            })
         if result.modified_count or result.upserted_id:
             return True
         return False
