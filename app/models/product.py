@@ -479,7 +479,9 @@ class Product:
                     prices = list()
                     for j in i.get("prices", []):
                         with RedisConnection() as redis:
-                            j += "/" + redis.client.hget(j.split("/")[1], "hex")
+                            hex_code = redis.client.hget(j.split("/")[1], "hex")
+                            if hex_code:
+                                j += "/" + hex_code
                             prices.append(j)
                     i.update({
                         "brand": brand.get("brand")
