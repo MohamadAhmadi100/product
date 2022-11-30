@@ -421,11 +421,7 @@ class Product:
                                                 ]
                                             }
                                         }
-                                    }, '/', {
-                                        '$substr': [
-                                            '$root_obj.color', 0, 1
-                                        ]
-                                    }
+                                    }, '/', '$root_obj.color'
                                 ]
                             }
                         }
@@ -480,9 +476,15 @@ class Product:
                     "image": f"https://api.aasood.com/gallery_files/iconpl/{brand['brand']}/117x36.jpg",
                 })
                 for i in brand.get("data", []):
+                    prices = list()
+                    for j in i.get("prices", []):
+                        with RedisConnection() as redis:
+                            j += "/" + redis.client.hget(j.split("/")[1], "hex")
+                            prices.append(j)
                     i.update({
                         "brand": brand.get("brand")
                     })
+                    i['prices'] = prices
                 rows.extend(brand.get("data", []))
             return rows
 
