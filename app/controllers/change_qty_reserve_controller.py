@@ -390,7 +390,7 @@ def return_imei(order, imei, staff_name):
             return {'success': False, 'message': 'محصول قبلا عودت داده شده است', "check_data": data_response,
                     'status_code': 200}
     else:
-        return {'success': False, 'message': 'محصولی جهت عودت یافت نشد', "check_data": data_response,
+        return {'success': False, 'message': 'تمامی محصولات قبلا عودت داده شده', "check_data": data_response,
                 'status_code': 200}
 
 def return_order(order, staff_name):
