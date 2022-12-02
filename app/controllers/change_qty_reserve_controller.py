@@ -365,29 +365,33 @@ def return_imei(order, imei, staff_name):
     order_model = OrderModel(dict(order))
     check_data, add_cardex_to_quantity, data_response = list(), list(), list()
     checked = False
-    for cursor_products in order_model.return_order_data:
-        if cursor_products.get("imei") == imei:
-            reserve_reserve_result = return_order_items(cursor_products.get("system_code"),
-                                                        cursor_products.get("storage_id"),
-                                                        cursor_products.get("customer_type"),
-                                                        cursor_products.get("order_number"),
-                                                        cursor_products.get("imei"),
-                                                        staff_name
-                                                        )
-            add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
-            checked = True
+    provided_products = order_model.return_order_data
+    if provided_products:
+        for cursor_products in provided_products:
+            if cursor_products.get("imei") == imei:
+                reserve_reserve_result = return_order_items(cursor_products.get("system_code"),
+                                                            cursor_products.get("storage_id"),
+                                                            cursor_products.get("customer_type"),
+                                                            cursor_products.get("order_number"),
+                                                            cursor_products.get("imei"),
+                                                            staff_name
+                                                            )
+                add_cardex_to_quantity.append(reserve_reserve_result.get('quantity_cardex_data'))
+                checked = True
 
-    if checked:
-        try:
-            add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
-                          add_cardex_to_quantity)
-            return {'success': True, 'message': 'done', 'status_code': 200}
-        except:
-            return {'success': False, 'message': 'log error', 'status_code': 409}
+        if checked:
+            try:
+                add_to_cardex(order["customer"].get("id"), order["customer"].get('fullName'), order.get("orderNumber"),
+                              add_cardex_to_quantity)
+                return {'success': True, 'message': 'done', 'status_code': 200}
+            except:
+                return {'success': False, 'message': 'log error', 'status_code': 409}
+        else:
+            return {'success': False, 'message': 'محصول قبلا عودت داده شده است', "check_data": data_response,
+                    'status_code': 200}
     else:
-        return {'success': False, 'message': 'عملیات ناموفقیت امیز بود', "check_data": data_response,
+        return {'success': False, 'message': 'محصولی جهت عودت یافت نشد', "check_data": data_response,
                 'status_code': 200}
-
 
 def return_order(order, staff_name):
     order_model = OrderModel(dict(order))

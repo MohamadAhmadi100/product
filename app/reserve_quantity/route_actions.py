@@ -30,11 +30,16 @@ class OrderModel:
     def return_order_data(self):
         provided_data = []
         customer_type = self.order["customer"]["type"]
+        return_log = self.order["logs"].get('returnLog')
+        returned_imeis = []
+        if return_log is not None:
+            for cursor in return_log:
+                returned_imeis.append(cursor['imei'])
         for item in self.order["splitedOrder"]:
             storage_id = item["storageId"]
             for product in item["products"]:
-                if product['status'] != "return":
-                    for imeis in product['imeis']:
+                for imeis in product['imeis']:
+                    if imeis not in returned_imeis:
                         product_detail = {
                             "system_code": product["systemCode"],
                             "storage_id": storage_id,
