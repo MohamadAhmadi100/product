@@ -488,3 +488,26 @@ def add_to_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
         return reserve_result
     else:
         return {"success": False, "error": f"{system_code}"}
+
+
+def checking_reserve_to_dealership(
+        storage_id: str,
+        system_code: str,
+        count: int,
+        customer_type: str):
+    try:
+        with MongoConnection() as mongo:
+            product = mongo.product.find_one({"system_code": system_code})
+            if not product:
+                return False, 0
+
+            qty_object = product.get("warehouse_details", {}).get(customer_type, {}).get("storages", {}).get(storage_id,
+                                                                                                             {})
+            if not qty_object:
+                return False, 0
+            enable_count = qty_object["quantity"] - qty_object["reserved"]
+            if enable_count < count:
+                return False, enable_count
+            return True, 1
+    except Exception:
+        return False, 0
