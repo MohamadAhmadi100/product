@@ -713,9 +713,3 @@ def cardex_query(quantity_cardex_data):
         return True
     except Exception:
         return False
-<<<<<<< Updated upstream
-=======
-
-#
-print(inv_report(["1"], None, None, [], [], "B2B"))
->>>>>>> Stashed changes
