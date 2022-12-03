@@ -160,6 +160,25 @@ dealership
 
 def add_to_reserve_dealership(referral_number, customer_id, customer_type, data):
     check_data, data_response, add_cardex_to_quantity = list(), list(), list()
+    response_of_checking = []
+    flag = True
+    for item in data.get("products"):
+        success, enable_count = checking_reserve_to_dealership(
+            item.get("storageId"),
+            item.get("systemCode"),
+            item.get("count"),
+            customer_type,
+        )
+        if not success:
+            flag = False
+            obj = {
+                "system_code": item.get("systemCode"),
+                "count": enable_count,
+            }
+            response_of_checking.append(obj)
+    if not flag:
+        return {'success': False, 'error': response_of_checking, 'status_code': 417}
+
     for cursor_products in data.get("products"):
         # add reserve per items
         reserve_result = add_to_reserves_dealership(cursor_products.get("systemCode"),
@@ -392,6 +411,7 @@ def return_imei(order, imei, staff_name):
     else:
         return {'success': False, 'message': 'تمامی محصولات قبلا عودت داده شده', "check_data": data_response,
                 'status_code': 200}
+
 
 def return_order(order, staff_name):
     order_model = OrderModel(dict(order))
