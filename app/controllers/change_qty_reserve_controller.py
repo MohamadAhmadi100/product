@@ -164,15 +164,15 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
     flag = True
     for item in data.get("products"):
         success, enable_count = checking_reserve_to_dealership(
-            item.get("storageId"),
-            item.get("systemCode"),
+            item.get("storage_id"),
+            item.get("system_code"),
             item.get("count"),
             customer_type,
         )
         if not success:
             flag = False
             obj = {
-                "system_code": item.get("systemCode"),
+                "system_code": item.get("system_code"),
                 "count": enable_count,
             }
             response_of_checking.append(obj)
@@ -181,8 +181,8 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
 
     for cursor_products in data.get("products"):
         # add reserve per items
-        reserve_result = add_to_reserves_dealership(cursor_products.get("systemCode"),
-                                                    cursor_products.get("storageId"),
+        reserve_result = add_to_reserves_dealership(cursor_products.get("system_code"),
+                                                    cursor_products.get("storage_id"),
                                                     cursor_products.get("count"),
                                                     customer_type, cursor_products.get("name"),
                                                     referral_number)
@@ -202,8 +202,8 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
         # roll back
         for reserved_products in check_data:
             if reserved_products[1] is True:
-                reserve_result = remove_reserve_rollback(reserved_products[0].get("systemCode"),
-                                                         reserved_products[0].get("storageId"),
+                reserve_result = remove_reserve_rollback(reserved_products[0].get("system_code"),
+                                                         reserved_products[0].get("storage_id"),
                                                          reserved_products[0].get("count"),
                                                          customer_type,
                                                          referral_number)
