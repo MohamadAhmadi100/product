@@ -11,6 +11,7 @@ import json
 from app.helpers.telegram import admin_handler
 import os
 
+
 def exit_order_handler(order_number: int,
                        storage_id: str,
                        products: list,
@@ -18,6 +19,12 @@ def exit_order_handler(order_number: int,
                        staff_name: str,
                        customer_type: str) -> tuple:
     try:
+
+        for item in products:
+            succ, mess = initial_checking(item["system_code"], storage_id, len(item["imeis"]), customer_type)
+            if not succ:
+                return succ, mess
+
         rollback_list = []
         rollback_flag = True
         error_message = None
@@ -80,6 +87,23 @@ def exit_order_handler(order_number: int,
         return False, "خطای سیستمی رخ داده است"
 
 
+def initial_checking(system_code, storage_id, count, customer_type):
+    try:
+        product = get_product_query(system_code)
+        if not product:
+            return False, "مغایرت در  بررسی سیستم کد "
+        qty_object = product.get("warehouse_details").get(customer_type).get("storages").get(storage_id)
+        if not qty_object:
+            return False, "مغایرت در بررسی اطلاعات"
+        # flag is False whene callled this func by rollback
+
+        if qty_object["quantity"] < count or qty_object["reserved"] < count:
+            return False, "مغایرت در بررسی موجودی"
+        return True, ""
+    except Exception:
+        return False, ""
+
+
 def update_quantity(order_number: int,
                     storage_id: str,
                     system_code: str,
@@ -130,6 +154,7 @@ def update_quantity(order_number: int,
         insert_error_log(error)
 
         return False, "خطای سیستمی رخ داده است"
+
 
 def rollback_products(products: list) -> bool:
     try:
@@ -374,6 +399,7 @@ def insert_error_log(new_error):
         file.seek(0)
         # convert back to json.
         json.dump(file_data, file, indent=4)
+
 
 def add_imei_query(imeis: list, system_code: str, storage_id: str, record_type: str) -> bool:
     try:
@@ -758,3 +784,4 @@ def get_imeis_report(system_code: str, storage_id: str) -> tuple:
     except Exception:
 
         return False, "خطای سیستمی رخ داده است"
+
