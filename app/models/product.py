@@ -585,8 +585,7 @@ class Product:
                     },
                     'min': {
                         '$gte': 0
-                    },
-                    "storage_id": '1'
+                    }
                 }
             }]
             if initial:
@@ -623,9 +622,11 @@ class Product:
                                    {
                                        '$group': {
                                            '_id': {
-                                               '$substr': [
-                                                   '$system_code', 0, 16
-                                               ]
+                                               "system_code": {
+                                                   '$substr': [
+                                                       '$system_code', 0, 16
+                                                   ]},
+                                               'storage_id': '$storage_id'
                                            },
                                            'header': {
                                                '$push': {
@@ -639,7 +640,6 @@ class Product:
                                            },
                                            'products': {
                                                '$push': {
-                                                   'storage_id': '$storage_id',
                                                    'customer_type': '$customer_type',
                                                    'color': '$root_obj.color',
                                                    'guaranty': '$root_obj.guaranty',
@@ -653,7 +653,7 @@ class Product:
                                        }
                                    }, {
                                        '$project': {
-                                           'system_code': '$_id',
+                                           'system_code': '$_id.system_code',
                                            '_id': 0,
                                            'header': {
                                                '$first': '$header'
