@@ -491,6 +491,208 @@ class Product:
             return rows
 
     @staticmethod
+    def search_product_in_bot(name):
+        pipe_lines = [{
+            '$match': {
+                'visible_in_site': True,
+                'name': {
+                    '$regex': re.compile(rf"{name}(?i)")
+                },
+            }
+        }, {
+            '$project': {
+                'system_code': 1,
+                'keys': {
+                    '$objectToArray': '$warehouse_details'
+                },
+                'root_obj': '$$ROOT'
+            }
+        }, {
+            '$unwind': '$keys'
+        }, {
+            '$project': {
+                'system_code': 1,
+                'customer_type': '$keys.k',
+                'zz': {
+                    '$objectToArray': '$keys.v.storages'
+                },
+                'root_obj': 1
+            }
+        }, {
+            '$unwind': '$zz'
+        }, {
+            '$project': {
+                'system_code': 1,
+                'storage_id': '$zz.k',
+                'customer_type': 1,
+                'qty': {
+                    '$subtract': [
+                        '$zz.v.quantity', '$zz.v.reserved'
+                    ]
+                },
+                'min': {
+                    '$subtract': [
+                        {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        }, '$zz.v.min_qty'
+                    ]
+                },
+                'min_qty': "$zz.v.min_qty",
+                'max_qty': {
+                    '$cond': [
+                        {
+                            '$gt': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.max_qty'
+                            ]
+                        }, '$zz.v.max_qty', {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        }
+                    ]
+                },
+                'regular': '$zz.v.regular',
+                'special': {
+                    '$cond': [
+                        {
+                            '$and': [
+                                {
+                                    '$gt': [
+                                        jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        '$zz.v.special_from_date'
+                                    ]
+                                }, {
+                                    '$lt': [
+                                        jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        '$zz.v.special_to_date'
+                                    ]
+                                }
+                            ]
+                        }, '$zz.v.special', None
+                    ]
+                },
+                'root_obj': 1
+            }
+        }, {
+            '$match': {
+                'customer_type': "B2B",
+                'qty': {
+                    '$gt': 0
+                },
+                'min': {
+                    '$gte': 0
+                }
+            }
+        }, {
+            '$group': {
+                '_id': {
+                    "system_code": {
+                        '$substr': [
+                            '$system_code', 0, 16
+                        ]},
+                    'storage_id': '$storage_id'
+                },
+                'header': {
+                    '$push': {
+                        '$concat': [
+                            '$root_obj.sub_category', '-', '$root_obj.brand'
+                        ]
+                    }
+                },
+                'name': {
+                    '$push': '$root_obj.name'
+                },
+                'products': {
+                    '$push': {
+                        'customer_type': '$customer_type',
+                        'color': '$root_obj.color',
+                        'guaranty': '$root_obj.guaranty',
+                        'regular': '$regular',
+                        'special': '$special',
+                        'system_code': '$system_code',
+                        "min_qty": "$min_qty",
+                        "max_qty": "$max_qty"
+                    }
+                }
+            }
+        }, {
+            '$project': {
+                'system_code': '$_id.system_code',
+                '_id': 0,
+                'header': {
+                    '$first': '$header'
+                },
+                'name': {
+                    '$first': '$name'
+                },
+                'products': 1
+            }
+        }, {
+            '$sort': {
+                'name': 1
+            }
+        },
+            {
+                "$limit": 10
+            },
+            {
+                '$group': {
+                    '_id': '$header',
+                    'system_code': {
+                        '$push': '$system_code'
+                    },
+                    'models': {
+                        '$push': {
+                            'system_code': '$system_code',
+                            'name': '$name',
+                            'products': '$products'
+                        }
+                    }
+                }
+            }, {
+                '$project': {
+                    'name': '$_id',
+                    'system_code': {
+                        '$substr': [
+                            {
+                                '$first': '$system_code'
+                            }, 0, 9
+                        ]
+                    },
+                    '_id': 0,
+                    'models': 1
+                }
+            }, {
+                '$sort': {
+                    'system_code': 1
+                }
+            }]
+        with MongoConnection() as mongo:
+            result = list(mongo.product.aggregate(pipe_lines))
+
+            with RedisConnection() as redis:
+                for group in result:
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": group["system_code"][:9]},
+                                                                   {"_id": 0})
+                    group['label'] = kowsar_data.get('sub_category_label',
+                                                     kowsar_data.get("sub_category")) + ' ' + kowsar_data.get(
+                        'brand_label', kowsar_data.get("brand"))
+                    for model in group['models']:
+                        for product in model['products']:
+                            product['guaranty'] = {"value": product['guaranty'],
+                                                   "label": redis.client.hget(product['guaranty'], "fa_ir")}
+                            product['color'] = {"value": product['color'],
+                                                "label": redis.client.hget(product['color'], "fa_ir")}
+
+            return result
+
+    @staticmethod
     def price_list_bot(customer_type, system_code, initial):
         with MongoConnection() as mongo:
             pipe_lines = [{
@@ -2040,7 +2242,25 @@ class Product:
                         'price': {
                             'storage_id': '$zz.k',
                             'regular': '$zz.v.regular',
-                            'special': '$zz.v.special'
+                            'special': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {
+                                                '$gt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_from_date'
+                                                ]
+                                            }, {
+                                                '$lt': [
+                                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                    '$zz.v.special_to_date'
+                                                ]
+                                            }
+                                        ]
+                                    }, '$zz.v.special', None
+                                ]
+                            }
                         },
                         'root_obj': 1
                     }
