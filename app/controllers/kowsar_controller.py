@@ -102,15 +102,12 @@ def get_kowsar_system_code(system_code):
 def assign_system_code_to_seller(system_codes: list, seller: str, seller_code: str, storage_ids: list):
     for system_code in system_codes:
         parent_data = KowsarGetter.system_code_name_getter(system_code)
-
         seller_group = create_kowsar_group(system_code[:16] + seller_code, seller, system_code[:16], None)
         color_group = create_kowsar_group(system_code[:16] + seller_code + system_code[19:22], parent_data.get("color"),
-                                          system_code[:16], None)
+                                          system_code[:16] + seller_code, None)
 
         system_code_part = create_system_code(system_code[:16] + seller_code + system_code[19:], storage_ids,
                                               parent_data.get("guaranty"))
-        if not seller_group.get("success") and not color_group.get("success") and not system_code_part.get("success"):
-            return {"success": False, "error": "ساخت گروه با خطا مواجه شد", "status_code": 500}
 
     return {"success": True, "message": {"message": "با موفقیت ایجاد شد"}, "status_code": 200}
 
