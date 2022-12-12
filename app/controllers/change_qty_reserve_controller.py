@@ -320,6 +320,7 @@ def transfer_products(transfer_object, system_code, staff_name):
         for cursor_products in transfer_object['products']:
             if cursor_products['system_code'] == system_code:
                 products = cursor_products
+                break
 
         if transfer_object['status_type'] == "submit":
             return export_transfer_form(products, transfer_object['src_warehouse'],
