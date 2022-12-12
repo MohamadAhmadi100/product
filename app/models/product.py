@@ -22,16 +22,97 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
-    def get_products_seller(seller_id, page, per_page):
-        skip = (page - 1) * per_page
+    def get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty, to_qty, from_price, to_price):
+        date_query = {}
+        if from_date or to_date:
+            date_query['date'] = {}
+            if to_date:
+                date_query['date']['$lte'] = to_date
+            if from_date:
+                date_query['date']['$gte'] = from_date
+
+        match_queries = {}
+        if from_qty or to_qty:
+            match_queries['zz.v.inventory'] = {}
+            if to_qty:
+                match_queries['zz.v.inventory']['$lte'] = to_qty
+            if from_qty:
+                match_queries['zz.v.inventory']['$gte'] = from_qty
+        if from_price or to_price:
+            match_queries['zz.v.regular'] = {}
+            if to_price:
+                match_queries['zz.v.regular']['$lte'] = to_price
+            if from_price:
+                match_queries['zz.v.regular']['$gte'] = from_price
+
         with MongoConnection() as mongo:
-            result = list(mongo.product.find(
-                {"system_code": {"$regex": ".{16}%s.{6}$" % (seller_id)}},
-                {"_id": 0}
-            ).skip(skip).limit(per_page))
-            count = mongo.product.count_documents({"system_code": {"$regex": ".{16}%s.{6}$" % (seller_id)}})
+            result = list(mongo.product.aggregate([
+                {
+                    '$match': dict({
+                        'system_code': {
+                            '$regex': f'.{{16}}{seller_id}.{{6}}$'
+                        }
+                    }, ** date_query)
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$match': dict({
+                        'zz.v.inventory': {
+                            '$gt': 0
+                        }
+                    }, ** match_queries)
+                }, {
+                    '$project': {
+                        "_id": 0,
+                        'system_code': 1,
+                        'customer_type': 1,
+                        'name': '$root_obj.name',
+                        'color': '$root_obj.color',
+                        'guaranty': '$root_obj.guaranty',
+                        'inventory': '$zz.v.inventory',
+                        'quantity': '$zz.v.quantity',
+                        'storage_id': '$zz.v.storage_id',
+                        'regular': '$zz.v.regular',
+                        'reserved': '$zz.v.reserved',
+                        'min_qty': '$zz.v.min_qty',
+                        'max_qty': '$zz.v.max_qty',
+                        'warehouse_label': '$zz.v.warehouse_label',
+                        'special': '$zz.v.special',
+                        'informal_price': '$zz.v.informal_price',
+                        'special_from_date': '$zz.v.special_from_date',
+                        'special_to_date': '$zz.v.special_to_date',
+                        'date': '$root_obj.date'
+                    }
+                },
+                {
+                    "$facet": {
+                        "data": [{"$skip": (page - 1) * per_page}, {"$limit": per_page}],
+                        "count": [{"$count": "count"}]
+                    }
+                }
+            ]))[0]
             if result:
-                return {"data": result, "count": count}
+                count = result.get("count", [{}])[0].get("count", 0) if result.get("count", [{}]) else 0
+                return {"data": result.get("data"), "count": count}
             return None
 
     @staticmethod
