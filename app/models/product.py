@@ -261,6 +261,11 @@ class Product:
                         }
                     }
                 }, {
+                    '$sort': {
+                        '_id': 1
+                    }
+                },
+                {
                     '$group': {
                         '_id': {
                             '$substr': [
