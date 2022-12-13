@@ -309,7 +309,7 @@ class Product:
             return mega_menu_data
 
     @staticmethod
-    def get_data_price_list_pic(customer_type, page, per_page):
+    def get_data_price_list_pic(customer_type, page, per_page, storage):
         skip = (page - 1) * per_page
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
@@ -401,7 +401,7 @@ class Product:
                         'root_obj': 1
                     }
                 }, {
-                    '$match': {
+                    '$match': dict({
                         'customer_type': customer_type,
                         'qty': {
                             '$gt': 0
@@ -409,7 +409,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         }
-                    }
+                    }, ** {} if not storage else {"storage_id": storage})
                 },
                 {
                     '$addFields': {
