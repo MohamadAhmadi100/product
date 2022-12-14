@@ -409,7 +409,7 @@ class Product:
                         'min': {
                             '$gte': 0
                         }
-                    }, ** {} if not storage else {"storage_id": storage})
+                    }, **{} if not storage_id else {"storage_id": storage_id})
                 },
                 {
                     '$addFields': {
