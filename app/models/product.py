@@ -309,7 +309,7 @@ class Product:
             return mega_menu_data
 
     @staticmethod
-    def get_data_price_list_pic(customer_type, page, per_page, storage):
+    def get_data_price_list_pic(system_code, customer_type, page, per_page, storage_id):
         skip = (page - 1) * per_page
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
@@ -317,7 +317,7 @@ class Product:
                     '$match': {
                         'visible_in_site': True,
                         'system_code': {
-                            '$regex': f'^200001'
+                            '$regex': f'^{system_code}'
                         }
                     }
                 }, {
