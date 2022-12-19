@@ -2,6 +2,8 @@ class Basket:
     @staticmethod
     def set_mandatory_products(mandatory_products, products):
         new_mandatory_products = []
+        if not len(mandatory_products) or not len(products):
+            return None, False
         for product in products:
             if not product.get("quantity"):
                 return None, False
@@ -13,11 +15,15 @@ class Basket:
                     product["price"] = mandatory_product.get("basketPrice")
                     product["storage_id"] = mandatory_product.get("storageId")
                     new_mandatory_products.append(product)
+        if len(new_mandatory_products) != len(mandatory_products):
+            return None, False
         return new_mandatory_products, True
 
     @staticmethod
     def set_selective_products(selective_products, products, basket_min_quantity):
         new_selective_products = []
+        if len(selective_products) < basket_min_quantity or len(products) < basket_min_quantity:
+            return None, False
         for product in products:
             if not product.get("quantity"):
                 return None, False

@@ -237,36 +237,37 @@ def get_basket_product(system_code, storage_id, customer_type):
 
 
 def get_basket_products(data: list, customer_type: str = "B2B"):
+    new_data = []
     for index, basket in enumerate(data):
         system_codes = [mandatory_product.get("systemCode") for mandatory_product in basket.get("mandatoryProducts")]
         if products := Product.get_basket_products(system_codes, basket.get("storageId"), customer_type):
-            result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products)
+            mandatory_result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products)
             if not active:
-                del data[index]
                 continue
-            data[index]["mandatoryProducts"] = result
+            data[index]["mandatoryProducts"] = mandatory_result
         selective_system_codes = [selective_product.get("systemCode") for selective_product in
                                   basket.get("selectiveProducts")]
         if selective_products := Product.get_basket_products(selective_system_codes, basket.get("storageId"),
                                                              customer_type):
-            result, active = Basket().set_selective_products(basket.get("selectiveProducts"), selective_products,
-                                                             basket.get("minSelectiveProductsQuantity"))
+            selective_result, active = Basket().set_selective_products(basket.get("selectiveProducts"),
+                                                                       selective_products,
+                                                                       basket.get("minSelectiveProductsQuantity"))
             if not active:
-                del data[index]
                 continue
-            data[index]["selectiveProducts"] = result
+            data[index]["selectiveProducts"] = selective_result
+        if products and selective_products:
+            new_data.append(data[index])
         if not basket.get("optionalProducts"):
             continue
         optional_system_codes = [optional_product.get("systemCode") for optional_product in
                                  basket.get("optionalProducts")]
         if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
                                                             customer_type):
-            data[index]["optionalProducts"] = Basket().set_optional_products(basket.get("optionalProducts"),
-                                                                             optional_products)
-    print(data)
-    if not len(data):
-        return {"success": False, "error": "سبدی برای نمایش وجود ندارد", "status_code": 404}
-    return {"success": True, "message": data, "status_code": 200}
+            new_data[index]["optionalProducts"] = Basket().set_optional_products(basket.get("optionalProducts"),
+                                                                                 optional_products)
+    return {"success": True, "message": dict({"data": new_data, "totalCount": len(new_data)}),
+            "status_code": 200} if len(new_data) else {"success": False, "error": "سبدی برای نمایش وجود ندارد",
+                                                       "status_code": 404}
 
 
 def price_list_bot(customer_type, system_code, initial=False):
@@ -283,8 +284,8 @@ def get_items(system_code, customer_type):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_data_price_list_pic(customer_type, page, per_page):
-    result = Product.get_data_price_list_pic(customer_type, page, per_page)
+def get_data_price_list_pic(system_code, customer_type, page, per_page, storage_id):
+    result = Product.get_data_price_list_pic(system_code, customer_type, page, per_page, storage_id)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
@@ -297,8 +298,9 @@ def get_mega_menu(customer_type, user_allowed_storages):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_products_seller(seller_id, page, per_page):
-    result = Product.get_products_seller(seller_id, page, per_page)
+def get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty, to_qty, from_price, to_price):
+    result = Product.get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty, to_qty, from_price,
+                                         to_price)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
