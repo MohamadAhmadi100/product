@@ -1,5 +1,5 @@
 from app.reserve_quantity.add_remove_model import AddRemoveQtyReserve
-from app.reserve_quantity.cardex import cardex
+from app.reserve_quantity.cardex import cardex, add_to_cardex
 from app.reserve_quantity.imeis import *
 
 
@@ -306,7 +306,7 @@ def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
-        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        add_to_cardex(None, staff_name, referral_number, list(quantity_cardex_data))
         return reserve_result
     else:
         return {"success": False, "error": f"{product['system_code']}"}
@@ -321,7 +321,7 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
     if reserve_result.get("success"):
         import_transfer_archive(product, src_warehouse, dst_warehouse, referral_number, staff_name)
         quantity_cardex_data = cardex(
-            storage_id=dst_warehouse,
+            storage_id=dst_warehouse['storage_id'],
             system_code=product['system_code'],
             incremental_id=referral_number,
             qty=product['count'],
@@ -335,7 +335,7 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
-        reserve_result['quantity_cardex_data'] = quantity_cardex_data
+        add_to_cardex(None, staff_name, referral_number, list(quantity_cardex_data))
         return reserve_result
     else:
         return {"success": False, "error": f"{product['system_code']}"}
@@ -349,7 +349,7 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
 
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
-            storage_id=dst_warehouse,
+            storage_id=src_warehouse['storage_id'],
             system_code=product['system_code'],
             incremental_id=referral_number,
             qty=product['count'],
