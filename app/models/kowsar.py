@@ -292,8 +292,8 @@ class KowsarPart:
                 "configs": parent_data['configs'],
                 "guaranty": self.guaranty,
                 "main_category": parent_data['main_category'],
-                "model": parent_data['model'],
-                "name": name.split(" | ")[0],
+                "model": parent_data['model'],                "name": name.split(" | ")[0] if parent_data['sub_category'] in ['Mobile', 'Tablet'] else
+                name.split(")")[0] + ")",
                 "seller": parent_data['seller'],
                 "step": 4,
                 "sub_category": parent_data['sub_category'],
