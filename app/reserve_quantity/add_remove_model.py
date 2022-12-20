@@ -170,7 +170,7 @@ class AddRemoveQtyReserve:
                                 storage_dict["reserved"] -= count
                                 self.cardex['newReserve'] = storage_dict["reserved"]
                                 if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0:
-                                    return {"success": False, "error": "تعداد از موجودی بیشتر است",
+                                    return {"success": False, "error": "تعداد از موجودی بیشتر است یا محصول رزرو نشده است",
                                             "status_code": 404}
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
                                 return {"success": True, "cardex": self.cardex}

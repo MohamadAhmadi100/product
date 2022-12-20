@@ -306,10 +306,10 @@ def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
-        add_to_cardex(None, staff_name, referral_number, list(quantity_cardex_data))
+        add_to_cardex(None, staff_name, referral_number, [quantity_cardex_data])
         return reserve_result
     else:
-        return {"success": False, "error": f"{product['system_code']}"}
+        return reserve_result
 
 
 def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number, quantity_type, staff_name):
@@ -317,7 +317,6 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
     reserve_result = add_remove_model.add_quantity(product['system_code'], dst_warehouse['storage_id'],
                                                    product['count'],
                                                    quantity_type, product['sell_price'])
-
     if reserve_result.get("success"):
         import_transfer_archive(product, src_warehouse, dst_warehouse, referral_number, staff_name)
         quantity_cardex_data = cardex(
@@ -335,7 +334,7 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
-        add_to_cardex(None, staff_name, referral_number, list(quantity_cardex_data))
+        add_to_cardex(None, staff_name, referral_number, [quantity_cardex_data])
         return reserve_result
     else:
         return {"success": False, "error": f"{product['system_code']}"}

@@ -189,56 +189,117 @@ dealership_detail = {
 }"""
 
 
+def check_import_transfer(products, dst_warehouse):
+    with MongoConnection() as client:
+        prod = list(client.imeis.aggregate([
+            {
+                '$match': {
+                    'system_code': '2000010030002001001003002',
+                    'storage_id': '1000'
+                }
+            }, {
+                '$replaceWith': {
+                    'newWith': '$imeis.imei'
+                }
+            }
+        ]))
+        print(prod[0].get('newWith'))
+        if products['accepted_imeis'] in prod[0].get("newWith"):
+            print("hi")
+
+
+def check_import(products, storage):
+    with MongoConnection() as client:
+        accepted_imeis = []
+        for imeis in products['imeis']:
+            prod = list(client.archive.aggregate([
+                {
+                    '$match': {
+                        'articles.first': imeis
+                    }
+                }, {
+                    '$unwind': '$articles'
+                }, {
+                    '$group': {
+                        '_id': '$articles.first',
+                        'fieldN': {
+                            '$push': '$articles'
+                        }
+                    }
+                }, {
+                    '$match': {
+                        '_id': imeis
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'data': {
+                            '$first': '$fieldN'
+                        }
+                    }
+                }
+            ]))
+            if prod[0].get("data").get('stockId') != storage['storage_id']:
+                accepted_imeis.append(imeis)
+        if len(accepted_imeis) == 0:
+            return None
+        products['imeis'] = accepted_imeis
+        return products
+
+
 def import_transfer_archive(products, src_warehouse, dst_warehouse, referral_number, staff_name):
     with MongoConnection() as client:
         transfer_stocks = []
         warehouse = find_warehouse(dst_warehouse['storage_id'])['warehouses']
-        for imeis in products['imeis']:
-            client.product_archive.update_one({"articles.first": imeis},
-                                              {"$set": {
-                                                  "articles.$.status": "landed",
-                                                  "articles.$.stockId": dst_warehouse['storage_id'],
-                                                  "articles.$.stockName": warehouse['warehouse_name'],
-                                                  "articles.$.stockLabel": warehouse['warehouse_name'],
-                                                  "articles.$.stockState": warehouse['state'],
-                                                  "articles.$.stockCity": warehouse['city'],
-                                                  "articles.$.stockStateId": warehouse['state_id'],
-                                                  "articles.$.stockCityId": warehouse['city_id'],
-                                              },
-                                                  "$push": {"articles.$.transfer_detail": {
-                                                      "from_storage": src_warehouse['storage_id'],
-                                                      "referral_number": referral_number,
-                                                      "import_time": str(jdatetime.datetime.now()).split(".")[0],
-                                                      "import_by": staff_name
-                                                  }
-                                                  }})
-            objected_imei = {"imei": imeis}
-            client.imeis.update_one({"imeis.imei": imeis, "storage_id": "1000"}, {"$pull": {"imeis": {"imei": imeis}}})
-            transfer_stocks.append(objected_imei)
-        count = client.imeis.count_documents(
-            {"system_code": products['system_code'], "storage_id": dst_warehouse['storage_id']})
-        if count > 0:
-            client.imeis.update_one(
-                {"system_code": products['system_code'], "storage_id": dst_warehouse['storage_id']},
-                {"$push": {"imeis": {"$each": transfer_stocks}}})
-        else:
-            client.imeis.insert_one({
-                "type": 'imeis',
-                "system_code": products['system_code'],
-                "name": products['name'],
-                "brand": products.get('brand'),
-                "model": products.get('model'),
-                "color": products.get('color'),
-                "guaranty": products.get('guaranty'),
-                "seller": products.get('seller'),
-                "stock_label": warehouse['warehouse_name'],
-                "storage_id": str(warehouse['warehouse_id']),
-                "imeis": []
-            })
-            client.imeis.update_one(
-                {"system_code": products['system_code'], "storage_id": dst_warehouse.get('storage_id')},
-                {"$push": {"imeis": {"$each": transfer_stocks}}})
-        return {"success": True}
+        checked_product = check_import(products, dst_warehouse)
+        if checked_product is not None:
+            for imeis in products['imeis']:
+                client.product_archive.update_one({"articles.first": imeis},
+                                                  {"$set": {
+                                                      "articles.$.status": "landed",
+                                                      "articles.$.stockId": dst_warehouse['storage_id'],
+                                                      "articles.$.stockName": warehouse['warehouse_name'],
+                                                      "articles.$.stockLabel": warehouse['warehouse_name'],
+                                                      "articles.$.stockState": warehouse['state'],
+                                                      "articles.$.stockCity": warehouse['city'],
+                                                      "articles.$.stockStateId": warehouse['state_id'],
+                                                      "articles.$.stockCityId": warehouse['city_id'],
+                                                  },
+                                                      "$push": {"articles.$.transfer_detail": {
+                                                          "from_storage": src_warehouse['storage_id'],
+                                                          "referral_number": referral_number,
+                                                          "import_time": str(jdatetime.datetime.now()).split(".")[0],
+                                                          "import_by": staff_name
+                                                      }
+                                                      }})
+                objected_imei = {"imei": imeis}
+                client.imeis.update_one({"imeis.imei": imeis, "storage_id": "1000"},
+                                        {"$pull": {"imeis": {"imei": imeis}}})
+                transfer_stocks.append(objected_imei)
+            count = client.imeis.count_documents(
+                {"system_code": products['system_code'], "storage_id": dst_warehouse['storage_id']})
+            if count > 0:
+                client.imeis.update_one(
+                    {"system_code": products['system_code'], "storage_id": dst_warehouse['storage_id']},
+                    {"$push": {"imeis": {"$each": transfer_stocks}}})
+            else:
+                client.imeis.insert_one({
+                    "type": 'imeis',
+                    "system_code": products['system_code'],
+                    "name": products['name'],
+                    "brand": products.get('brand'),
+                    "model": products.get('model'),
+                    "color": products.get('color'),
+                    "guaranty": products.get('guaranty'),
+                    "seller": products.get('seller'),
+                    "stock_label": warehouse['warehouse_name'],
+                    "storage_id": str(warehouse['warehouse_id']),
+                    "imeis": []
+                })
+                client.imeis.update_one(
+                    {"system_code": products['system_code'], "storage_id": dst_warehouse.get('storage_id')},
+                    {"$push": {"imeis": {"$each": transfer_stocks}}})
+    return {"success": True}
 
 
 def check_transfer_imei(imei, transfer_object):

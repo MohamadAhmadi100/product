@@ -1,4 +1,3 @@
-from app.reserve_quantity.cardex import add_to_cardex
 from app.reserve_quantity.route_actions import *
 
 """
@@ -328,9 +327,15 @@ def transfer_products(transfer_object, system_code, staff_name):
                                         transfer_object['referral_number'],
                                         transfer_object['quantity_type'], 'staff')
         elif transfer_object['status_type'] == "transfer":
-            return import_transfer_form(products, transfer_object['src_warehouse'], transfer_object['dst_warehouse'],
-                                        transfer_object['referral_number'],
-                                        transfer_object['quantity_type'], 'staff')
+            checked_product = check_import(products, transfer_object['dst_warehouse'])
+            if checked_product is not None:
+                return import_transfer_form(products, transfer_object['src_warehouse'],
+                                            transfer_object['dst_warehouse'],
+                                            transfer_object['referral_number'],
+                                            transfer_object['quantity_type'], 'staff')
+            else:
+                return {"success": False, "error": "سیستم کد قبلا ثبت شده است"}
+
         return {'success': False, 'error': 'status not fount', 'status_code': 400}
     except:
         return {'success': False, 'error': 'root exception error', 'status_code': 400}
