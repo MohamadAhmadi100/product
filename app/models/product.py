@@ -2990,6 +2990,7 @@ class Product:
                         "editable_in_ecommerce": 1,
                         "editable_in_portal": 1,
                         "label": 1,
+                        "values": 1,
                         "portal_use_in_filter": 1,
                         "portal_use_in_search": 1,
                         "show_in_ecommerce": 1,
@@ -3002,7 +3003,10 @@ class Product:
 
                         for key, value in product.get("attributes", {}).items():
                             stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
-                            stored_data['value'] = value
+                            stored_data['value'] = [attr_value.get("label") for attr_value in stored_data['values'] if
+                                                    attr_value.get("value") == value][0] if stored_data.get(
+                                "values") else value
+                            del stored_data['values']
                             attributes_list.append(stored_data)
 
                         product['attributes'] = attributes_list
