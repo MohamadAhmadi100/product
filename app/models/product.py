@@ -3006,7 +3006,8 @@ class Product:
                             stored_data['value'] = [attr_value.get("label") for attr_value in stored_data['values'] if
                                                     attr_value.get("value") == value][0] if stored_data.get(
                                 "values") else value
-                            del stored_data['values']
+                            if stored_data.get("values"):
+                                del stored_data['values']
                             attributes_list.append(stored_data)
 
                         product['attributes'] = attributes_list
