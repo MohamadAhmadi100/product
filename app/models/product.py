@@ -3026,9 +3026,9 @@ class Product:
 
                         for key, value in product.get("attributes", {}).items():
                             stored_data = copy([attr for attr in attributes_data if attr['name'] == key][0])
-                            stored_data['value'] = [attr_value.get("label") for attr_value in stored_data['values'] if
-                                                    attr_value.get("value") == value][0] if stored_data.get(
-                                "values") else value
+                            stored_data['value'] = value if not stored_data.get(
+                                "values") else [attr_value.get("label") for attr_value in stored_data['values']
+                                                if attr_value.get("value") == value][0] if value else None
                             if stored_data.get("values"):
                                 del stored_data['values']
                             attributes_list.append(stored_data)
