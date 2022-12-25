@@ -1,4 +1,5 @@
 import re
+from copy import copy
 from typing import Union
 
 import jdatetime
@@ -3024,7 +3025,7 @@ class Product:
                         attributes_list = list()
 
                         for key, value in product.get("attributes", {}).items():
-                            stored_data = [attr for attr in attributes_data if attr['name'] == key][0]
+                            stored_data = copy([attr for attr in attributes_data if attr['name'] == key][0])
                             stored_data['value'] = [attr_value.get("label") for attr_value in stored_data['values'] if
                                                     attr_value.get("value") == value][0] if stored_data.get(
                                 "values") else value
@@ -3032,8 +3033,7 @@ class Product:
                                 del stored_data['values']
                             attributes_list.append(stored_data)
 
-                        attributes_list = sorted(attributes_list, key=lambda x: x.get("priority", 9999))
-                        product['attributes'] = attributes_list
+                        product['attributes'] = sorted(attributes_list, key=lambda x: x.get("priority", 9999))
                         product['color'] = {"value": product['color'],
                                             "label": redis.client.hget(product['color'], lang),
                                             "hex": redis.client.hget(product['color'], "hex")
