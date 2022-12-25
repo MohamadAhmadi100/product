@@ -52,7 +52,7 @@ class Product:
                         'system_code': {
                             '$regex': f'.{{16}}{seller_id}.{{6}}$'
                         }
-                    }, ** date_query)
+                    }, **date_query)
                 }, {
                     '$project': {
                         'system_code': 1,
@@ -79,7 +79,7 @@ class Product:
                         'zz.v.inventory': {
                             '$gt': 0
                         }
-                    }, ** match_queries)
+                    }, **match_queries)
                 }, {
                     '$project': {
                         "_id": 0,
@@ -2995,6 +2995,7 @@ class Product:
                         "portal_use_in_search": 1,
                         "show_in_ecommerce": 1,
                         "show_in_portal": 1,
+                        "priority": 1
                     }
                 ))
                 with RedisConnection() as redis:
@@ -3010,6 +3011,7 @@ class Product:
                                 del stored_data['values']
                             attributes_list.append(stored_data)
 
+                        attributes_list = sorted(attributes_list, key=lambda x: x.get("priority", 9999))
                         product['attributes'] = attributes_list
                         product['color'] = {"value": product['color'],
                                             "label": redis.client.hget(product['color'], lang),
