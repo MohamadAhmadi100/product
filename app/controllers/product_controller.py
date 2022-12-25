@@ -63,13 +63,11 @@ def set_product_price(system_code: str, customer_type: dict):
 
 
 def update_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
-                 informal_price: dict,
-                 special_from_date: str,
-                 special_to_date: str) -> dict:
+                 informal_price: dict, credit: dict, special_from_date: str, special_to_date: str) -> dict:
     """
     update price (regular & special) by customer type and storage for a system code
     """
-    data = Price.update_price(system_code, customer_type, storage_id, regular, special, informal_price,
+    data = Price.update_price(system_code, customer_type, storage_id, regular, special, informal_price, credit,
                               special_from_date, special_to_date)
     if data:
         return {"success": True, "status_code": 202, "message": data}
@@ -303,4 +301,11 @@ def get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty,
                                          to_price)
     if result:
         return {"success": True, "message": result, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def add_credit_by_category(system_code: str, customer_type: str, credit: dict):
+    result = Product.add_credit_by_category(system_code, customer_type, credit)
+    if result:
+        return {"success": True, "message": "price updated successfully", "status_code": 201}
     return {"success": False, "error": "product not found", "status_code": 404}

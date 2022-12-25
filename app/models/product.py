@@ -122,6 +122,27 @@ class Product:
             return True if result else False
 
     @staticmethod
+    def add_credit_by_category(system_code, customer_type, credit):
+        with MongoConnection() as mongo:
+            warehouses_list = list(mongo.warehouses.find(
+                {"isActive": True},
+                {
+                    "_id": 0,
+                    "storage_id": {
+                        "$convert": {"input": "$warehouse_id",
+                                     "to": "string"}},
+                }))
+            query = {f"warehouse_details.{customer_type}.storages.{storage['storage_id']}.credit": credit for storage in
+                     warehouses_list}
+            result = mongo.product.update_many(
+                {"system_code": {"$regex": f"^{system_code}"}},
+                {"$set": query}
+            )
+            if result.modified_count:
+                return True
+            return False
+
+    @staticmethod
     def mega_menu(customer_type, user_allowed_storages):
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
@@ -3903,7 +3924,7 @@ class Price:
 
     @staticmethod
     def update_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
-                     informal_price: dict,
+                     informal_price: dict, credit: dict,
                      special_from_date: str, special_to_date: str) -> Union[str, None]:
         with MongoConnection() as client:
             update_data = {f"warehouse_details.{customer_type}.storages.{storage_id}.storage_id": storage_id}
@@ -3918,6 +3939,10 @@ class Price:
             if informal_price:
                 update_data.update({
                     f"warehouse_details.{customer_type}.storages.{storage_id}.informal_price": informal_price
+                })
+            if credit:
+                update_data.update({
+                    f"warehouse_details.{customer_type}.storages.{storage_id}.credit": credit
                 })
             if special_from_date:
                 update_data.update({
