@@ -2791,7 +2791,7 @@ class Product:
             return False
 
     @staticmethod
-    def get_product_page(system_code, user_allowed_storages, customer_type, lang):
+    def get_product_page(system_code, user_allowed_storages, customer_type, lang, credit):
         with MongoConnection() as mongo:
             result = mongo.product.aggregate([
                 {
@@ -2933,6 +2933,7 @@ class Product:
                                     }, '$warehouse_details.v.special', None
                                 ]
                             },
+                            "credit": 1 if credit else 0,
                             'warehouse_state': 1,
                             'warehouse_city': 1,
                             'warehouse_state_id': 1,

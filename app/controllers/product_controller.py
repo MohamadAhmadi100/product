@@ -142,6 +142,28 @@ def get_product_by_system_code(system_code: str, lang: str) -> dict:
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
+def get_products_credit_price_by_system_codes(product_list: dict, lang: str, customer_type) -> dict:
+    cart_credit_price = 0
+    for product in product_list:
+        result = Product.get_product_by_system_code(product.get("system_code"), lang)
+        storage_id = product.get("storage_id")
+        days = product.get("days")
+        pr_storage = result.get("warehouse_details", {}).get(customer_type, {}).get("storages", {}).get(storage_id, {})
+        pr_price = pr_storage.get("regular", 0)
+        pr_credit = pr_storage.get("credit")
+        if pr_credit.get("type") == "fixed":
+            cart_credit_price += pr_price + (
+                    pr_credit.get("percent", 0) * pr_price
+            ) + pr_credit.get("regular", 0)
+        elif pr_credit.get("type") == "daily":
+            cart_credit_price += pr_price + (
+                    pr_credit.get("percent", 0) * pr_price
+            ) * days + pr_credit.get("regular", 0) * days
+    if cart_credit_price:
+        return {"success": True, "message": cart_credit_price, "status_code": 200}
+    return {"success": False, "error": "product not found", "status_code": 404}
+
+
 def get_product_list_by_system_code(system_code, page, per_page, storages, user_allowed_storages, customer_type):
     result = Product.get_product_list_by_system_code(system_code, page, per_page, storages, user_allowed_storages,
                                                      customer_type)
@@ -150,11 +172,12 @@ def get_product_list_by_system_code(system_code, page, per_page, storages, user_
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_product_page(system_code: str, user_allowed_storages: list, customer_type: str, lang: str) -> dict:
+def get_product_page(system_code: str, user_allowed_storages: list, customer_type: str, lang: str,
+                     credit: bool) -> dict:
     """
     Get a product by system_code in main collection in database.
     """
-    result = Product.get_product_page(system_code, user_allowed_storages, customer_type, lang)
+    result = Product.get_product_page(system_code, user_allowed_storages, customer_type, lang, credit)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
