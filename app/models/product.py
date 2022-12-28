@@ -2933,7 +2933,7 @@ class Product:
                                     }, '$warehouse_details.v.special', None
                                 ]
                             },
-                            "credit": 1 if credit else 0,
+                            # "credit": 1 if credit else 0,
                             'warehouse_state': 1,
                             'warehouse_city': 1,
                             'warehouse_state_id': 1,
