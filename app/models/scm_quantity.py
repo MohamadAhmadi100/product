@@ -713,3 +713,140 @@ def cardex_query(quantity_cardex_data):
         return True
     except Exception:
         return False
+
+
+def management_reports():
+    with MongoConnection() as mongo:
+        inv_warehouse_report = list(mongo.product.aggregate([
+            {
+                '$addFields': {
+                    'B2B': '$warehouse_details.B2B.storages'
+                }
+            }, {
+                '$project': {
+                    'brand': '$brand',
+                    'result': {
+                        '$objectToArray': '$B2B'
+                    }
+                }
+            }, {
+                '$unwind': '$result'
+            }, {
+                '$addFields': {
+                    'res': '$result.v',
+                    'price': '$result.v.regular'
+                }
+            }, {
+                '$match': {
+                    'res.quantity': {
+                        '$gt': 0
+                    }
+                }
+            }, {
+                '$project': {
+                    '_id': 0,
+                    'brand': 1,
+                    'totalPrice': {
+                        '$multiply': [
+                            '$price', '$res.quantity'
+                        ]
+                    },
+                    'res': 1
+                }
+            }, {
+                '$group': {
+                    '_id': {
+                        'brand': '$brand',
+                        'warehouse': '$res.warehouse_label'
+                    },
+                    'totalQty': {
+                        '$sum': '$res.quantity'
+                    },
+                    'totalPrice': {
+                        '$sum': '$totalPrice'
+                    }
+                }
+            }, {
+                '$project': {
+                    'storage': '$_id.warehouse',
+                    'brand': '$_id.brand',
+                    '_id': 0,
+                    'totalQty': 1,
+                    'totalPrice': 1
+                }
+            }
+        ]))
+        inv_warehouse_sidebar_total_qty = 0
+        inv_warehouse_sidebar_total_price = 0
+        inv_brand_sidebar = {}
+        if inv_warehouse_report:
+            for items in inv_warehouse_report:
+                inv_warehouse_sidebar_total_qty += items['totalQty']
+                inv_warehouse_sidebar_total_price += items['totalPrice']
+            inv_brand_sidebar = {"totalQty": inv_warehouse_sidebar_total_qty,
+                                 "totalPrice": inv_warehouse_sidebar_total_price}
+        brand_report = list(mongo.product.aggregate([
+            {
+                '$addFields': {
+                    'B2B': '$warehouse_details.B2B.storages'
+                }
+            }, {
+                '$project': {
+                    'brand': '$brand',
+                    'result': {
+                        '$objectToArray': '$B2B'
+                    }
+                }
+            }, {
+                '$unwind': '$result'
+            }, {
+                '$addFields': {
+                    'res': '$result.v',
+                    'price': '$result.v.regular'
+                }
+            }, {
+                '$match': {
+                    'res.quantity': {
+                        '$gt': 0
+                    }
+                }
+            }, {
+                '$project': {
+                    '_id': 0,
+                    'brand': 1,
+                    'totalPrice': {
+                        '$multiply': [
+                            '$price', '$res.quantity'
+                        ]
+                    },
+                    'res': 1
+                }
+            }, {
+                '$group': {
+                    '_id': '$brand',
+                    'totalQty': {
+                        '$sum': '$res.quantity'
+                    },
+                    'totalPrice': {
+                        '$sum': '$totalPrice'
+                    }
+                }
+            }, {
+                '$project': {
+                    'brand': '$_id',
+                    '_id': 0,
+                    'totalQty': 1,
+                    'totalPrice': 1
+                }
+            }
+        ]))
+        brand_sidebar_total_qty = 0
+        brand_sidebar_total_price = 0
+        brand_sidebar = {}
+        if brand_report:
+            for items in brand_report:
+                brand_sidebar_total_qty += items['totalQty']
+                brand_sidebar_total_price += items['totalPrice']
+            brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
+        return {"invBrandReport": inv_warehouse_report, "invBrandSide": inv_brand_sidebar, "brandReport": brand_report,
+                "brandSide": brand_sidebar}
