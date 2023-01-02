@@ -260,11 +260,13 @@ def get_basket_product(system_code, storage_id, customer_type):
 def get_basket_products(data: list, customer_type: str = "B2B"):
     new_data = []
     for index, basket in enumerate(data):
+        product_count = 0
         system_codes = [mandatory_product.get("systemCode") for mandatory_product in basket.get("mandatoryProducts")]
         if products := Product.get_basket_products(system_codes, basket.get("storageId"), customer_type):
             mandatory_result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products)
             if not active:
                 continue
+            product_count += len(mandatory_result)
             data[index]["mandatoryProducts"] = mandatory_result
         selective_system_codes = [selective_product.get("systemCode") for selective_product in
                                   basket.get("selectiveProducts")]
@@ -275,19 +277,22 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
                                                                        basket.get("minSelectiveProductsQuantity"))
             if not active:
                 continue
+            product_count += len(selective_result)
             data[index]["selectiveProducts"] = selective_result
-
         if not basket.get("optionalProducts"):
             if products and selective_products:
+                data[index]["productsCount"] = product_count
                 new_data.append(data[index])
             continue
         optional_system_codes = [optional_product.get("systemCode") for optional_product in
                                  basket.get("optionalProducts")]
         if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
                                                             customer_type):
-            new_optional_products = Basket().set_optional_products(basket.get("optionalProducts"), optional_products)
-            data[index]["optionalProducts"] = new_optional_products
+            optional_result = Basket().set_optional_products(basket.get("optionalProducts"), optional_products)
+            data[index]["optionalProducts"] = optional_result
             if products and selective_products:
+                product_count += len(optional_result)
+                data[index]["productsCount"] = product_count
                 new_data.append(data[index])
 
     return {"success": True, "message": dict({"data": new_data, "totalCount": len(new_data)}),
