@@ -877,9 +877,8 @@ def management_reports():
             brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
         return {"invBrandReport": result_inv_warehouse_report, "invBrandSide": inv_brand_sidebar,
                 "brandReport": result_brand_report,
-                "brandSide": brand_sidebar}
+                "brandSide": brand_sidebar, "storageNames": storages}
 
-        # return result_inv_warehouse_report
-
-
+#         return storages
+#
 # print(management_reports())
