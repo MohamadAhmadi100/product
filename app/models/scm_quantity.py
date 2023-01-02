@@ -757,7 +757,8 @@ def management_reports():
                 '$group': {
                     '_id': {
                         'brand': '$brand',
-                        'warehouse': '$res.warehouse_label'
+                        'warehouse': '$res.warehouse_label',
+                        'storage_id': '$res.storage_id'
                     },
                     'totalQty': {
                         '$sum': '$res.quantity'
@@ -772,17 +773,26 @@ def management_reports():
                     'brand': '$_id.brand',
                     '_id': 0,
                     'totalQty': 1,
-                    'totalPrice': 1
+                    'totalPrice': 1,
+                    'storageId': '$_id.storage_id'
                 }
             }
         ]))
+
+        def custom_sort(k):
+            return int(k['storageId'])
+
+        inv_warehouse_report.sort(key=custom_sort)
         inv_warehouse_sidebar_total_qty = 0
         inv_warehouse_sidebar_total_price = 0
         inv_brand_sidebar = {}
         if inv_warehouse_report:
             brands = []
+            storages = []
             result_inv_warehouse_report = []
             for items in inv_warehouse_report:
+                if items['storage'] not in storages:
+                    storages.append(items['storage'])
                 if items['brand'] not in brands:
                     result_inv_warehouse_report.append({"brand": items['brand'], "data": [items]})
                     brands.append(items['brand'])
@@ -793,6 +803,7 @@ def management_reports():
                 inv_warehouse_sidebar_total_price += items['totalPrice']
             inv_brand_sidebar = {"totalQty": inv_warehouse_sidebar_total_qty,
                                  "totalPrice": inv_warehouse_sidebar_total_price}
+
         brand_report = list(mongo.product.aggregate([
             {
                 '$addFields': {
@@ -867,3 +878,8 @@ def management_reports():
         return {"invBrandReport": result_inv_warehouse_report, "invBrandSide": inv_brand_sidebar,
                 "brandReport": result_brand_report,
                 "brandSide": brand_sidebar}
+
+        # return result_inv_warehouse_report
+
+
+# print(management_reports())
