@@ -780,7 +780,15 @@ def management_reports():
         inv_warehouse_sidebar_total_price = 0
         inv_brand_sidebar = {}
         if inv_warehouse_report:
+            brands = []
+            result_inv_warehouse_report = []
             for items in inv_warehouse_report:
+                if items['brand'] not in brands:
+                    result_inv_warehouse_report.append({"brand": items['brand'], "data": [items]})
+                    brands.append(items['brand'])
+                else:
+                    index = brands.index(items['brand'])
+                    result_inv_warehouse_report[index]['data'].append(items)
                 inv_warehouse_sidebar_total_qty += items['totalQty']
                 inv_warehouse_sidebar_total_price += items['totalPrice']
             inv_brand_sidebar = {"totalQty": inv_warehouse_sidebar_total_qty,
@@ -844,9 +852,18 @@ def management_reports():
         brand_sidebar_total_price = 0
         brand_sidebar = {}
         if brand_report:
+            brands = []
+            result_brand_report = []
             for items in brand_report:
+                if items['brand'] not in brands:
+                    result_brand_report.append({"brand": items['brand'], "data": [items]})
+                    brands.append(items['brand'])
+                else:
+                    index = brands.index(items['brand'])
+                    result_brand_report[index]['data'].append(items)
                 brand_sidebar_total_qty += items['totalQty']
                 brand_sidebar_total_price += items['totalPrice']
             brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
-        return {"invBrandReport": inv_warehouse_report, "invBrandSide": inv_brand_sidebar, "brandReport": brand_report,
+        return {"invBrandReport": result_inv_warehouse_report, "invBrandSide": inv_brand_sidebar,
+                "brandReport": result_brand_report,
                 "brandSide": brand_sidebar}
