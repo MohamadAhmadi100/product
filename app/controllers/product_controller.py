@@ -276,16 +276,20 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
             if not active:
                 continue
             data[index]["selectiveProducts"] = selective_result
-        if products and selective_products:
-            new_data.append(data[index])
+
         if not basket.get("optionalProducts"):
+            if products and selective_products:
+                new_data.append(data[index])
             continue
         optional_system_codes = [optional_product.get("systemCode") for optional_product in
                                  basket.get("optionalProducts")]
         if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
                                                             customer_type):
-            new_data[index]["optionalProducts"] = Basket().set_optional_products(basket.get("optionalProducts"),
-                                                                                 optional_products)
+            new_optional_products = Basket().set_optional_products(basket.get("optionalProducts"), optional_products)
+            data[index]["optionalProducts"] = new_optional_products
+            if products and selective_products:
+                new_data.append(data[index])
+
     return {"success": True, "message": dict({"data": new_data, "totalCount": len(new_data)}),
             "status_code": 200} if len(new_data) else {"success": False, "error": "سبدی برای نمایش وجود ندارد",
                                                        "status_code": 404}
