@@ -723,6 +723,10 @@ def management_reports():
                     'B2B': '$warehouse_details.B2B.storages'
                 }
             }, {
+                '$match': {
+                    'main_category': 'Device'
+                }
+            }, {
                 '$project': {
                     'brand': '$brand',
                     'result': {
@@ -787,17 +791,17 @@ def management_reports():
         inv_warehouse_sidebar_total_price = 0
         inv_brand_sidebar = {}
         if inv_warehouse_report:
-            brands = []
+            inv_warehouse_report_brands = []
             storages = []
             result_inv_warehouse_report = []
             for items in inv_warehouse_report:
                 if items['storage'] not in storages:
                     storages.append(items['storage'])
-                if items['brand'] not in brands:
+                if items['brand'] not in inv_warehouse_report_brands:
                     result_inv_warehouse_report.append({"brand": items['brand'], "data": [items]})
-                    brands.append(items['brand'])
+                    inv_warehouse_report_brands.append(items['brand'])
                 else:
-                    index = brands.index(items['brand'])
+                    index = inv_warehouse_report_brands.index(items['brand'])
                     result_inv_warehouse_report[index]['data'].append(items)
                 inv_warehouse_sidebar_total_qty += items['totalQty']
                 inv_warehouse_sidebar_total_price += items['totalPrice']
@@ -808,6 +812,10 @@ def management_reports():
             {
                 '$addFields': {
                     'B2B': '$warehouse_details.B2B.storages'
+                }
+            }, {
+                '$match': {
+                    'main_category': 'Device'
                 }
             }, {
                 '$project': {
@@ -863,22 +871,22 @@ def management_reports():
         brand_sidebar_total_price = 0
         brand_sidebar = {}
         if brand_report:
-            brands = []
+            brand_report_brands = []
             result_brand_report = []
             for items in brand_report:
-                if items['brand'] not in brands:
+                if items['brand'] not in brand_report_brands:
                     result_brand_report.append({"brand": items['brand'], "data": [items]})
-                    brands.append(items['brand'])
+                    brand_report_brands.append(items['brand'])
                 else:
-                    index = brands.index(items['brand'])
+                    index = brand_report_brands.index(items['brand'])
                     result_brand_report[index]['data'].append(items)
                 brand_sidebar_total_qty += items['totalQty']
                 brand_sidebar_total_price += items['totalPrice']
             brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
         return {"invBrandReport": result_inv_warehouse_report, "invBrandSide": inv_brand_sidebar,
                 "brandReport": result_brand_report,
-                "brandSide": brand_sidebar, "storageNames": storages}
+                "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands}
 
-#         return storages
+        # return brand_report_brands
 #
 # print(management_reports())
