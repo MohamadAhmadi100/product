@@ -791,17 +791,14 @@ def management_reports():
         inv_warehouse_sidebar_total_price = 0
         inv_brand_sidebar = {}
         if inv_warehouse_report:
-            inv_warehouse_report_brands = []
             storages = []
             result_inv_warehouse_report = []
             for items in inv_warehouse_report:
                 if items['storage'] not in storages:
+                    result_inv_warehouse_report.append({"storage": items['storage'], "data": [items]})
                     storages.append(items['storage'])
-                if items['brand'] not in inv_warehouse_report_brands:
-                    result_inv_warehouse_report.append({"brand": items['brand'], "data": [items]})
-                    inv_warehouse_report_brands.append(items['brand'])
                 else:
-                    index = inv_warehouse_report_brands.index(items['brand'])
+                    index = storages.index(items['storage'])
                     result_inv_warehouse_report[index]['data'].append(items)
                 inv_warehouse_sidebar_total_qty += items['totalQty']
                 inv_warehouse_sidebar_total_price += items['totalPrice']
