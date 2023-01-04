@@ -883,10 +883,55 @@ def management_reports():
                 brand_sidebar_total_qty += items['totalQty']
                 brand_sidebar_total_price += items['totalPrice']
             brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
+
+        transfer_report = list(mongo.imeis.aggregate([
+            {
+                '$match': {
+                    'storage_id': '1000'
+                }
+            }, {
+                '$unwind': '$imeis'
+            }, {
+                '$group': {
+                    '_id': {
+                        'to_storage': '$imeis.to_storage',
+                        'brand': '$brand'
+                    },
+                    'fieldN': {
+                        '$push': '$imeis'
+                    }
+                }
+            }, {
+                '$project': {
+                    'brand': '$_id.brand',
+                    'toStorage': '$_id.to_storage',
+                    'count': {
+                        '$size': '$fieldN'
+                    },
+                    '_id': 0
+                }
+            }
+        ]))
+        if transfer_report:
+            def custom_sort(k):
+                return int(k['toStorage'])
+
+            transfer_report.sort(key=custom_sort)
+            transfer_array = []
+            for items in transfer_report:
+
+                items['toStorage'] = mongo.warehouses.find_one({"warehouse_id": int(items['toStorage'])},
+                                                               {"warehouse_name": True, "_id": False}).get(
+                    'warehouse_name')
+                if items['toStorage'] not in transfer_array:
+                    transfer_array.append(items['toStorage'])
         return {"invBrandReport": result_inv_warehouse_report, "invBrandSide": inv_brand_sidebar,
                 "brandReport": result_brand_report,
-                "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands}
+                "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands,
+                "transferReport": transfer_report, "transferStorages": transfer_array
+                }
 
-        # return brand_report_brands
-#
+        # return transfer_report
+
+
 # print(management_reports())
