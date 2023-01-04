@@ -28,6 +28,7 @@ class MongoConnection:
         self.attributes_collection = self.db['attributes']
         self.quantity_log = self.db['quantity_log']
         self.kowsar_log = self.db['kowsar_log']
+        self.banners = self.db['banners']
         """
         reserves
         """

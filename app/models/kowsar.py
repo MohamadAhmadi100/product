@@ -281,7 +281,8 @@ class KowsarPart:
                         "informal_price": None,
                         "special_from_date": None,
                         "special_to_date": None,
-                        "inventory": 0
+                        "inventory": 0,
+                        "visible_in_site": True
                     }
                 })
             mongo.product.insert_one({

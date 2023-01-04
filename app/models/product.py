@@ -23,6 +23,465 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
+    def main_menu(customer_type, user_allowed_storages):
+        with MongoConnection() as mongo:
+            result = mongo.product.aggregate([
+                {
+                    '$match': {
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'min_qty': '$zz.v.min_qty',
+                        'max_qty': {
+                            '$cond': [
+                                {
+                                    '$gt': [
+                                        {
+                                            '$subtract': [
+                                                '$zz.v.quantity', '$zz.v.reserved'
+                                            ]
+                                        }, '$zz.v.max_qty'
+                                    ]
+                                }, '$zz.v.max_qty', {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }
+                            ]
+                        },
+                        'regular': '$zz.v.regular',
+                        'special': {
+                            '$cond': [
+                                {
+                                    '$and': [
+                                        {
+                                            '$gt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_from_date'
+                                            ]
+                                        }, {
+                                            '$lt': [
+                                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                '$zz.v.special_to_date'
+                                            ]
+                                        }
+                                    ]
+                                }, '$zz.v.special', None
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': dict({
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        }
+                    }, **({} if not user_allowed_storages else {
+                        "storage_id": {"$in": user_allowed_storages}}))
+                }, {
+                    '$group': {
+                        '_id': '$_id',
+                        'item': {
+                            '$addToSet': '$root_obj'
+                        },
+                        'prices': {
+                            '$addToSet': {
+                                'storage_id': '$storage_id',
+                                'regular': '$regular',
+                                'special': '$special'
+                            }
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'item': {
+                            '$first': '$item'
+                        },
+                        'prices': 1
+                    }
+                }, {
+                    '$project': {
+                        'system_code': '$item.system_code',
+                        'name': '$item.name',
+                        'color': '$item.color',
+                        'attributes': '$item.attributes',
+                        'sub_category': '$item.sub_category',
+                        'brand': '$item.brand',
+                        'prices': 1
+                    }
+                },
+                {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 16
+                            ]
+                        },
+                        'name': {
+                            '$first': '$name'
+                        },
+                        'products': {
+                            '$push': '$$ROOT'
+                        },
+                        'prices': {
+                            '$push': {
+                                'system_code': '$system_code',
+                                'prices': '$prices'
+                            }
+                        },
+                        'sub_category': {
+                            '$addToSet': '$sub_category'
+                        },
+                        'brand': {
+                            '$addToSet': '$brand'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'products': 1,
+                        'name': 1,
+                        'system_code': '$_id',
+                        'color': {
+                            '$setIntersection': {
+                                '$reduce': {
+                                    'input': '$products',
+                                    'initialValue': [],
+                                    'in': {
+                                        '$concatArrays': [
+                                            '$$value', [
+                                                '$$this.color'
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        'images': {
+                            '$setIntersection': {
+                                '$reduce': {
+                                    'input': '$products',
+                                    'initialValue': [],
+                                    'in': {
+                                        '$concatArrays': [
+                                            '$$value', [
+                                                '$$this.attributes.mainImage-pd'
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        'prices': 1,
+                        'sub_category': {
+                            '$first': '$sub_category'
+                        },
+                        'brand': {
+                            '$first': '$brand'
+                        }
+                    }
+                }, {
+                    '$facet': {
+                        'mobiles': [
+                            {
+                                '$match': {
+                                    'sub_category': 'Mobile'
+                                }
+                            }, {
+                                '$group': {
+                                    '_id': '$brand',
+                                    'products': {
+                                        '$push': {
+                                            'name': '$name',
+                                            'prices': '$prices',
+                                            'system_code': '$system_code',
+                                            'color': '$color',
+                                            'images': '$images'
+                                        }
+                                    },
+                                    "sys_codes": {"$push": "$system_code"}
+                                }
+                            }, {
+                                '$project': {
+                                    'products': {
+                                        '$slice': [
+                                            '$products', 10
+                                        ]
+                                    },
+                                    "sys_codes": {"$first": "$sys_codes"},
+                                    'name': '$_id',
+                                    '_id': 0
+                                }
+                            },
+                            {
+                                "$sort": {"sys_codes": 1}
+                            }, {"$project": {"sys_codes": 0}}
+                        ],
+                        'others': [
+                            {
+                                '$match': {
+                                    'sub_category': {
+                                        '$ne': 'Mobile'
+                                    }
+                                }
+                            }, {
+                                '$group': {
+                                    '_id': '$sub_category',
+                                    'products': {
+                                        '$push': {
+                                            'name': '$name',
+                                            'prices': '$prices',
+                                            'system_code': '$system_code',
+                                            'color': '$color',
+                                            'images': '$images'
+                                        }
+                                    }
+                                }
+                            }, {
+                                '$project': {
+                                    'products': {
+                                        '$slice': [
+                                            '$products', 10
+                                        ]
+                                    },
+                                    'name': '$_id',
+                                    '_id': 0
+                                }
+                            }
+                        ]
+                    }
+                }, {
+                    '$project': {
+                        'data': {
+                            '$concatArrays': [
+                                '$mobiles', '$others'
+                            ]
+                        }
+                    }
+                }
+            ])
+            brands = mongo.product.aggregate([
+                {
+                    '$match': {
+                        'system_code': {
+                            '$regex': '^20'
+                        },
+                        'visible_in_site': True
+                    }
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'keys': {
+                            '$objectToArray': '$warehouse_details'
+                        },
+                        'root_obj': '$$ROOT'
+                    }
+                }, {
+                    '$unwind': '$keys'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'customer_type': '$keys.k',
+                        'zz': {
+                            '$objectToArray': '$keys.v.storages'
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$unwind': '$zz'
+                }, {
+                    '$project': {
+                        'system_code': 1,
+                        'storage_id': '$zz.k',
+                        'customer_type': 1,
+                        'qty': {
+                            '$subtract': [
+                                '$zz.v.quantity', '$zz.v.reserved'
+                            ]
+                        },
+                        'min': {
+                            '$subtract': [
+                                {
+                                    '$subtract': [
+                                        '$zz.v.quantity', '$zz.v.reserved'
+                                    ]
+                                }, '$zz.v.min_qty'
+                            ]
+                        },
+                        'root_obj': 1
+                    }
+                }, {
+                    '$match': dict({
+                        'customer_type': customer_type,
+                        'qty': {
+                            '$gt': 0
+                        },
+                        'min': {
+                            '$gte': 0
+                        }}, **({} if not user_allowed_storages else {
+                        "storage_id": {"$in": user_allowed_storages}}))
+                }, {
+                    '$group': {
+                        '_id': '$_id',
+                        'item': {
+                            '$addToSet': '$root_obj'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        '_id': 0,
+                        'item': {
+                            '$first': '$item'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$item.system_code', 0, 16
+                            ]
+                        },
+                        'items': {
+                            '$addToSet': '$item'
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'item': {
+                            '$first': '$items'
+                        }
+                    }
+                }, {
+                    '$group': {
+                        '_id': '$item.brand',
+                        'count': {
+                            '$sum': 1
+                        }
+                    }
+                }, {
+                    '$project': {
+                        'brand': '$_id',
+                        '_id': 0,
+                        'count': 1
+                    }
+                }
+            ])
+            brands_list = list()
+            for brand in brands:
+                kowsar_result = mongo.kowsar_collection.find_one(
+                    {"brand": brand.get("brand"), "$expr": {"$eq": [{"$strLenCP": '$system_code'}, 9]}})
+                brands_list.append({"name": brand.get("brand"), "label": kowsar_result.get("brand_label"),
+                                    "image": kowsar_result.get("image"),
+                                    "route": brand.get("brand").replace(" ", ""),
+                                    "count": brand.get("count"),
+                                    "system_code": kowsar_result.get("system_code"),
+                                    })
+
+            brands_list = sorted(brands_list, key=lambda x: x['system_code'], reverse=False)
+            data = result.next().get("data") if result.alive else []
+            for i in data:
+                kowsar_result = mongo.kowsar_collection.find_one(
+                    {"system_code": i.get("products")[0].get("system_code", '')})
+                if kowsar_result.get("sub_category") == "Mobile":
+                    label = kowsar_result.get("sub_category_label") + " " + kowsar_result.get("brand_label")
+                else:
+                    label = kowsar_result.get("sub_category_label")
+                i['label'] = label
+                product_list = list()
+                for res in i.get("products", []):
+                    if None in res['images']:
+                        res['images'].remove(None)
+                    res['image'] = res['images'][0] if res['images'] else None
+                    res['name'] = res['name'].split(" | ")[0]
+                    del res['images']
+                    colors_list = list()
+                    with RedisConnection() as redis:
+                        for color in res.get('color', []):
+                            colors_list.append(redis.client.hget(color, "hex"))
+                    res['color'] = colors_list
+                    prices_list = list()
+                    if user_allowed_storages:
+                        for sys_code in res['prices']:
+                            for price in sys_code['prices']:
+                                if price['storage_id'] in user_allowed_storages:
+                                    prices_list.append(price)
+                    else:
+                        for sys_code in res['prices']:
+                            for price in sys_code['prices']:
+                                prices_list.append(price)
+
+                    prices_list.sort(key=lambda x: x["regular"])
+                    price, special_price = prices_list[0]["regular"], prices_list[0].get("special")
+                    res['price'] = price
+                    res['special_price'] = special_price
+                    del res['prices']
+
+                    product_list.append(res)
+
+                i['products'] = product_list
+
+            return {"mobile_brands": brands_list, "categories": data}
+
+    @staticmethod
+    def set_main_menu_banners(sliders, others):
+        with MongoConnection() as mongo:
+            result = mongo.banners.update_one({"name": "main_menu"}, {"$set": {"sliders": sliders, "others": others}},
+                                              upsert=True)
+            if result.modified_count or result.upserted_id:
+                return True
+            return False
+
+    @staticmethod
+    def get_main_manu_banners():
+        with MongoConnection() as mongo:
+            result = mongo.banners.find_one({"name": "main_menu"}, {"_id": 0, "name": 0})
+            return result
+
+    @staticmethod
     def get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty, to_qty, from_price, to_price):
         date_query = {}
         if from_date or to_date:
