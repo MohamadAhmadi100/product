@@ -58,8 +58,8 @@ def set_product_price(system_code: str, customer_type: dict):
     if price.system_code_exists():
         result = price.set_product_price()
         if result:
-            return {"success": True, "message": "price updated successfully", "status_code": 201}
-    return {"success": False, "error": "product not found", "status_code": 404}
+            return {"success": True, "message": "موجودی با موفقیت آپدیت شد", "status_code": 201}
+    return {"success": False, "error": "محصول یافت نشد", "status_code": 404}
 
 
 def update_price(system_code: str, customer_type: str, storage_id: str, regular: int, special: int,
@@ -71,7 +71,7 @@ def update_price(system_code: str, customer_type: str, storage_id: str, regular:
                               special_from_date, special_to_date)
     if data:
         return {"success": True, "status_code": 202, "message": data}
-    return {"success": False, "status_code": 417, "error": "failed to update price"}
+    return {"success": False, "status_code": 417, "error": "خطا در آپدیت قیمت"}
 
 
 def get_stock(system_code: str) -> dict:
@@ -91,8 +91,8 @@ def set_product_quantity(system_code, customer_types) -> dict:
     quantity = Quantity(system_code, customer_types)
     result = quantity.set_quantity()
     if result:
-        return {"success": True, "status_code": 201, "message": "Quantity updated successfully"}
-    return {"success": False, "status_code": 417, "error": "Error while setting quantity"}
+        return {"success": True, "status_code": 201, "message": "موجودی با موفقیت آپدیت شد"}
+    return {"success": False, "status_code": 417, "error": "خطا در آپدیت موجودی!"}
 
 
 def update_quantity(system_code: str, customer_type: str, storage_id: str, quantity: int,
@@ -103,7 +103,7 @@ def update_quantity(system_code: str, customer_type: str, storage_id: str, quant
     result = Quantity.update_quantity(system_code, customer_type, storage_id, quantity, min_qty, max_qty)
     if result:
         return {"success": True, "status_code": 200, "message": result}
-    return {"success": False, "status_code": 404, "error": "quantity not found"}
+    return {"success": False, "status_code": 404, "error": "کالا یافت نشد"}
 
 
 def get_product_list_back_office(brands: list, warehouses: list, price_from: int, price_to: int, sellers: list,

@@ -4430,7 +4430,7 @@ class Price:
             result = client.product.update_one({"system_code": system_code}, [{"$set": update_data}])
 
             if result.modified_count:
-                return "price updated successfully"
+                return "قیمت با موفقیت آپدیت شد"
             return None
 
 
@@ -4541,7 +4541,7 @@ class Quantity:
             result = client.product.update_one({"system_code": system_code}, [{"$set": db_query}])
 
             if result.modified_count:
-                return 'quantity updated successfully'
+                return 'موجودی با موفقیت آپدیت شد'
             return None
 
     @staticmethod
