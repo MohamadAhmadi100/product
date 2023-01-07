@@ -4478,26 +4478,6 @@ class Quantity:
             return None
 
     @staticmethod
-    def get_stock(system_code: str) -> dict:
-        """
-        get physical stock of products
-        """
-        with MongoConnection() as client:
-            db_stocks = []
-            result = {
-                "total": 0,
-                "storages": []
-            }
-            for stock in db_stocks:
-                quantity = stock["quantity"] - stock["reserve"]
-                result["total"] += quantity
-                wearhouses = client.warehouses.find_one({"warehouse_id": int(stock["stockId"])}, {"_id": 0})
-                result["storages"].append({"storage_id": stock["stockId"],
-                                           "storage_label": wearhouses["warehouse_name"],
-                                           "stock": quantity})
-            return result
-
-    @staticmethod
     def get_all_stocks():
         """
         get all stocks

@@ -38,14 +38,6 @@ class MongoConnection:
         self.cardex_collection = self.db['cardex']
         self.reserve_log_collection = self.db['reserve_log']
 
-        self.master_server = pymongo.MongoClient(
-            "172.16.16.12", 27017, username='root', password='qweasdQWEASD'
-        )
-        self.stocks_collection = self.master_server["msm"]["stocks"]
-        self.stocks_log_collection = self.master_server["msm"]["stock_logs"]
-        self.warehouses_collection = self.master_server["msm"]["warehouse"]
-        self.master_product_collection = self.master_server["warehouse"]["products"]
-
     def __enter__(self):
         return self
 

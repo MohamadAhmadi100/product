@@ -1,5 +1,4 @@
 from app.models.custom_category import KowsarCategories, CustomCategories
-from app.models.product import Product
 
 
 def create_custom_kowsar_category(system_code: str, custom_name: str, visible_in_site: bool, image: str):

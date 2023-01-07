@@ -297,18 +297,15 @@ warehouse
 def warehouse_buying(product, dst_warehouse, referral_number, supplier_name, form_date, customer_type):
     check = check_buying_imeis(product)
     if check.get("success"):
-        master_product = add_warehouse_product(product, referral_number, supplier_name, form_date, dst_warehouse)
-        if master_product.get("success"):
-            product_reserve_result = add_buying_form(product, dst_warehouse, customer_type,
-                                                     referral_number,
-                                                     supplier_name, form_date)
-            if product_reserve_result.get("success"):
-                product_reserve_result['message'] = "عملیات با موفقیت انجام شد"
-                return product_reserve_result
-            else:
-                return product_reserve_result
+        product_reserve_result = add_buying_form(product, dst_warehouse, customer_type,
+                                                 referral_number,
+                                                 supplier_name, form_date)
+        if product_reserve_result.get("success"):
+            product_reserve_result['message'] = "عملیات با موفقیت انجام شد"
+            return product_reserve_result
         else:
-            return master_product
+            return product_reserve_result
+
     else:
         return check
 

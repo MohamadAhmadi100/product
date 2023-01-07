@@ -92,35 +92,6 @@ def add_product_archive(product, referral_number, supplier, form_date, dst_wareh
         return {"success": True}
 
 
-def add_warehouse_product(product, referral_number, supplier, form_date, dst_warehouse):
-    with MongoConnection() as client:
-        count = client.master_product_collection.count_documents(
-            {"refferalNumber": referral_number, "partNumber": product['system_code']})
-        if count > 0:
-            return {"success": False, 'error': "فرم خرید قبلا ثبت شده.", "status_code": 400}
-        client.master_product_collection.insert_one({
-            "refferalNumber": referral_number,
-            "partNumber": product['system_code'],
-            "sku": product['name'],
-            "quantity": product['count'],
-            "supplier": supplier,
-            "form_date": form_date,
-            "cat": 'موبایل',
-            "brand": 'سامسونگ',
-            "model": 'A03s [32GB 3GB]',
-            "color": 'Black',
-            "seller": 'aasood',
-            "guaranty": '18m aawaat',
-            "registerDate": str(jdatetime.datetime.now()).split(".")[0],
-            "packName": 'new product',
-            "unit_price": product['unit_price'],
-            "sell_price": product['sell_price'],
-            "articles": articles(product, dst_warehouse),
-            "isDoubleSim": False,
-        })
-        return {"success": True}
-
-
 def export_transfer_archive(products, dst_warehouse, referral_number, staff_name):
     with MongoConnection() as client:
         count_imei = client.imeis.count_documents({"system_code": products['system_code'], "storage_id": "1000"})
@@ -187,25 +158,6 @@ dealership_detail = {
     "dealershipId": str,
 
 }"""
-
-
-def check_import_transfer(products, dst_warehouse):
-    with MongoConnection() as client:
-        prod = list(client.imeis.aggregate([
-            {
-                '$match': {
-                    'system_code': '2000010030002001001003002',
-                    'storage_id': '1000'
-                }
-            }, {
-                '$replaceWith': {
-                    'newWith': '$imeis.imei'
-                }
-            }
-        ]))
-        print(prod[0].get('newWith'))
-        if products['accepted_imeis'] in prod[0].get("newWith"):
-            print("hi")
 
 
 def check_import(products, storage):

@@ -74,16 +74,6 @@ def update_price(system_code: str, customer_type: str, storage_id: str, regular:
     return {"success": False, "status_code": 417, "error": "خطا در آپدیت قیمت"}
 
 
-def get_stock(system_code: str) -> dict:
-    """
-    get stock of a system_code
-    """
-    result = Quantity.get_stock(system_code)
-    if result['total'] == 0:
-        return {"success": False, "status_code": 404, "error": Quantity.get_all_stocks()}
-    return {"success": True, "status_code": 200, "message": result}
-
-
 def set_product_quantity(system_code, customer_types) -> dict:
     """
     set quantity per stock and user type
