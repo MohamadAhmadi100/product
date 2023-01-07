@@ -482,7 +482,8 @@ class Product:
             return result
 
     @staticmethod
-    def get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty, to_qty, from_price, to_price):
+    def get_products_seller(seller_id, page, per_page, from_date, to_date, from_qty, to_qty, from_price, to_price,
+                            search):
         date_query = {}
         if from_date or to_date:
             date_query['date'] = {}
@@ -504,6 +505,8 @@ class Product:
                 match_queries['zz.v.regular']['$lte'] = to_price
             if from_price:
                 match_queries['zz.v.regular']['$gte'] = from_price
+        if search:
+            match_queries['root_obj.name'] = {'$regex': re.compile(rf"{search}(?i)")}
 
         with MongoConnection() as mongo:
             result = list(mongo.product.aggregate([
@@ -4480,7 +4483,7 @@ class Quantity:
         get physical stock of products
         """
         with MongoConnection() as client:
-            db_stocks = list(client.stocks_collection.find({"systemCode": system_code}, {"_id": 0}))
+            db_stocks = []
             result = {
                 "total": 0,
                 "storages": []
