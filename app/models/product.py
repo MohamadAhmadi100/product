@@ -898,84 +898,27 @@ class Product:
                 {
                     '$addFields': {
                         'name': {
-                            '$concat': [
+                            '$substr': [
+                                '$root_obj.name',
                                 {
-                                    '$cond': [
+                                    "$add": [
                                         {
-                                            '$gte': [
-                                                {
-                                                    '$indexOfBytes': [
-                                                        '$root_obj.model', '$root_obj.brand'
-                                                    ]
-                                                }, 0
-                                            ]
-                                        }, {
-                                            '$arrayElemAt': [
-                                                {
-                                                    '$split': [
-                                                        '$root_obj.model', {
-                                                            '$concat': [
-                                                                '$root_obj.brand', ' '
-                                                            ]
-                                                        }
-                                                    ]
-                                                }, 1
-                                            ]
-                                        }, '$root_obj.model'
-                                    ]
-                                }, ' ', {
-                                    '$reduce': {
-                                        'input': {
-                                            '$objectToArray': '$root_obj.configs'
+                                            '$strLenCP': '$root_obj.sub_category'
                                         },
-                                        'initialValue': '(',
-                                        'in': {
-                                            '$concat': [
-                                                '$$value', {
-                                                    '$cond': [
-                                                        {
-                                                            '$in': [
-                                                                '$$this.v', [
-                                                                    None, 'RX', "?"
-                                                                ]
-                                                            ]
-                                                        }, '', {
-                                                            '$concat': [
-                                                                {
-                                                                    '$substr': [
-                                                                        '$$this.v', 0, {
-                                                                            '$indexOfBytes': [
-                                                                                '$$this.v', 'GB'
-                                                                            ]
-                                                                        }
-                                                                    ]
-                                                                }, ' '
-                                                            ]
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }, ')'
-                            ]
+                                        {
+                                            '$strLenCP': '$root_obj.brand'
+                                        },
+                                        2
+                                    ]
+                                },
+                                {
+                                    '$strLenCP': '$root_obj.name'
+                                }]
                         }
                     }
                 }, {
                     '$group': {
-                        '_id': {
-                            '$concat': [
-                                {
-                                    '$substr': [
-                                        '$name', 0, {
-                                            '$indexOfBytes': [
-                                                '$name', ' )'
-                                            ]
-                                        }
-                                    ]
-                                }, ')'
-                            ]
-                        },
+                        '_id': '$name',
                         'root_obj': {
                             '$first': '$root_obj'
                         },
@@ -1165,8 +1108,7 @@ class Product:
                     "system_code": {
                         '$substr': [
                             '$system_code', 0, 16
-                        ]},
-                    'storage_id': '$storage_id'
+                        ]}
                 },
                 'header': {
                     '$push': {
@@ -1179,7 +1121,7 @@ class Product:
                     '$push': '$root_obj.name'
                 },
                 'products': {
-                    '$push': {
+                    '$addToSet': {
                         'customer_type': '$customer_type',
                         'color': '$root_obj.color',
                         'guaranty': '$root_obj.guaranty',
