@@ -282,7 +282,6 @@ class KowsarPart:
                         "special_from_date": None,
                         "special_to_date": None,
                         "inventory": 0,
-                        "visible_in_site": True
                     }
                 })
             mongo.product.insert_one({
@@ -313,7 +312,8 @@ class KowsarPart:
                         "type": "B2G",
                         "storages": storages_data
                     }
-                }
+                },
+                "visible_in_site": True
             })
         if result.modified_count or result.upserted_id:
             return True
