@@ -715,6 +715,71 @@ def cardex_query(quantity_cardex_data):
         return False
 
 
+def moghayerat_report():
+    with MongoConnection() as mongo:
+
+        storage_sys = []
+        archive_result = []
+        archives = mongo.archive.find()
+        for root_archive in archives:
+            for articles_archive in root_archive["articles"]:
+                if articles_archive["exist"]:
+                    if {"system_code": root_archive["system_code"],
+                        "storage": articles_archive["stockId"]} not in storage_sys:
+                        storage_sys.append(
+                            {"system_code": root_archive["system_code"], "storage": articles_archive["stockId"]})
+                        archive_result.append({
+                            "s_c": root_archive["system_code"],
+                            "storage": articles_archive["stockId"],
+                            "archive_c": 1,
+                            "imeis": [{"imei": articles_archive["first"]}]
+                        })
+                    else:
+                        index = storage_sys.index(
+                            {"system_code": root_archive["system_code"], "storage": articles_archive["stockId"]})
+                        archive_result[index]["archive_c"] += 1
+                        archive_result[index]["imeis"].append({"imei": articles_archive["first"]})
+
+        """
+        check archive with imeis
+        """
+
+        for cursor_moghayerat in archive_result:
+            imeis = mongo.imeis.find_one(
+                {"system_code": cursor_moghayerat["s_c"], "storage_id": cursor_moghayerat["storage"]})
+            cursor_moghayerat["imeis_c"] = len(imeis["imeis"])
+
+            product = mongo.product.find_one({"system_code": cursor_moghayerat["s_c"]})
+            for key, val in product["warehouse_details"].items():
+                if val is not None:
+                    if val.get("storages") is not None:
+                        for k, v in val["storages"].items():
+                            if k == cursor_moghayerat["storage"]:
+                                if v.get("quantity") is not None:
+
+                                    if cursor_moghayerat.get("product_c") is None:
+                                        cursor_moghayerat["product_c"] = v["quantity"]
+                                        cursor_moghayerat["imeis_c"] = len(imeis["imeis"])
+                                    else:
+                                        cursor_moghayerat["product_c"] += v["quantity"]
+
+        """
+        moghayerat with products
+        """
+
+        moghayerat = []
+
+        for items in archive_result:
+            if items["imeis_c"] == items["product_c"] and items["imeis_c"] == items["product_c"] and items[
+                "imeis_c"] == items[
+                "archive_c"]:
+                pass
+            else:
+                del items["imeis"]
+                moghayerat.append(items)
+        return moghayerat
+
+
 def management_reports():
     with MongoConnection() as mongo:
         inv_warehouse_report = list(mongo.product.aggregate([
@@ -931,4 +996,4 @@ def management_reports():
         # return transfer_report
 
 
-# print(management_reports())
+# print(moghayerat_report())
