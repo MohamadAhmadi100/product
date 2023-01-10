@@ -777,7 +777,7 @@ def moghayerat_report():
             else:
                 del items["imeis"]
                 moghayerat.append(items)
-        return moghayerat
+        return {"success": True, "data": moghayerat}
 
 
 def management_reports():
@@ -996,4 +996,4 @@ def management_reports():
         # return transfer_report
 
 
-# print(moghayerat_report())
+print(moghayerat_report())
