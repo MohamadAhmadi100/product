@@ -918,7 +918,7 @@ class Product:
                     }
                 }, {
                     '$group': {
-                        '_id': '$name',
+                        '_id': {"name": "$name", "color": "$root_obj.color"},
                         'root_obj': {
                             '$first': '$root_obj'
                         },
@@ -938,6 +938,16 @@ class Product:
                                 ]
                             }
                         }
+                    }
+                }, {
+                    "$group": {
+                        "_id": "$_id.name",
+                        'root_obj': {
+                            '$first': '$root_obj'
+                        },
+                        'data': {
+                            '$first': '$data'
+                        },
                     }
                 },
                 {
