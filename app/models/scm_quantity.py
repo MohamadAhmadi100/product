@@ -3,6 +3,43 @@ import jdatetime
 from app.helpers.mongo_connection import MongoConnection
 
 
+def balanced_avg_management_report(system_code):
+    """
+    get balanced avg
+    """
+    with MongoConnection() as client:
+        bavg_result = []
+        bavg_system_code = []
+        products_col = client.archive.find({"system_code": str(system_code), "articles.exist": True})
+        for root in products_col:
+            try:
+                counter = 0
+                for articles in root['articles']:
+                    if articles['exist'] == True:
+                        counter += 1
+                if counter > 0:
+                    mozon = counter * root['unit_price']
+                    if root['system_code'] not in bavg_system_code:
+                        bavg_system_code.append(root['system_code'])
+                        bavg_result.append({
+                            "systemCode": root['system_code'],
+                            "mozon": mozon,
+                            "counter": counter
+                        })
+                    else:
+                        index = bavg_system_code.index(root['partNumber'])
+                        bavg_result[index]["mozon"] += mozon
+                        bavg_result[index]["counter"] += counter
+            except:
+                pass
+        for items in bavg_result:
+            items['result'] = int(items['mozon'] / items['counter'])
+        return bavg_system_code, bavg_result
+
+
+3
+
+
 def balanced_avg():
     """
     get balanced avg
@@ -780,7 +817,7 @@ def moghayerat_report():
         return {"success": True, "data": moghayerat}
 
 
-def management_reports():
+def management_reports(order_data):
     with MongoConnection() as mongo:
         inv_warehouse_report = list(mongo.product.aggregate([
             {
@@ -987,13 +1024,29 @@ def management_reports():
                     'warehouse_name')
                 if items['toStorage'] not in transfer_array:
                     transfer_array.append(items['toStorage'])
+
+        for items in order_data:
+            items['profit'] = 0
+            # for items in asas:
+            for cursor in items['childs']:
+                system_code, result = balanced_avg_management_report(cursor['systemCode'])
+                try:
+                    index = system_code.index(cursor['systemCode'])
+                    try:
+                        del items['systemCodes']
+                    except:
+                        pass
+                    cursor['Profit'] = cursor['totalPrice'] - (result[index]['result'] * cursor['totalQty'])
+                    items['profit'] += cursor['Profit']
+                except:
+                    try:
+                        del items['systemCodes']
+                    except:
+                        pass
+                    cursor['Profit'] = 0
         return {"invBrandReport": result_inv_warehouse_report, "invBrandSide": inv_brand_sidebar,
                 "brandReport": result_brand_report,
                 "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands,
-                "transferReport": transfer_report, "transferStorages": transfer_array
+                "transferReport": transfer_report, "transferStorages": transfer_array,
+                "invChartSellReport": order_data
                 }
-
-        # return transfer_report
-
-
-# print(moghayerat_report())
