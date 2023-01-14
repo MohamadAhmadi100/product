@@ -1521,7 +1521,7 @@ class Product:
             return None
 
     @staticmethod
-    def get_items(system_code, customer_type):
+    def get_items(system_code, customer_type, storage_id):
         with MongoConnection() as mongo:
             pipe_line = [{
                 '$match': {
@@ -1609,7 +1609,7 @@ class Product:
                     'root_obj': 1
                 }
             }, {
-                '$match': {
+                '$match': dict({
                     'customer_type': customer_type,
                     'qty': {
                         '$gt': 0
@@ -1617,7 +1617,7 @@ class Product:
                     'min': {
                         '$gte': 0
                     }
-                }
+                }, **({} if not storage_id else {"storage_id": storage_id}))
             }]
             if len(system_code) != 25:
                 if system_code == '00':
