@@ -895,14 +895,17 @@ def management_reports(order_data):
         if inv_warehouse_report:
             storages = []
             storages_id = []
+            brand = []
             result_inv_warehouse_report = []
             for items in inv_warehouse_report:
                 if items['storage'] not in storages:
-                    result_inv_warehouse_report.append({"storage": items['storage'], "data": [items]})
                     storages.append(items['storage'])
                     storages_id.append(items['storageId'])
+                if items['brand'] not in brand:
+                    result_inv_warehouse_report.append({"brand": items['brand'], "data": [items]})
+                    brand.append(items['brand'])
                 else:
-                    index = storages.index(items['storage'])
+                    index = brand.index(items['brand'])
                     result_inv_warehouse_report[index]['data'].append(items)
                 inv_warehouse_sidebar_total_qty += items['totalQty']
                 inv_warehouse_sidebar_total_price += items['totalPrice']
@@ -1066,3 +1069,7 @@ def management_reports(order_data):
             "transferReport": transfer_report, "transferStorages": transfer_array,
             "invChartSellReport": order_data
         }
+
+
+# print(management_reports([]))
+
