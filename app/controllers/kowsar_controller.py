@@ -99,8 +99,10 @@ def get_kowsar_system_code(system_code):
     return {"success": False, "error": "product not found", "status_code": 500}
 
 
-def assign_system_code_to_seller(system_codes: list, seller: str, seller_code: str, storage_ids: list):
+def assign_system_code_to_seller(system_codes: dict, seller: str, seller_code: str):
     for system_code in system_codes:
+        storage_ids = system_code.get("storage_ids")
+        system_code = system_code.get("system_code")
         parent_data = KowsarGetter.system_code_name_getter(system_code)
         seller_group = create_kowsar_group(system_code[:16] + seller_code, seller, system_code[:16], None)
         color_group = create_kowsar_group(system_code[:16] + seller_code + system_code[19:22], parent_data.get("color"),
