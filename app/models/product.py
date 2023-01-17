@@ -1,3 +1,4 @@
+import math
 import re
 from copy import copy
 from typing import Union
@@ -21,6 +22,71 @@ class Product:
     def system_codes_are_unique(self):
         with MongoConnection() as mongo:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
+
+    @staticmethod
+    def torob(page, system_code):
+        with MongoConnection() as mongo:
+            skip = (page - 1) * 100
+            query = {}
+            if system_code:
+                query['system_code'] = system_code
+                skip = 0
+
+            data = mongo.product.find(query, {"_id": 0}).skip(skip).limit(100)
+            count_all = mongo.product.count_documents({})
+            data_list = list()
+            for i in data:
+                title = i.get('name')
+                page_unique = i.get('system_code')
+                availability = None
+                current_price = 0
+                old_price = 0
+                category_name = i.get('sub_category')
+                image_link = i.get('attributes', {}).get('mainImage-pd')
+                image_links = [i.get('attributes', {}).get('mainImage-pd'),
+                               i.get('attributes', {}).get('otherImage-pd'),
+                               i.get('attributes', {}).get('closeImage-pd')]
+                page_url = f"https://rakiano.com/product/{page_unique[:16]}/"
+                i['configs'].update({"color": i['color']})
+                spec = i['configs']
+                with RedisConnection() as redis:
+                    guarantee = redis.client.hget(i.get('guaranty'), "fa_ir")
+                    seller_name = redis.client.hget(i.get('seller'), "fa_ir")
+                for storage in i['warehouse_details']['B2C']['storages'].values():
+                    if (storage.get('quantity', 0) - storage.get('reserved', 0) - storage.get('min_qty', 1)) >= 0:
+                        availability = "instock"
+                        if storage.get('special'):
+                            now_datetime_obj = jdatetime.datetime.strptime(
+                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+                            special_datetime_obj = jdatetime.datetime.strptime(
+                                storage.get("special_to_date", jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                                "%Y-%m-%d %H:%M:%S")
+                            if special_datetime_obj > now_datetime_obj:
+                                if current_price == 0 or current_price > storage.get('special'):
+                                    current_price = storage.get('special')
+                                    old_price = storage.get("regular")
+                            else:
+                                if current_price == 0 or current_price > storage.get("regular"):
+                                    current_price = storage.get("regular")
+                        else:
+                            if current_price == 0 or current_price > storage.get("regular"):
+                                current_price = storage.get("regular")
+                data_list.append(dict({
+                    "title": title,
+                    "page_unique": page_unique,
+                    "availability": availability,
+                    "current_price": current_price,
+                    "category_name": category_name,
+                    "image_link": image_link,
+                    "image_links": image_links,
+                    "page_url": page_url,
+                    "spec": spec,
+                    "guarantee": guarantee,
+                    "seller_name": seller_name
+                }, **({} if not old_price else {"old_price": old_price})))
+        if system_code:
+            return data_list[0]
+        return {"products": data_list, "count": count_all, "max_pages": math.ceil(count_all / 100)}
 
     @staticmethod
     def main_menu(customer_type, user_allowed_storages):
