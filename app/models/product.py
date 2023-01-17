@@ -3891,14 +3891,20 @@ class Product:
                     attributes_list.append(stored_data)
 
                 result['attributes'] = attributes_list
-                result['brand'] = {"value": result['brand'], "label": result['brand']}
-                result['color'] = {"value": result['color'], "label": result['color']}
-                result['guaranty'] = {"value": result['guaranty'], "label": result['guaranty']}
-                result['main_category'] = {"value": result['main_category'], "label": result['main_category']}
-                result['seller'] = {"value": result['seller'], "label": result['seller']}
-                result['sub_category'] = {"value": result['sub_category'], "label": result['sub_category']}
+                with RedisConnection() as redis:
+                    result['color'] = {"value": result['color'], "label": redis.client.hget(result['color'], lang)}
+                    result['guaranty'] = {"value": result['guaranty'],
+                                          "label": redis.client.hget(result['guaranty'], lang)}
+                    result['seller'] = {"value": result['seller'], "label": redis.client.hget(result['seller'], lang)}
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+                result['sub_category'] = {"value": result['sub_category'],
+                                          "label": kowsar_data['sub_category_label'] if kowsar_data else None}
+                result['main_category'] = {"value": result['main_category'],
+                                           "label": kowsar_data['main_category_label'] if kowsar_data else None}
+                result['brand'] = {"value": result['brand'],
+                                   "label": kowsar_data['brand_label'] if kowsar_data else None}
+
                 result.update({
                     "routes": {
                         "route": result.get('main_category'),
