@@ -3963,7 +3963,7 @@ class Product:
                                           "label": redis.client.hget(result['guaranty'], lang)}
                     result['seller'] = {"value": result['seller'], "label": redis.client.hget(result['seller'], lang)}
 
-                kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code}, {"_id": 0})
+                kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code[:9]}, {"_id": 0})
                 result['sub_category'] = {"value": result['sub_category'],
                                           "label": kowsar_data['sub_category_label'] if kowsar_data else None}
                 result['main_category'] = {"value": result['main_category'],
