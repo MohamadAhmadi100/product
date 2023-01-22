@@ -32,7 +32,7 @@ class Product:
                 query['system_code'] = system_code
                 skip = 0
 
-            data = mongo.product.find(query, {"_id": 0}).skip(skip).limit(100)
+            data = mongo.product.find(query, {"_id": 0}).sort("date", -1).skip(skip).limit(100)
             count_all = mongo.product.count_documents({})
             data_list = list()
             for i in data:
