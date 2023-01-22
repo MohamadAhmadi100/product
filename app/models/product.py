@@ -24,35 +24,81 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
-    def torob(page, system_code):
+    def torob(page, system_code, page_url):
         with MongoConnection() as mongo:
             skip = (page - 1) * 100
             query = {}
             if system_code:
-                query['system_code'] = system_code
+                query['system_code'] = {"$regex" : "^" + system_code}
                 skip = 0
-
-            data = mongo.product.find(query, {"_id": 0}).sort("date", -1).skip(skip).limit(100)
-            count_all = mongo.product.count_documents({})
+            elif page_url:
+                page_url = page_url if not page_url[-1] == "/" else page_url[:-1]
+                query['system_code'] = {"$regex" : "^" + page_url.split("/")[-1]}
+                skip = 0
+            data = mongo.product.aggregate([
+                {"$sort": {"date": -1}},
+                {"$match": query},
+                {
+                    '$group': {
+                        '_id': {
+                            '$substr': [
+                                '$system_code', 0, 16
+                            ]
+                        },
+                        'data': {
+                            '$first': {
+                                'image_link': '$attributes.mainImage-pd',
+                                'image_links': [
+                                    '$attributes.mainImage-pd', '$attributes.otherImage-pd', '$attributes.closeImage-pd'
+                                ],
+                                'page_url': {
+                                    '$concat': [
+                                        'https://rakiano.com/product/', {
+                                            '$substr': [
+                                                '$system_code', 0, 16
+                                            ]
+                                        }
+                                    ]
+                                },
+                                'title': '$name',
+                                'spec': '$configs',
+                                'category_name': '$sub_category',
+                                'storages': '$warehouse_details.B2C.storages'
+                            }
+                        }
+                    }
+                }, {
+                    '$facet': {
+                        'products': [
+                            {
+                                '$replaceRoot': {
+                                    'newRoot': {
+                                        '$mergeObjects': [
+                                            '$data', {
+                                                'page_unique': '$_id'
+                                            }
+                                        ]
+                                    }
+                                }
+                            }, {"$skip": skip}, {"$limit": 100}
+                        ],
+                        'count': [
+                            {
+                                '$count': 'count'
+                            }
+                        ]
+                    }
+                }
+            ])
+            data = data.next()
+            counts = data['count'][0]['count']
+            data = data["products"]
             data_list = list()
             for i in data:
-                title = i.get('name')
-                page_unique = i.get('system_code')
-                availability = None
-                current_price = 0
                 old_price = 0
-                category_name = i.get('sub_category')
-                image_link = i.get('attributes', {}).get('mainImage-pd')
-                image_links = [i.get('attributes', {}).get('mainImage-pd'),
-                               i.get('attributes', {}).get('otherImage-pd'),
-                               i.get('attributes', {}).get('closeImage-pd')]
-                page_url = f"https://rakiano.com/product/{page_unique[:16]}/"
-                i['configs'].update({"color": i['color']})
-                spec = i['configs']
-                with RedisConnection() as redis:
-                    guarantee = redis.client.hget(i.get('guaranty'), "fa_ir")
-                    seller_name = redis.client.hget(i.get('seller'), "fa_ir")
-                for storage in i['warehouse_details']['B2C']['storages'].values():
+                current_price = 0
+                availability = None
+                for storage in i['storages'].values():
                     if (storage.get('quantity', 0) - storage.get('reserved', 0) - storage.get('min_qty', 1)) >= 0:
                         availability = "instock"
                         if storage.get('special'):
@@ -71,22 +117,15 @@ class Product:
                         else:
                             if current_price == 0 or current_price > storage.get("regular"):
                                 current_price = storage.get("regular")
-                data_list.append(dict({
-                    "title": title,
-                    "page_unique": page_unique,
-                    "availability": availability,
-                    "current_price": current_price,
-                    "category_name": category_name,
-                    "image_link": image_link,
-                    "image_links": image_links,
-                    "page_url": page_url,
-                    "spec": spec,
-                    "guarantee": guarantee,
-                    "seller_name": seller_name
-                }, **({} if not old_price else {"old_price": old_price})))
-        if system_code:
+                del i['storages']
+                data_list.append(dict(i, **({"availability": availability,
+                                             "current_price": current_price,
+                                             } if not old_price else {"availability": availability,
+                                                                      "current_price": current_price,
+                                                                      "old_price": old_price})))
+        if system_code or page_url:
             return data_list[0]
-        return {"products": data_list, "count": count_all, "max_pages": math.ceil(count_all / 100)}
+        return {"products": data_list, "count": counts, "max_pages": math.ceil(counts / 100)}
 
     @staticmethod
     def main_menu(customer_type, user_allowed_storages):
@@ -1570,7 +1609,8 @@ class Product:
                     product['sub_category'] = {"value": product['sub_category'],
                                                "label": kowsar_data.get('sub_category_label') if kowsar_data else None}
                     product['main_category'] = {"value": product['main_category'],
-                                                "label": kowsar_data.get('main_category_label') if kowsar_data else None}
+                                                "label": kowsar_data.get(
+                                                    'main_category_label') if kowsar_data else None}
                     product['brand'] = {"value": product['brand'],
                                         "label": kowsar_data.get('brand_label') if kowsar_data else None}
             if result:
@@ -3956,11 +3996,11 @@ class Product:
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code[:9]}, {"_id": 0})
                 result['sub_category'] = {"value": result['sub_category'],
-                                           "label": kowsar_data.get('sub_category_label') if kowsar_data else None}
+                                          "label": kowsar_data.get('sub_category_label') if kowsar_data else None}
                 result['main_category'] = {"value": result['main_category'],
-                                            "label": kowsar_data.get('main_category_label') if kowsar_data else None}
+                                           "label": kowsar_data.get('main_category_label') if kowsar_data else None}
                 result['brand'] = {"value": result['brand'],
-                                    "label": kowsar_data.get('brand_label') if kowsar_data else None}
+                                   "label": kowsar_data.get('brand_label') if kowsar_data else None}
 
                 result.update({
                     "routes": {

@@ -368,8 +368,8 @@ def add_credit_by_category(system_code: str, customer_type: str, credit: dict):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_torob_data(page, system_code):
-    result = Product.torob(page, system_code)
+def get_torob_data(page, system_code, page_url):
+    result = Product.torob(page, system_code, page_url)
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
