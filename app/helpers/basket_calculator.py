@@ -1,6 +1,6 @@
 class Basket:
     @staticmethod
-    def set_mandatory_products(mandatory_products, products):
+    def set_mandatory_products(mandatory_products, products, storage_id):
         new_mandatory_products = []
         if not len(mandatory_products) or not len(products):
             return None, False
@@ -13,14 +13,14 @@ class Basket:
                         return None, False
                     product["count"] = mandatory_product.get("quantity")
                     product["price"] = mandatory_product.get("basketPrice")
-                    product["storage_id"] = mandatory_product.get("storageId")
+                    product["storage_id"] = storage_id
                     new_mandatory_products.append(product)
         if len(new_mandatory_products) != len(mandatory_products):
             return None, False
         return new_mandatory_products, True
 
     @staticmethod
-    def set_selective_products(selective_products, products, basket_min_quantity):
+    def set_selective_products(selective_products, products, basket_min_quantity, storage_id):
         new_selective_products = []
         if len(selective_products) < basket_min_quantity or len(products) < basket_min_quantity:
             return None, False
@@ -41,14 +41,14 @@ class Basket:
                         "max_qty")
                     product["count"] = min_quantity if min_quantity == max_quantity else 0
                     product["price"] = selective_product.get("basketPrice")
-                    product["storage_id"] = selective_product.get("storageId")
+                    product["storage_id"] = storage_id
                     new_selective_products.append(product)
         if len(new_selective_products) < basket_min_quantity:
             return None, False
         return new_selective_products, True
 
     @staticmethod
-    def set_optional_products(optional_products, products):
+    def set_optional_products(optional_products, products, storage_id):
         new_optional_products = []
         for product in products:
             if not product.get("quantity"):
@@ -67,6 +67,6 @@ class Basket:
                         "max_qty")
                     product["count"] = min_quantity if min_quantity == max_quantity else 0
                     product["price"] = optional_product.get("basketPrice")
-                    product["storage_id"] = optional_product.get("storageId")
+                    product["storage_id"] = storage_id
                     new_optional_products.append(product)
         return new_optional_products

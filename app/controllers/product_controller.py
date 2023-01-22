@@ -263,7 +263,8 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
         product_count = 0
         system_codes = [mandatory_product.get("systemCode") for mandatory_product in basket.get("mandatoryProducts")]
         if products := Product.get_basket_products(system_codes, basket.get("storageId"), customer_type):
-            mandatory_result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products)
+            mandatory_result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products,
+                                                                       basket.get("storageId"))
             if not active:
                 continue
             product_count += len(mandatory_result)
@@ -274,7 +275,8 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
                                                              customer_type):
             selective_result, active = Basket().set_selective_products(basket.get("selectiveProducts"),
                                                                        selective_products,
-                                                                       basket.get("minSelectiveProductsQuantity"))
+                                                                       basket.get("minSelectiveProductsQuantity"),
+                                                                       basket.get("storageId"))
             if not active:
                 continue
             product_count += len(selective_result)
@@ -288,7 +290,8 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
                                  basket.get("optionalProducts")]
         if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
                                                             customer_type):
-            optional_result = Basket().set_optional_products(basket.get("optionalProducts"), optional_products)
+            optional_result = Basket().set_optional_products(basket.get("optionalProducts"), optional_products,
+                                                             basket.get("storageId"))
             data[index]["optionalProducts"] = optional_result
             if products and selective_products:
                 product_count += len(optional_result)
