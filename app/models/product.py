@@ -1553,35 +1553,26 @@ class Product:
                         '_id': 0,
                         'warehouse_details': 0
                     }
-                }, {
-                    '$addFields': {
-                        'brand': {
-                            'value': '$brand',
-                            'label': '$brand'
-                        },
-                        'color': {
-                            'value': '$color',
-                            'label': '$color'
-                        },
-                        'guaranty': {
-                            'value': '$guaranty',
-                            'label': '$guaranty'
-                        },
-                        'main_category': {
-                            'value': '$main_category',
-                            'label': '$main_category'
-                        },
-                        'seller': {
-                            'value': '$seller',
-                            'label': '$seller'
-                        },
-                        'sub_category': {
-                            'value': '$sub_category',
-                            'label': '$sub_category'
-                        }
-                    }}
+                }
             ]
             result = list(mongo.product.aggregate(pipe_lines))
+            lang = "fa_ir"
+            with RedisConnection() as redis:
+                for product in result:
+                    product['color'] = {"value": product['color'], "label": redis.client.hget(product['color'], lang)}
+                    product['guaranty'] = {"value": product['guaranty'],
+                                           "label": redis.client.hget(product['guaranty'], lang)}
+                    product['seller'] = {"value": product['seller'],
+                                         "label": redis.client.hget(product['seller'], lang)}
+
+                    kowsar_data = mongo.kowsar_collection.find_one({"system_code": product.get("system_code")[:9]},
+                                                                   {"_id": 0})
+                    product['sub_category'] = {"value": product['sub_category'],
+                                               "label": kowsar_data.get('sub_category_label') if kowsar_data else None}
+                    product['main_category'] = {"value": product['main_category'],
+                                                "label": kowsar_data.get('main_category_label') if kowsar_data else None}
+                    product['brand'] = {"value": product['brand'],
+                                        "label": kowsar_data.get('brand_label') if kowsar_data else None}
             if result:
                 return result
             return None
@@ -3965,11 +3956,11 @@ class Product:
 
                 kowsar_data = mongo.kowsar_collection.find_one({"system_code": system_code[:9]}, {"_id": 0})
                 result['sub_category'] = {"value": result['sub_category'],
-                                          "label": kowsar_data['sub_category_label'] if kowsar_data else None}
+                                           "label": kowsar_data.get('sub_category_label') if kowsar_data else None}
                 result['main_category'] = {"value": result['main_category'],
-                                           "label": kowsar_data['main_category_label'] if kowsar_data else None}
+                                            "label": kowsar_data.get('main_category_label') if kowsar_data else None}
                 result['brand'] = {"value": result['brand'],
-                                   "label": kowsar_data['brand_label'] if kowsar_data else None}
+                                    "label": kowsar_data.get('brand_label') if kowsar_data else None}
 
                 result.update({
                     "routes": {

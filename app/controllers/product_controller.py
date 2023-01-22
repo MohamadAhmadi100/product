@@ -302,6 +302,7 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
             "status_code": 200} if len(new_data) else {"success": False, "error": "سبدی برای نمایش وجود ندارد",
                                                        "status_code": 404}
 
+Product.get_basket_products(["2100030040001001001016019"], "1", "B2B")
 
 def price_list_bot(customer_type, system_code, initial=False):
     result = Product.price_list_bot(customer_type, system_code, initial)
