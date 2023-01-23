@@ -29,14 +29,13 @@ class Product:
             skip = (page - 1) * 100
             query = {}
             if system_code:
-                query['system_code'] = {"$regex" : "^" + system_code}
+                query['system_code'] = {"$regex": "^" + system_code}
                 skip = 0
             elif page_url:
                 page_url = page_url if not page_url[-1] == "/" else page_url[:-1]
-                query['system_code'] = {"$regex" : "^" + page_url.split("/")[-1]}
+                query['system_code'] = {"$regex": "^" + page_url.split("/")[-1]}
                 skip = 0
             data = mongo.product.aggregate([
-                {"$sort": {"date": -1}},
                 {"$match": query},
                 {
                     '$group': {
@@ -63,11 +62,13 @@ class Product:
                                 'title': '$name',
                                 'spec': '$configs',
                                 'category_name': '$sub_category',
-                                'storages': '$warehouse_details.B2C.storages'
+                                'storages': '$warehouse_details.B2C.storages',
+                                "date": "$date"
                             }
                         }
                     }
-                }, {
+                }, {"$sort": {"data.date": -1}},
+                {
                     '$facet': {
                         'products': [
                             {
@@ -80,7 +81,7 @@ class Product:
                                         ]
                                     }
                                 }
-                            }, {"$skip": skip}, {"$limit": 100}
+                            }, {"$project": {"date": 0}}, {"$skip": skip}, {"$limit": 100}
                         ],
                         'count': [
                             {
@@ -101,22 +102,20 @@ class Product:
                 for storage in i['storages'].values():
                     if (storage.get('quantity', 0) - storage.get('reserved', 0) - storage.get('min_qty', 1)) >= 0:
                         availability = "instock"
-                        if storage.get('special'):
-                            now_datetime_obj = jdatetime.datetime.strptime(
-                                jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
-                            special_datetime_obj = jdatetime.datetime.strptime(
-                                storage.get("special_to_date", jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                                "%Y-%m-%d %H:%M:%S")
-                            if special_datetime_obj > now_datetime_obj:
-                                if current_price == 0 or current_price > storage.get('special'):
-                                    current_price = storage.get('special')
-                                    old_price = storage.get("regular")
-                            else:
-                                if current_price == 0 or current_price > storage.get("regular"):
-                                    current_price = storage.get("regular")
+                        if storage.get('special') and (
+                                jdatetime.datetime.strptime(
+                                    jdatetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+                                >
+                                jdatetime.datetime.strptime(storage.get("special_to_date", jdatetime.datetime.now(
+                                ).strftime("%Y-%m-%d %H:%M:%S")), "%Y-%m-%d %H:%M:%S")
+                        ):
+                            current_price = storage.get('special')
+                            old_price = storage.get("regular")
+                            break
                         else:
-                            if current_price == 0 or current_price > storage.get("regular"):
-                                current_price = storage.get("regular")
+                            current_price = storage.get("regular")
+                            break
+
                 del i['storages']
                 data_list.append(dict(i, **({"availability": availability,
                                              "current_price": current_price,
