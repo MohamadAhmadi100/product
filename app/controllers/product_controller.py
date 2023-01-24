@@ -269,20 +269,22 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
                 continue
             product_count += len(mandatory_result)
             data[index]["mandatoryProducts"] = mandatory_result
-        selective_system_codes = [selective_product.get("systemCode") for selective_product in
-                                  basket.get("selectiveProducts")]
-        if selective_products := Product.get_basket_products(selective_system_codes, basket.get("storageId"),
-                                                             customer_type):
-            selective_result, active = Basket().set_selective_products(basket.get("selectiveProducts"),
-                                                                       selective_products,
-                                                                       basket.get("minSelectiveProductsQuantity"),
-                                                                       basket.get("storageId"))
-            if not active:
-                continue
-            product_count += len(selective_result)
-            data[index]["selectiveProducts"] = selective_result
+        selective_products = []
+        if basket.get("selectiveProducts") and basket.get("minSelectiveProductsQuantity"):
+            selective_system_codes = [selective_product.get("systemCode") for selective_product in
+                                      basket.get("selectiveProducts")]
+            if selective_products := Product.get_basket_products(selective_system_codes, basket.get("storageId"),
+                                                                 customer_type):
+                selective_result, active = Basket().set_selective_products(basket.get("selectiveProducts"),
+                                                                           selective_products,
+                                                                           basket.get("minSelectiveProductsQuantity"),
+                                                                           basket.get("storageId"))
+                if not active:
+                    continue
+                product_count += len(selective_result)
+                data[index]["selectiveProducts"] = selective_result
         if not basket.get("optionalProducts"):
-            if products and selective_products:
+            if products or selective_products:
                 data[index]["productsCount"] = product_count
                 new_data.append(data[index])
             continue
