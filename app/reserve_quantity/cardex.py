@@ -11,7 +11,7 @@ def cardex(**kwargs):
         "incremental_id": kwargs.get("incremental_id"),
         "sku": kwargs.get("sku"),
         "type": kwargs.get("type"),
-        "product_type": kwargs.get("customer_type"),
+        "product_type": kwargs.get("product_type"),
         "qty": kwargs.get("qty"),
         "old_quantity": kwargs.get("old_quantity"),
         "new_quantity": kwargs.get("new_quantity"),
