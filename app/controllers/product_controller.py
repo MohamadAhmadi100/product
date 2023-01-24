@@ -295,7 +295,7 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
             optional_result = Basket().set_optional_products(basket.get("optionalProducts"), optional_products,
                                                              basket.get("storageId"))
             data[index]["optionalProducts"] = optional_result
-            if products and selective_products:
+            if products or selective_products:
                 product_count += len(optional_result)
                 data[index]["productsCount"] = product_count
                 new_data.append(data[index])
