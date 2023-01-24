@@ -29,6 +29,7 @@ class AddRemoveQtyReserve:
                                 self.cardex['oldInventory'] = storage_dict["inventory"]
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
                                 self.cardex['newInventory'] = storage_dict["inventory"]
+                                self.cardex['customerType'] = customer_type
                                 client.product.replace_one({"system_code": system_code}, products)
                                 return {"success": True, "cardex": self.cardex}
                             else:
@@ -62,6 +63,7 @@ class AddRemoveQtyReserve:
                                 self.cardex['newReserve'] = storage_dict["reserved"]
                                 self.cardex['oldQuantity'] = storage_dict["quantity"]
                                 self.cardex['newQuantity'] = storage_dict["quantity"]
+                                self.cardex['customerType'] = customer_type
                                 client.product.replace_one({"system_code": system_code}, products)
                                 return {"success": True, "cardex": self.cardex}
                             else:
@@ -108,6 +110,7 @@ class AddRemoveQtyReserve:
                                 self.cardex['newInventory'] = storage_dict["inventory"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 self.cardex['newReserve'] = storage_dict["reserved"]
+                                self.cardex['customerType'] = customer_type
                                 if price is not None:
                                     storage_dict["regular"] = price
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
@@ -120,6 +123,7 @@ class AddRemoveQtyReserve:
                         self.cardex['newInventory'] = count
                         self.cardex['oldReserve'] = 0
                         self.cardex['newReserve'] = 0
+                        self.cardex['customerType'] = customer_type
                         warehouse_detail = find_warehouse(storage_id)
                         client.product.update_one(
                             {"system_code": system_code},
@@ -169,6 +173,7 @@ class AddRemoveQtyReserve:
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 storage_dict["reserved"] -= count
                                 self.cardex['newReserve'] = storage_dict["reserved"]
+                                self.cardex['customerType'] = customer_type
                                 if storage_dict["quantity"] < 0 or storage_dict["reserved"] < 0:
                                     return {"success": False, "error": "تعداد از موجودی بیشتر است یا محصول رزرو نشده است",
                                             "status_code": 404}
@@ -215,6 +220,7 @@ class AddRemoveQtyReserve:
                                 self.cardex['newInventory'] = storage_dict["inventory"]
                                 self.cardex['oldReserve'] = storage_dict["reserved"]
                                 self.cardex['newReserve'] = storage_dict["reserved"]
+                                self.cardex['customerType'] = customer_type
                                 client.product.update_one({"system_code": system_code}, {"$set": products})
                                 return {"success": True, "cardex": self.cardex}
                     else:
@@ -225,6 +231,7 @@ class AddRemoveQtyReserve:
                         self.cardex['newInventory'] = count
                         self.cardex['oldReserve'] = 0
                         self.cardex['newReserve'] = 0
+                        self.cardex['customerType'] = customer_type
                         warehouse_detail = find_warehouse(storage_id)
                         client.product.update_one(
                             {"system_code": system_code},

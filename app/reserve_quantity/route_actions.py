@@ -73,6 +73,7 @@ def add_to_reserve_order(system_code, storage_id, count, customer_type, sku, ord
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -102,6 +103,7 @@ def add_to_reserves_reorder(system_code, storage_id, count, customer_type, sku, 
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             user=staff_name
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -130,6 +132,7 @@ def add_to_reserves_dealership(system_code, storage_id, count, customer_type, sk
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -158,6 +161,7 @@ def remove_reserves_dealership(system_code, storage_id, count, customer_type, sk
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -191,6 +195,7 @@ def remove_products_dealership_from_inv(system_code, imeis, dealership_detail, s
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             imeis=imeis
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -219,6 +224,7 @@ def remove_reserve_cancel(system_code, storage_id, count, customer_type, sku, or
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -273,6 +279,7 @@ def remove_reserve_edit_order(system_code, storage_id, count, customer_type, sku
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -304,6 +311,7 @@ def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         add_to_cardex(None, staff_name, referral_number, [quantity_cardex_data])
@@ -332,6 +340,7 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         add_to_cardex(None, staff_name, referral_number, [quantity_cardex_data])
@@ -361,6 +370,7 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
             new_reserve=reserve_result['cardex'].get('newReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             user=staff_name
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -391,6 +401,7 @@ def add_buying_form(product, dst_warehouse, customer_type, referral_number, supp
                 old_inventory=reserve_result['cardex'].get('oldInventory'),
                 new_inventory=reserve_result['cardex'].get('newInventory'),
                 old_reserve=reserve_result['cardex'].get('oldReserve'),
+                product_type=reserve_result['cardex'].get('customerType'),
                 new_reserve=reserve_result['cardex'].get('newReserve')
             )
             with MongoConnection() as client:
@@ -423,6 +434,7 @@ def return_order_items(system_code, storage_id, customer_type, order_number, ime
                 new_inventory=reserve_result['cardex'].get('newInventory'),
                 old_reserve=reserve_result['cardex'].get('oldReserve'),
                 new_reserve=reserve_result['cardex'].get('newReserve'),
+                product_type=reserve_result['cardex'].get('customerType'),
                 user=staff_name
             )
             return_action['quantity_cardex_data'] = quantity_cardex_data
@@ -453,6 +465,7 @@ def remove_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
@@ -481,6 +494,7 @@ def add_to_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
             old_inventory=reserve_result['cardex'].get('oldInventory'),
             new_inventory=reserve_result['cardex'].get('newInventory'),
             old_reserve=reserve_result['cardex'].get('oldReserve'),
+            product_type=reserve_result['cardex'].get('customerType'),
             new_reserve=reserve_result['cardex'].get('newReserve')
         )
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
