@@ -37,6 +37,10 @@ class Product:
                 skip = 0
             data = mongo.product.aggregate([
                 {"$match": query},
+                {"$sort": {
+                    "system_code": 1
+                }
+                },
                 {
                     '$group': {
                         '_id': {
@@ -62,13 +66,32 @@ class Product:
                                 'title': '$name',
                                 'spec': '$configs',
                                 'category_name': '$sub_category',
-                                'storages': '$warehouse_details.B2C.storages',
-                                "date": "$date"
+                                'date': '$date'
+                            }
+                        },
+                        'storages': {
+                            '$push': {
+                                '$objectToArray': '$warehouse_details.B2C.storages'
                             }
                         }
                     }
-                }, {"$sort": {"data.date": -1}},
-                {
+                }, {
+                    '$addFields': {
+                        'storages': {
+                            '$reduce': {
+                                'input': '$storages',
+                                'initialValue': [],
+                                'in': {
+                                    '$concatArrays': ["$$value", "$$this.v"]
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    '$sort': {
+                        'data.date': -1
+                    }
+                }, {
                     '$facet': {
                         'products': [
                             {
@@ -77,11 +100,21 @@ class Product:
                                         '$mergeObjects': [
                                             '$data', {
                                                 'page_unique': '$_id'
+                                            }, {
+                                                'storages': '$storages'
                                             }
                                         ]
                                     }
                                 }
-                            }, {"$project": {"date": 0}}, {"$skip": skip}, {"$limit": 100}
+                            }, {
+                                '$project': {
+                                    'date': 0
+                                }
+                            }, {
+                                '$skip': skip
+                            }, {
+                                '$limit': 100
+                            }
                         ],
                         'count': [
                             {
@@ -99,7 +132,7 @@ class Product:
                 old_price = 0
                 current_price = 0
                 availability = None
-                for storage in i['storages'].values():
+                for storage in i['storages']:
                     if (storage.get('quantity', 0) - storage.get('reserved', 0) - storage.get('min_qty', 1)) >= 0:
                         availability = "instock"
                         if storage.get('special') and (
