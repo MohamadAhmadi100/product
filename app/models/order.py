@@ -136,6 +136,7 @@ def update_quantity(order_number: int,
                                       staff_id,
                                       staff_name,
                                       service_name,
+                                      customer_type,
                                       flag)
         # create cardex loge in any update for update and rollback
         if not cardex:
@@ -241,6 +242,7 @@ def create_cardex_object(qty_object: dict,
                          staff_id: int,
                          staff_name: str,
                          service_name: str,
+                         customer_type:str,
                          flag: bool) -> bool:
     try:
         quantity_cardex_data = {
@@ -250,6 +252,7 @@ def create_cardex_object(qty_object: dict,
             "storage_id": storage_id,
             "stockName": "",
             "system_code": system_code,
+            "customer_type": customer_type,
             "sku": "",
             "type": service_name,
             "qty": count,
