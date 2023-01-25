@@ -3458,7 +3458,7 @@ class Product:
                             '$addToSet': '$item'
                         },
                         'a': {
-                            '$addToSet': '$warehouse_details.v'
+                            '$push': '$warehouse_details.v'
                         }
                     }
                 }, {
@@ -3485,14 +3485,14 @@ class Product:
                         }
                     }
                 }, {
+                    '$sort': {
+                        '_id': 1
+                    }
+                }, {
                     '$group': {
-                        '_id': {
-                            '$substr': [
-                                '$system_code', 0, 16
-                            ]
-                        },
+                        '_id': None,
                         'products': {
-                            '$addToSet': '$item'
+                            '$push': '$item'
                         }
                     }
                 }, {
@@ -3500,13 +3500,8 @@ class Product:
                         '_id': 0,
                         'products': 1,
                         'name': {
-                            '$first': '$products'
+                            '$first': '$products.name'
                         }
-                    }
-                }, {
-                    '$project': {
-                        'name': '$name.name',
-                        'products': 1
                     }
                 }
             ])
