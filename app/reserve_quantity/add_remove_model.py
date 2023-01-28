@@ -42,7 +42,7 @@ class AddRemoveQtyReserve:
                                      "count": count,
                                      "order_number": order_number, "message": "reserve bishtar az quantity",
                                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
-                                return {"success": False}
+                                return {"success": False, "status_code": 400}
 
     def remove_reserve(self, system_code, storage_id, count, customer_type, order_number):
         """
@@ -76,7 +76,7 @@ class AddRemoveQtyReserve:
                                      "count": count,
                                      "order_number": order_number, "message": "reserve manfi",
                                      "edit_date": str(jdatetime.datetime.now()).split(".")[0]})
-                                return {"success": False, "error": "موجودی یا رزرو کافی نیست"}
+                                return {"success": False, "error": "موجودی یا رزرو کافی نیست", "status_code": 400}
 
     def add_quantity(self, system_code, storage_id, count, customer_type, price):
         """

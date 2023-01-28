@@ -40,7 +40,7 @@ def add_to_reserve(order):
                 if reserve_result.get("success") is False:
                     return reserve_result
                 data_response.append(reserved_products)
-        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 200}
+        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 400}
 
 
 def remove_from_reserve(order):
@@ -80,7 +80,7 @@ def remove_from_reserve(order):
             else:
                 data_response.append(reserved_products)
         return {'success': False, 'message': 'operation unsuccessful', "error": data_response,
-                'status_code': 200}
+                'status_code': 400}
 
 
 def add_to_reserve_edit_order(product, customer_type, order_number, staff_name):
@@ -149,7 +149,7 @@ def remove_reserve_edit(edited_object, order_number, customer_id, customer_type,
             else:
                 data_response.append(reserved_products)
         return {'success': False, 'message': 'operation unsuccessful', "error": data_response,
-                'status_code': 200}
+                'status_code': 400}
 
 
 """
@@ -210,7 +210,7 @@ def add_to_reserve_dealership(referral_number, customer_id, customer_type, data)
                     return reserve_result
             else:
                 data_response.append(reserved_products)
-        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 200}
+        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 400}
 
 
 def remove_reserve_dealership(referral_number, customer_id, customer_type, data):
@@ -286,7 +286,7 @@ def remove_product_dealership_from_inv(referral_number, customer_id, customer_ty
                     return reserve_result
             else:
                 data_response.append(reserved_products)
-        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 200}
+        return {'success': False, 'message': 'operation unsuccessful', "check_data": data_response, 'status_code': 400}
 
 
 """
@@ -373,7 +373,7 @@ def add_to_reserve_transfer(transfer_object, staff):
             else:
                 data_response.append(reserved_products)
         return {'success': False, 'error': 'موجودی محصولات کافی نیست', "check_data": data_response,
-                'status_code': 200}
+                'status_code': 400}
 
 
 def check_transfer_imeis(imei, transfer_object):
@@ -410,10 +410,10 @@ def return_imei(order, imei, staff_name):
                 return {'success': False, 'message': 'log error', 'status_code': 409}
         else:
             return {'success': False, 'message': 'محصول قبلا عودت داده شده است', "check_data": data_response,
-                    'status_code': 200}
+                    'status_code': 400}
     else:
         return {'success': False, 'message': 'تمامی محصولات قبلا عودت داده شده', "check_data": data_response,
-                'status_code': 200}
+                'status_code': 400}
 
 
 def return_order(order, staff_name):
@@ -442,7 +442,7 @@ def return_order(order, staff_name):
             return {'success': False, 'message': 'log error', 'status_code': 409}
     else:
         return {'success': False, 'message': 'عملیات ناموفقیت امیز بود', "check_data": data_response,
-                'status_code': 200}
+                'status_code': 400}
 
 
 def edit_transfer_form(edit_object):
