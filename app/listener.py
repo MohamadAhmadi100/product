@@ -1,5 +1,5 @@
 import sys
-
+from app.modules.service_log import Log
 from config import settings
 
 # Important imports dont remove
@@ -29,6 +29,7 @@ def callback(message: dict) -> dict:
         body = data.get("body", {})
         try:
             exec(f"global response; response['{app_name}'] = {action}(**{body})")
+            Log(body, response).insert_log()
             return response
         except Exception as e:
             return {f"{app_name}": {"success": False, "status_code": 503, "error": f"{app_name}: {e}"}}
