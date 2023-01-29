@@ -885,10 +885,7 @@ def management_reports(order_data):
             }
         ]))
 
-        def custom_sort(k):
-            return int(k['storageId'])
-
-        inv_warehouse_report.sort(key=custom_sort)
+        inv_warehouse_report.sort(key=lambda key: int(key['storageId']))
         inv_warehouse_sidebar_total_qty = 0
         inv_warehouse_sidebar_total_price = 0
         inv_brand_sidebar = {}
@@ -919,10 +916,7 @@ def management_reports(order_data):
                     {'totalQty': 0, 'totalPrice': 0, 'brand': items['data'][0]['brand'],
                      'storage': io, 'storageId': storages_id[storages.index(io)]} for io in storages_copy]
 
-                def custom_sort(k):
-                    return int(k['storageId'])
-
-                items['data'].sort(key=custom_sort)
+                items['data'].sort(key=lambda key: int(key['storageId']))
 
         brand_report = list(mongo.product.aggregate([
             {
@@ -1028,20 +1022,33 @@ def management_reports(order_data):
                 }
             }
         ]))
+        transfer_result = []
+        transfer_storage = []
+        transfer_brand = []
         if transfer_report:
-            def custom_sort(k):
-                return int(k['toStorage'])
-
-            transfer_report.sort(key=custom_sort)
+            transfer_report.sort(key=lambda key: int(key['toStorage']))
             transfer_array = []
             for items in transfer_report:
-
                 items['toStorage'] = mongo.warehouses.find_one({"warehouse_id": int(items['toStorage'])},
                                                                {"warehouse_name": True, "_id": False}).get(
                     'warehouse_name')
                 if items['toStorage'] not in transfer_array:
                     transfer_array.append(items['toStorage'])
-
+                if items['brand'] not in transfer_brand:
+                    transfer_brand.append(items['brand'])
+                if items['toStorage'] not in transfer_storage:
+                    transfer_result.append({"storage": items['toStorage'], "data": [items]})
+                    transfer_storage.append(items['toStorage'])
+                else:
+                    index = transfer_storage.index(items['toStorage'])
+                    transfer_result[index]['data'].append(items)
+            for items in transfer_result:
+                storages_copy = transfer_brand.copy()
+                [storages_copy.pop(storages_copy.index(i['brand'])) for i in items['data'] if
+                 i["brand"] in storages_copy]
+                items['data'] += [
+                    {'brand': io, 'toStorage': items['storage'], 'count': 0} for io in storages_copy]
+                items['data'].sort(key=lambda key: key['brand'])
         for items in order_data:
             items['profit'] = 0
             # for items in asas:
@@ -1069,7 +1076,3 @@ def management_reports(order_data):
             "transferReport": transfer_report, "transferStorages": transfer_array,
             "invChartSellReport": order_data
         }
-
-
-# print(management_reports([]))
-
