@@ -1073,6 +1073,6 @@ def management_reports(order_data):
             "invBrandSide": inv_brand_sidebar,
             "brandReport": result_brand_report,
             "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands,
-            "transferReport": transfer_report, "transferStorages": transfer_array,
+            "transferReport": transfer_result, "transferStorages": transfer_array,
             "invChartSellReport": order_data
         }
