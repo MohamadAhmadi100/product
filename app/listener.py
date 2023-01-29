@@ -29,7 +29,7 @@ def callback(message: dict) -> dict:
         body = data.get("body", {})
         try:
             exec(f"global response; response['{app_name}'] = {action}(**{body})")
-            Log(body, response.get(app_name)).insert_log()
+            Log(body, response.get(app_name), action).insert_log()
             return response
         except Exception as e:
             return {f"{app_name}": {"success": False, "status_code": 503, "error": f"{app_name}: {e}"}}
