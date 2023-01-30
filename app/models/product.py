@@ -155,8 +155,6 @@ class Product:
                                              } if not old_price else {"availability": availability,
                                                                       "current_price": current_price,
                                                                       "old_price": old_price})))
-        if system_code or page_url:
-            return data_list[0]
         return {"products": data_list, "count": counts, "max_pages": math.ceil(counts / 100)}
 
     @staticmethod
