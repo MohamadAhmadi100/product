@@ -3516,6 +3516,7 @@ class Product:
                             'main_category': 1,
                             'model': 1,
                             'sub_category': 1,
+                            "GIN": 1,
                             'warehouse_details': '$a'
                         }
                     }
