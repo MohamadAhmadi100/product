@@ -24,7 +24,7 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
-    def torob(page, system_code, page_url):
+    def torob(page, system_code, page_url, return_all=False):
         with MongoConnection() as mongo:
             skip = (page - 1) * 100
             query = {}
@@ -35,7 +35,7 @@ class Product:
                 page_url = page_url if not page_url[-1] == "/" else page_url[:-1]
                 query['system_code'] = {"$regex": "^" + page_url.split("/")[-1]}
                 skip = 0
-            data = mongo.product.aggregate([
+            pipe_lines = [
                 {"$match": query},
                 {"$sort": {
                     "system_code": 1
@@ -123,7 +123,11 @@ class Product:
                         ]
                     }
                 }
-            ])
+            ]
+            if return_all:
+                del pipe_lines[0]
+                del pipe_lines[-1]['$facet']['products'][-2:]
+            data = mongo.product.aggregate(pipe_lines)
             data = data.next()
             counts = data['count'][0]['count']
             data = data["products"]
