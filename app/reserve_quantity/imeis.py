@@ -70,6 +70,7 @@ def articles(product, dst_warehouse):
             "stockStateId": warehouse['state_id'],
             "stockCityId": warehouse['city_id'],
             "name": product['name'],
+            "GIN": product.get("GIN"),
             "status": 'landed'
         }
         articles_deta.append(data)
@@ -87,7 +88,6 @@ def add_product_archive(product, referral_number, supplier, form_date, dst_wareh
             "insert_date": str(jdatetime.datetime.now()).split(".")[0],
             "unit_price": product['unit_price'],
             "sell_price": product['sell_price'],
-            "GIN": product.get("GIN"),
             "articles": articles(product, dst_warehouse)
         })
         return {"success": True}
