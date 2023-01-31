@@ -1035,12 +1035,10 @@ def management_reports(order_data):
                 if items['toStorage'] not in transfer_array:
                     transfer_array.append(items['toStorage'])
                 if items['brand'] not in transfer_brand:
-                    transfer_brand.append(items['brand'])
-                if items['toStorage'] not in transfer_storage:
-                    transfer_result.append({"storage": items['toStorage'], "data": [items]})
+                    transfer_result.append({"brand": items['brand'], "data": [items]})
                     transfer_storage.append(items['toStorage'])
                 else:
-                    index = transfer_storage.index(items['toStorage'])
+                    index = transfer_storage.index(items['brand'])
                     transfer_result[index]['data'].append(items)
             for items in transfer_result:
                 storages_copy = transfer_brand.copy()
@@ -1048,7 +1046,7 @@ def management_reports(order_data):
                  i["brand"] in storages_copy]
                 items['data'] += [
                     {'brand': io, 'toStorage': items['storage'], 'count': 0} for io in storages_copy]
-                items['data'].sort(key=lambda key: key['brand'])
+            transfer_result.sort(key=lambda key: key['brand'])
         for items in order_data:
             items['profit'] = 0
             # for items in asas:
