@@ -70,7 +70,6 @@ def articles(product, dst_warehouse):
             "stockStateId": warehouse['state_id'],
             "stockCityId": warehouse['city_id'],
             "name": product['name'],
-            "GIN": product.get("GIN"),
             "status": 'landed'
         }
         articles_deta.append(data)
@@ -90,6 +89,7 @@ def add_product_archive(product, referral_number, supplier, form_date, dst_wareh
             "sell_price": product['sell_price'],
             "articles": articles(product, dst_warehouse)
         })
+        client.product.update_one({"system_code": product['system_code']}, {"$set": {"GIN": product.get('GIN')}})
         return {"success": True}
 
 
