@@ -1025,9 +1025,9 @@ def management_reports(order_data):
         transfer_result = []
         transfer_storage = []
         transfer_brand = []
+        transfer_array = []
         if transfer_report:
             transfer_report.sort(key=lambda key: int(key['toStorage']))
-            transfer_array = []
             for items in transfer_report:
                 items['toStorage'] = mongo.warehouses.find_one({"warehouse_id": int(items['toStorage'])},
                                                                {"warehouse_name": True, "_id": False}).get(
@@ -1074,3 +1074,6 @@ def management_reports(order_data):
             "transferReport": transfer_result, "transferStorages": transfer_array,
             "invChartSellReport": order_data
         }
+
+
+print(management_reports([]))
