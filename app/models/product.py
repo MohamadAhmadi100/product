@@ -146,12 +146,12 @@ class Product:
                                 jdatetime.datetime.strptime(storage.get("special_to_date", jdatetime.datetime.now(
                                 ).strftime("%Y-%m-%d %H:%M:%S")), "%Y-%m-%d %H:%M:%S")
                         ):
-                            current_price = storage.get('special')
-                            old_price = storage.get("regular")
-                            break
+                            if current_price > storage.get('special') or current_price == 0:
+                                current_price = storage.get('special')
+                                old_price = storage.get("regular")
                         else:
-                            current_price = storage.get("regular")
-                            break
+                            if current_price > storage.get('regular') or current_price == 0:
+                                current_price = storage.get("regular")
 
                 del i['storages']
                 data_list.append(dict(i, **({"availability": availability,
@@ -3428,7 +3428,7 @@ class Product:
                             'main_category': 1,
                             'model': 1,
                             "GIN": 1,
-                           'sub_category': 1,
+                            'sub_category': 1,
                         },
                         'warehouse_details': {
                             '$filter': {
