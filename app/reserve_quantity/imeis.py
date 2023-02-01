@@ -87,6 +87,7 @@ def add_product_archive(product, referral_number, supplier, form_date, dst_wareh
             "insert_date": str(jdatetime.datetime.now()).split(".")[0],
             "unit_price": product['unit_price'],
             "sell_price": product['sell_price'],
+            "GIN": product.get("GIN"),
             "articles": articles(product, dst_warehouse)
         })
         client.product.update_one({"system_code": product['system_code']}, {"$set": {"GIN": product.get('GIN')}})
