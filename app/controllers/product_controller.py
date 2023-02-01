@@ -382,10 +382,3 @@ def get_emalls_data():
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
-
-
-def get_emalls_data():
-    result = Product.torob(1, None, None, return_all=True)
-    if result:
-        return {"success": True, "message": result, "status_code": 200}
-    return {"success": False, "error": "product not found", "status_code": 404}
