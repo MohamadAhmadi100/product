@@ -382,6 +382,9 @@ class Product:
                                             'images': '$images'
                                         }
                                     },
+                                    "system_code": {
+                                        "$first": {"$substr": ["$system_code", 0, 6]}
+                                    },
                                     "sys_codes": {"$push": "$system_code"}
                                 }
                             }, {
@@ -391,6 +394,7 @@ class Product:
                                             '$products', 10
                                         ]
                                     },
+                                    "system_code": 1,
                                     "sys_codes": {"$first": "$sys_codes"},
                                     'name': '$_id',
                                     '_id': 0
@@ -410,6 +414,9 @@ class Product:
                             }, {
                                 '$group': {
                                     '_id': '$sub_category',
+                                    "system_code": {
+                                        "$first": {"$substr": ["$system_code", 0, 9]}
+                                    },
                                     'products': {
                                         '$push': {
                                             'name': '$name',
@@ -427,6 +434,7 @@ class Product:
                                             '$products', 10
                                         ]
                                     },
+                                    "system_code": 1,
                                     'name': '$_id',
                                     '_id': 0
                                 }
