@@ -383,7 +383,7 @@ class Product:
                                         }
                                     },
                                     "system_code": {
-                                        "$first": {"$substr": ["$system_code", 0, 6]}
+                                        "$first": {"$substr": ["$system_code", 0, 9]}
                                     },
                                     "sys_codes": {"$push": "$system_code"}
                                 }
@@ -415,7 +415,7 @@ class Product:
                                 '$group': {
                                     '_id': '$sub_category',
                                     "system_code": {
-                                        "$first": {"$substr": ["$system_code", 0, 9]}
+                                        "$first": {"$substr": ["$system_code", 0, 6]}
                                     },
                                     'products': {
                                         '$push': {
