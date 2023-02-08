@@ -982,14 +982,17 @@ def management_reports(order_data):
         brand_sidebar = {}
         if brand_report:
             brand_report_brands = []
+            quantity_brand_report = []
             result_brand_report = []
             for items in brand_report:
                 if items['brand'] not in brand_report_brands:
                     result_brand_report.append({"brand": items['brand'], "data": [items]})
                     brand_report_brands.append(items['brand'])
+                    quantity_brand_report.append(items['totalQty'])
                 else:
                     index = brand_report_brands.index(items['brand'])
                     result_brand_report[index]['data'].append(items)
+                    quantity_brand_report.append(items['totalQty'])
                 brand_sidebar_total_qty += items['totalQty']
                 brand_sidebar_total_price += items['totalPrice']
             brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
@@ -1070,6 +1073,7 @@ def management_reports(order_data):
             "invBrandReport": result_inv_warehouse_report,
             "invBrandSide": inv_brand_sidebar,
             "brandReport": result_brand_report,
+            "brandReportQuantity": quantity_brand_report,
             "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands,
             "transferReport": transfer_result, "transferStorages": transfer_array,
             "invChartSellReport": order_data
@@ -1077,3 +1081,4 @@ def management_reports(order_data):
 
 
 # print(management_reports([]))
+
