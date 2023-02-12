@@ -407,12 +407,12 @@ class KowsarGroup:
                 del parent_data["image"]
             if parent_data.get('visible_in_site'):
                 del parent_data["visible_in_site"]
-
             parent_system_code_len = len(parent_data.get("system_code"))
             if parent_system_code_len == 2:
                 parent_data['sub_category'] = self.name
             elif parent_system_code_len == 6:
-                parent_data['brand'] = self.name if ' ' not in self.name else " ".join(self.name.split(" ")[1:])
+                parent_data['brand'] = self.name if parent_data.get(
+                    'sub_category') not in self.name else self.name.replace(parent_data.get('sub_category') + " ", "")
             elif parent_system_code_len == 9:
                 parent_data['model'] = self.name
             elif parent_system_code_len == 13:
@@ -423,7 +423,6 @@ class KowsarGroup:
                 parent_data['color'] = self.name
             elif parent_system_code_len == 22:
                 parent_data['guaranty'] = self.name
-
             parent_data['system_code'] = self.system_code
             return parent_data
         else:

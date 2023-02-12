@@ -109,7 +109,7 @@ def add_to_reserves_reorder(system_code, storage_id, count, customer_type, sku, 
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def add_to_reserves_dealership(system_code, storage_id, count, customer_type, sku, order_number):
@@ -138,7 +138,7 @@ def add_to_reserves_dealership(system_code, storage_id, count, customer_type, sk
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def remove_reserves_dealership(system_code, storage_id, count, customer_type, sku, order_number):
@@ -167,7 +167,7 @@ def remove_reserves_dealership(system_code, storage_id, count, customer_type, sk
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def remove_products_dealership_from_inv(system_code, imeis, dealership_detail, storage_id, count, customer_type, sku,
@@ -201,7 +201,7 @@ def remove_products_dealership_from_inv(system_code, imeis, dealership_detail, s
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def remove_reserve_cancel(system_code, storage_id, count, customer_type, sku, order_number):
@@ -230,7 +230,7 @@ def remove_reserve_cancel(system_code, storage_id, count, customer_type, sku, or
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def remove_reserve_rollback(system_code, storage_id, count, customer_type, order_number):
@@ -243,7 +243,7 @@ def remove_reserve_rollback(system_code, storage_id, count, customer_type, order
     if reserve_result.get("success"):
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def add_reserve_rollback(system_code, storage_id, count, customer_type, order_number):
@@ -256,7 +256,7 @@ def add_reserve_rollback(system_code, storage_id, count, customer_type, order_nu
     if reserve_result.get("success"):
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def remove_reserve_edit_order(system_code, storage_id, count, customer_type, sku, order_number):
@@ -285,7 +285,7 @@ def remove_reserve_edit_order(system_code, storage_id, count, customer_type, sku
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def export_transfer_form(product, src_warehouse, dst_warehouse, referral_number, customer_type, staff_name):
@@ -346,7 +346,7 @@ def import_transfer_form(product, src_warehouse, dst_warehouse, referral_number,
         add_to_cardex(None, staff_name, referral_number, [quantity_cardex_data])
         return reserve_result
     else:
-        return {"success": False, "error": f"{product['system_code']}"}
+        return {"success": False, "error": f"{product['system_code']}", "status_code": 400}
 
 
 def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_number, quantity_type,
@@ -376,7 +376,7 @@ def create_transfer_reserve(product, src_warehouse, dst_warehouse, referral_numb
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{product['system_code']}"}
+        return {"success": False, "error": f"{product['system_code']}", "status_code": 400}
 
 
 def add_buying_form(product, dst_warehouse, customer_type, referral_number, supplier_name, form_date):
@@ -409,7 +409,7 @@ def add_buying_form(product, dst_warehouse, customer_type, referral_number, supp
             reserve_result.pop("cardex")
             return reserve_result
     else:
-        return {"success": False, "error": f"{product['system_code']}"}
+        return {"success": False, "error": f"{product['system_code']}", "status_code": 400}
 
 
 def return_order_items(system_code, storage_id, customer_type, order_number, imei, staff_name):
@@ -471,7 +471,7 @@ def remove_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def add_to_reserve_edit_transfer(system_code, storage_id, count, customer_type, order_number):
@@ -500,7 +500,7 @@ def add_to_reserve_edit_transfer(system_code, storage_id, count, customer_type, 
         reserve_result['quantity_cardex_data'] = quantity_cardex_data
         return reserve_result
     else:
-        return {"success": False, "error": f"{system_code}"}
+        return {"success": False, "error": f"{system_code}", "status_code": 400}
 
 
 def checking_reserve_to_dealership(

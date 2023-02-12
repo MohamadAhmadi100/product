@@ -885,10 +885,7 @@ def management_reports(order_data):
             }
         ]))
 
-        def custom_sort(k):
-            return int(k['storageId'])
-
-        inv_warehouse_report.sort(key=custom_sort)
+        inv_warehouse_report.sort(key=lambda key: int(key['storageId']))
         inv_warehouse_sidebar_total_qty = 0
         inv_warehouse_sidebar_total_price = 0
         inv_brand_sidebar = {}
@@ -919,10 +916,7 @@ def management_reports(order_data):
                     {'totalQty': 0, 'totalPrice': 0, 'brand': items['data'][0]['brand'],
                      'storage': io, 'storageId': storages_id[storages.index(io)]} for io in storages_copy]
 
-                def custom_sort(k):
-                    return int(k['storageId'])
-
-                items['data'].sort(key=custom_sort)
+                items['data'].sort(key=lambda key: int(key['storageId']))
 
         brand_report = list(mongo.product.aggregate([
             {
@@ -988,14 +982,17 @@ def management_reports(order_data):
         brand_sidebar = {}
         if brand_report:
             brand_report_brands = []
+            quantity_brand_report = []
             result_brand_report = []
             for items in brand_report:
                 if items['brand'] not in brand_report_brands:
                     result_brand_report.append({"brand": items['brand'], "data": [items]})
                     brand_report_brands.append(items['brand'])
+                    quantity_brand_report.append(items['totalQty'])
                 else:
                     index = brand_report_brands.index(items['brand'])
                     result_brand_report[index]['data'].append(items)
+                    quantity_brand_report.append(items['totalQty'])
                 brand_sidebar_total_qty += items['totalQty']
                 brand_sidebar_total_price += items['totalPrice']
             brand_sidebar = {"totalQty": brand_sidebar_total_qty, "totalPrice": brand_sidebar_total_price}
@@ -1028,20 +1025,31 @@ def management_reports(order_data):
                 }
             }
         ]))
+        transfer_result = []
+        transfer_storage = []
+        transfer_brand = []
+        transfer_array = []
         if transfer_report:
-            def custom_sort(k):
-                return int(k['toStorage'])
-
-            transfer_report.sort(key=custom_sort)
-            transfer_array = []
+            transfer_report.sort(key=lambda key: int(key['toStorage']))
             for items in transfer_report:
-
                 items['toStorage'] = mongo.warehouses.find_one({"warehouse_id": int(items['toStorage'])},
                                                                {"warehouse_name": True, "_id": False}).get(
                     'warehouse_name')
                 if items['toStorage'] not in transfer_array:
                     transfer_array.append(items['toStorage'])
-
+                if items['brand'] not in transfer_brand:
+                    transfer_result.append({"brand": items['brand'], "data": [items]})
+                    transfer_storage.append(items['toStorage'])
+                else:
+                    index = transfer_storage.index(items['brand'])
+                    transfer_result[index]['data'].append(items)
+            for items in transfer_result:
+                storages_copy = transfer_brand.copy()
+                [storages_copy.pop(storages_copy.index(i['brand'])) for i in items['data'] if
+                 i["brand"] in storages_copy]
+                items['data'] += [
+                    {'brand': io, 'toStorage': items['storage'], 'count': 0} for io in storages_copy]
+            transfer_result.sort(key=lambda key: key['brand'])
         for items in order_data:
             items['profit'] = 0
             # for items in asas:
@@ -1065,8 +1073,9 @@ def management_reports(order_data):
             "invBrandReport": result_inv_warehouse_report,
             "invBrandSide": inv_brand_sidebar,
             "brandReport": result_brand_report,
+            "brandReportQuantity": quantity_brand_report,
             "brandSide": brand_sidebar, "storageNames": storages, "brands": brand_report_brands,
-            "transferReport": transfer_report, "transferStorages": transfer_array,
+            "transferReport": transfer_result, "transferStorages": transfer_array,
             "invChartSellReport": order_data
         }
 

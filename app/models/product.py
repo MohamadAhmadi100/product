@@ -24,7 +24,7 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
-    def torob(page, system_code, page_url):
+    def torob(page, system_code, page_url, return_all=False):
         with MongoConnection() as mongo:
             skip = (page - 1) * 100
             query = {}
@@ -35,8 +35,12 @@ class Product:
                 page_url = page_url if not page_url[-1] == "/" else page_url[:-1]
                 query['system_code'] = {"$regex": "^" + page_url.split("/")[-1]}
                 skip = 0
-            data = mongo.product.aggregate([
+            pipe_lines = [
                 {"$match": query},
+                {"$sort": {
+                    "system_code": 1
+                }
+                },
                 {
                     '$group': {
                         '_id': {
@@ -62,13 +66,32 @@ class Product:
                                 'title': '$name',
                                 'spec': '$configs',
                                 'category_name': '$sub_category',
-                                'storages': '$warehouse_details.B2C.storages',
-                                "date": "$date"
+                                'date': '$date'
+                            }
+                        },
+                        'storages': {
+                            '$push': {
+                                '$objectToArray': '$warehouse_details.B2C.storages'
                             }
                         }
                     }
-                }, {"$sort": {"data.date": -1}},
-                {
+                }, {
+                    '$addFields': {
+                        'storages': {
+                            '$reduce': {
+                                'input': '$storages',
+                                'initialValue': [],
+                                'in': {
+                                    '$concatArrays': ["$$value", "$$this.v"]
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    '$sort': {
+                        'data.date': -1
+                    }
+                }, {
                     '$facet': {
                         'products': [
                             {
@@ -77,11 +100,21 @@ class Product:
                                         '$mergeObjects': [
                                             '$data', {
                                                 'page_unique': '$_id'
+                                            }, {
+                                                'storages': '$storages'
                                             }
                                         ]
                                     }
                                 }
-                            }, {"$project": {"date": 0}}, {"$skip": skip}, {"$limit": 100}
+                            }, {
+                                '$project': {
+                                    'date': 0
+                                }
+                            }, {
+                                '$skip': skip
+                            }, {
+                                '$limit': 100
+                            }
                         ],
                         'count': [
                             {
@@ -90,7 +123,11 @@ class Product:
                         ]
                     }
                 }
-            ])
+            ]
+            if return_all:
+                del pipe_lines[0]
+                del pipe_lines[-1]['$facet']['products'][-2:]
+            data = mongo.product.aggregate(pipe_lines)
             data = data.next()
             counts = data['count'][0]['count']
             data = data["products"]
@@ -99,7 +136,7 @@ class Product:
                 old_price = 0
                 current_price = 0
                 availability = None
-                for storage in i['storages'].values():
+                for storage in i['storages']:
                     if (storage.get('quantity', 0) - storage.get('reserved', 0) - storage.get('min_qty', 1)) >= 0:
                         availability = "instock"
                         if storage.get('special') and (
@@ -109,12 +146,12 @@ class Product:
                                 jdatetime.datetime.strptime(storage.get("special_to_date", jdatetime.datetime.now(
                                 ).strftime("%Y-%m-%d %H:%M:%S")), "%Y-%m-%d %H:%M:%S")
                         ):
-                            current_price = storage.get('special')
-                            old_price = storage.get("regular")
-                            break
+                            if current_price > storage.get('special') or current_price == 0:
+                                current_price = storage.get('special')
+                                old_price = storage.get("regular")
                         else:
-                            current_price = storage.get("regular")
-                            break
+                            if current_price > storage.get('regular') or current_price == 0:
+                                current_price = storage.get("regular")
 
                 del i['storages']
                 data_list.append(dict(i, **({"availability": availability,
@@ -122,8 +159,6 @@ class Product:
                                              } if not old_price else {"availability": availability,
                                                                       "current_price": current_price,
                                                                       "old_price": old_price})))
-        if system_code or page_url:
-            return data_list[0]
         return {"products": data_list, "count": counts, "max_pages": math.ceil(counts / 100)}
 
     @staticmethod
@@ -347,6 +382,9 @@ class Product:
                                             'images': '$images'
                                         }
                                     },
+                                    "system_code": {
+                                        "$first": {"$substr": ["$system_code", 0, 9]}
+                                    },
                                     "sys_codes": {"$push": "$system_code"}
                                 }
                             }, {
@@ -356,6 +394,7 @@ class Product:
                                             '$products', 10
                                         ]
                                     },
+                                    "system_code": 1,
                                     "sys_codes": {"$first": "$sys_codes"},
                                     'name': '$_id',
                                     '_id': 0
@@ -375,6 +414,9 @@ class Product:
                             }, {
                                 '$group': {
                                     '_id': '$sub_category',
+                                    "system_code": {
+                                        "$first": {"$substr": ["$system_code", 0, 6]}
+                                    },
                                     'products': {
                                         '$push': {
                                             'name': '$name',
@@ -392,6 +434,7 @@ class Product:
                                             '$products', 10
                                         ]
                                     },
+                                    "system_code": 1,
                                     'name': '$_id',
                                     '_id': 0
                                 }
@@ -3392,6 +3435,7 @@ class Product:
                             "brand": 1,
                             'main_category': 1,
                             'model': 1,
+                            "GIN": 1,
                             'sub_category': 1,
                         },
                         'warehouse_details': {
@@ -3481,6 +3525,7 @@ class Product:
                             'main_category': 1,
                             'model': 1,
                             'sub_category': 1,
+                            "GIN": 1,
                             'warehouse_details': '$a'
                         }
                     }

@@ -101,7 +101,7 @@ def get_kowsar_system_code(system_code):
 
 def assign_system_code_to_seller(system_codes: dict, seller: str, seller_code: str):
     for system_code in system_codes:
-        storage_ids = system_code.get("storage_ids")
+        storage_ids = system_code.get("storage_id")
         system_code = system_code.get("system_code")
         parent_data = KowsarGetter.system_code_name_getter(system_code)
         seller_group = create_kowsar_group(system_code[:16] + seller_code, seller, system_code[:16], None)
