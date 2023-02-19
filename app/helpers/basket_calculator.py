@@ -36,10 +36,8 @@ class Basket:
                     max_quantity = selective_product.get("maxQuantity") or selective_product.get("quantity")
                     if action != "get" and min_quantity > product.get("quantity"):
                         return None, False
-                    product["minQuantity"] = min_quantity if min_quantity >= product.get("min_qty") else product.get(
-                        "min_qty")
-                    product["maxQuantity"] = max_quantity if max_quantity <= product.get("max_qty") else product.get(
-                        "max_qty")
+                    product["minQuantity"] = min_quantity
+                    product["maxQuantity"] = max_quantity
                     product["count"] = min_quantity if min_quantity == max_quantity else 0
                     product["price"] = selective_product.get("basketPrice")
                     product["storage_id"] = storage_id
@@ -62,10 +60,8 @@ class Basket:
                 if optional_product.get("systemCode") == product.get("system_code"):
                     if action != "get" and min_quantity > product.get("quantity"):
                         continue
-                    product["minQuantity"] = min_quantity if min_quantity >= product.get("min_qty") else product.get(
-                        "min_qty")
-                    product["maxQuantity"] = max_quantity if max_quantity <= product.get("max_qty") else product.get(
-                        "max_qty")
+                    product["minQuantity"] = min_quantity
+                    product["maxQuantity"] = max_quantity
                     product["count"] = min_quantity if min_quantity == max_quantity else 0
                     product["price"] = optional_product.get("basketPrice")
                     product["storage_id"] = storage_id
