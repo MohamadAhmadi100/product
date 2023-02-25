@@ -1052,7 +1052,6 @@ def management_reports(order_data):
             transfer_result.sort(key=lambda key: key['brand'])
         for items in order_data:
             items['profit'] = 0
-            # for items in asas:
             for cursor in items['childs']:
                 system_code, result = balanced_avg_management_report(cursor['systemCode'])
                 try:
@@ -1062,7 +1061,10 @@ def management_reports(order_data):
                     except:
                         pass
                     cursor['Profit'] = cursor['totalPrice'] - (result[index]['result'] * cursor['totalQty'])
+                    cursor['profitPercentage'] = round((cursor['Profit'] / (
+                            result[index]['result'] * cursor['totalQty'])) * 100, 2)
                     items['profit'] += cursor['Profit']
+                    items['profitPercentage'] += cursor['profitPercentage']
                 except:
                     try:
                         del items['systemCodes']
@@ -1080,5 +1082,34 @@ def management_reports(order_data):
         }
 
 
-# print(management_reports([]))
-
+print(management_reports([{'childs': [
+    {'totalQty': 2, 'totalPrice': 128000, 'systemCode': '2100020020004002001057017', 'customers': 1, 'totalOrders': 1,
+     'name': 'Cable Cable Koluman KD-19 (2m USB-A to Lighning)', 'color': 'Gold', 'seller': 'ASD', 'guaranty': 'NOG',
+     'category': 'Accessories', 'model': 'KD-19', 'avg': 1.5}], 'totalQty': 2, 'customer': 1, 'totalPrice': 128000,
+    'orders': 1, 'systemCodes': ['2100020020004002001057017'], 'model': 'KD-19'}, {'childs': [
+    {'totalQty': 1, 'totalPrice': 159000, 'systemCode': '2100020010001001001016021', 'customers': 1, 'totalOrders': 1,
+     'name': 'Cable Anker PowerLine+ (A8121H22) (0.9m USB-A to Lightning)', 'color': 'White', 'seller': 'ASD',
+     'guaranty': '12 Month Sherkati', 'category': 'Accessories', 'model': 'PowerLine+ (A8121H22)', 'avg': 3.4}],
+    'totalQty': 1,
+    'customer': 1,
+    'totalPrice': 159000,
+    'orders': 1,
+    'systemCodes': [
+        '2100020010001001001016021'],
+    'model': 'PowerLine+ (A8121H22)'},
+    {'childs': [{'totalQty': 1, 'totalPrice': 969000, 'systemCode': '2000010010041001001005002',
+                 'customers': 1, 'totalOrders': 1,
+                 'name': 'Mobile Samsung B315E (4MB 4MB 2G) Global', 'color': 'Blue',
+                 'seller': 'ASD', 'guaranty': 'Sherkati', 'category': 'Device', 'model': 'B315E',
+                 'avg': 7.2}], 'totalQty': 1, 'customer': 1, 'totalPrice': 969000, 'orders': 1,
+     'systemCodes': ['2000010010041001001005002'], 'model': 'B315E'}, {'childs': [
+        {'totalQty': 7, 'totalPrice': 3108000, 'systemCode': '2100060050003001001001021', 'customers': 1,
+         'totalOrders': 1, 'name': 'Power Bank Xiaomi Redmi (PB100LZM) (10000mAh)', 'color': 'Black', 'seller': 'ASD',
+         'guaranty': '12 Month Sherkati', 'category': 'Accessories', 'model': 'Redmi (PB100LZM)', 'avg': 5.9}],
+        'totalQty': 7,
+        'customer': 1,
+        'totalPrice': 3108000,
+        'orders': 1,
+        'systemCodes': [
+            '2100060050003001001001021'],
+        'model': 'Redmi (PB100LZM)'}]))
