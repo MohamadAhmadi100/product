@@ -7,15 +7,23 @@ class Basket:
         for product in products:
             if action != "get" and not product.get("quantity"):
                 return None, False
+            if type(product.get("quantity")) == int and type(product.get("reserved")) == int:
+                stock = product.get("quantity") - product.get("reserved")
+            elif type(product.get("quantity")) == int:
+                stock = product.get("quantity")
+            elif action == "get":
+                stock = product.get("quantity")
+            else:
+                return None, False
             for mandatory_product in mandatory_products:
                 if mandatory_product.get("systemCode") == product.get("system_code"):
-                    if action != "get" and mandatory_product.get("quantity") > product.get("quantity"):
+                    if action != "get" and mandatory_product.get("quantity") > stock:
                         return None, False
                     product["count"] = mandatory_product.get("quantity")
                     product["price"] = mandatory_product.get("basketPrice")
                     product["storage_id"] = storage_id
                     new_mandatory_products.append(product)
-        if len(new_mandatory_products) != len(mandatory_products):
+        if action != "get" and len(new_mandatory_products) != len(mandatory_products):
             return None, False
         return new_mandatory_products, True
 
@@ -27,6 +35,14 @@ class Basket:
         for product in products:
             if action != "get" and not product.get("quantity"):
                 return None, False
+            if type(product.get("quantity")) == int and type(product.get("reserved")) == int:
+                stock = product.get("quantity") - product.get("reserved")
+            elif type(product.get("quantity")) == int:
+                stock = product.get("quantity")
+            elif action == "get":
+                stock = product.get("quantity")
+            else:
+                return None, False
             for selective_product in selective_products:
                 if action != "get" and not selective_product.get("minQuantity") and not selective_product.get(
                         "quantity"):
@@ -34,7 +50,7 @@ class Basket:
                 if selective_product.get("systemCode") == product.get("system_code"):
                     min_quantity = selective_product.get("minQuantity") or selective_product.get("quantity")
                     max_quantity = selective_product.get("maxQuantity") or selective_product.get("quantity")
-                    if action != "get" and min_quantity > product.get("quantity"):
+                    if action != "get" and min_quantity > stock:
                         return None, False
                     product["minQuantity"] = min_quantity
                     product["maxQuantity"] = max_quantity
@@ -42,7 +58,7 @@ class Basket:
                     product["price"] = selective_product.get("basketPrice")
                     product["storage_id"] = storage_id
                     new_selective_products.append(product)
-        if len(new_selective_products) < basket_min_quantity:
+        if action != "get" and len(new_selective_products) < basket_min_quantity:
             return None, False
         return new_selective_products, True
 
@@ -52,13 +68,23 @@ class Basket:
         for product in products:
             if action != "get" and not product.get("quantity"):
                 continue
+            if action != "get" and not product.get("quantity"):
+                return None, False
+            if type(product.get("quantity")) == int and type(product.get("reserved")) == int:
+                stock = product.get("quantity") - product.get("reserved")
+            elif type(product.get("quantity")) == int:
+                stock = product.get("quantity")
+            elif action == "get":
+                stock = product.get("quantity")
+            else:
+                return None, False
             for optional_product in optional_products:
                 min_quantity = optional_product.get("minQuantity") or optional_product.get("quantity")
                 max_quantity = optional_product.get("maxQuantity") or optional_product.get("quantity")
                 if action != "get" and not min_quantity:
                     continue
                 if optional_product.get("systemCode") == product.get("system_code"):
-                    if action != "get" and min_quantity > product.get("quantity"):
+                    if action != "get" and min_quantity > stock:
                         continue
                     product["minQuantity"] = min_quantity
                     product["maxQuantity"] = max_quantity
