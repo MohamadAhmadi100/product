@@ -254,17 +254,17 @@ def remove_product_dealership_from_inv(referral_number, customer_id, customer_ty
     check_data, data_response, add_cardex_to_quantity = list(), list(), list()
     for cursor_products in dealership_form.get("products"):
         # add reserve per items
-        reserve_result = remove_products_dealership_from_inv(cursor_products.get("system_code"),
+        reserve_result = remove_products_dealership_from_inv(cursor_products.get("systemCode"),
                                                              cursor_products.get("imeis"),
                                                              dealership_detail,
-                                                             cursor_products.get("storage_id"),
+                                                             cursor_products.get("storageId"),
                                                              cursor_products.get("count"),
-                                                             customer_type[0], cursor_products.get("name"),
+                                                             customer_type, cursor_products.get("name"),
                                                              referral_number)
 
         data_for_check = (cursor_products, reserve_result.get("success"))
         check_data.append(data_for_check)
-        add_cardex_to_quantity.append(reserve_result.get("quantity"))
+        add_cardex_to_quantity.append(reserve_result.get('quantity_cardex_data'))
     # check all items reserved
     checked = all(elem[1] for elem in check_data)
     if checked:
