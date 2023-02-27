@@ -148,7 +148,7 @@ def remove_reserve_edit(edited_object, order_number, customer_id, customer_type,
                     return reserve_result
             else:
                 data_response.append(reserved_products)
-        return {'success': False, 'message': 'operation unsuccessful', "error": data_response,
+        return {'success': False, 'message': 'موجودی کالا کافی نیست', "error": data_response,
                 'status_code': 400}
 
 
