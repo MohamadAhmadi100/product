@@ -138,7 +138,7 @@ def export_transfer_dealership(system_code, imeis, dealership_detail, referral_n
             client.product_archive.update_one({"articles.first": imei}, {"$set": {
                 "articles.$.dealership_detail":
                     [{
-                        "to_dealership": dealership_detail['dealershipId'],
+                        "to_dealership": dealership_detail['dealership_id'],
                         "referral_number": referral_number,
                         "export_time": str(jdatetime.datetime.now()).split(".")[0],
                     }]

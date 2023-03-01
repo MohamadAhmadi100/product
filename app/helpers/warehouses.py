@@ -18,6 +18,15 @@ def warehouses():
         return {"success": True, "warehouses": warehouses}
 
 
+def get_all_warehouses(all):
+    with MongoConnection() as mongo:
+        query = {}
+        if not all:
+            query['isActive'] = True
+        warehouses = mongo.warehouses.find(query, {"_id": 0, "storage_id": "$warehouse_id", "label": "$warehouse_name"})
+        return list(warehouses)
+
+
 def create_warehouse_db(user_id, user_name, warehouse_id, warehouse_name, state, state_id, city, city_id, address):
     with MongoConnection() as mongo:
         result = mongo.warehouses.insert_one({

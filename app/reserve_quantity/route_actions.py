@@ -264,8 +264,11 @@ def remove_reserve_edit_order(system_code, storage_id, count, customer_type, sku
     remove reserve edit order
     """
     add_remove_model = AddRemoveQtyReserve()
-    reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type,
-                                                     order_number)
+    if count > 0:
+        reserve_result = add_remove_model.remove_reserve(system_code, storage_id, count, customer_type, order_number)
+    else:
+        count = count * -1
+        reserve_result = add_remove_model.add_reserve(system_code, storage_id, count, customer_type, order_number)
     if reserve_result.get("success"):
         quantity_cardex_data = cardex(
             storage_id=storage_id,

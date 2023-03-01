@@ -257,14 +257,14 @@ def get_basket_product(system_code, storage_id, customer_type):
     return {"success": False, "error": "product not found", "status_code": 404}
 
 
-def get_basket_products(data: list, customer_type: str = "B2B"):
+def get_basket_products(data: list, customer_type: str = "B2B", action="set"):
     new_data = []
     for index, basket in enumerate(data):
         product_count = 0
         system_codes = [mandatory_product.get("systemCode") for mandatory_product in basket.get("mandatoryProducts")]
         if products := Product.get_basket_products(system_codes, basket.get("storageId"), customer_type):
             mandatory_result, active = Basket().set_mandatory_products(basket.get("mandatoryProducts"), products,
-                                                                       basket.get("storageId"))
+                                                                       basket.get("storageId"), action)
             if not active:
                 continue
             product_count += len(mandatory_result)
@@ -278,7 +278,8 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
                 selective_result, active = Basket().set_selective_products(basket.get("selectiveProducts"),
                                                                            selective_products,
                                                                            basket.get("minSelectiveProductsQuantity"),
-                                                                           basket.get("storageId"))
+                                                                           basket.get("storageId"),
+                                                                           action)
                 if not active:
                     continue
                 product_count += len(selective_result)
@@ -293,7 +294,7 @@ def get_basket_products(data: list, customer_type: str = "B2B"):
         if optional_products := Product.get_basket_products(optional_system_codes, basket.get("storageId"),
                                                             customer_type):
             optional_result = Basket().set_optional_products(basket.get("optionalProducts"), optional_products,
-                                                             basket.get("storageId"))
+                                                             basket.get("storageId"), action)
             data[index]["optionalProducts"] = optional_result
             if products or selective_products:
                 product_count += len(optional_result)

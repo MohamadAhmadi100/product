@@ -1052,7 +1052,6 @@ def management_reports(order_data):
             transfer_result.sort(key=lambda key: key['brand'])
         for items in order_data:
             items['profit'] = 0
-            # for items in asas:
             for cursor in items['childs']:
                 system_code, result = balanced_avg_management_report(cursor['systemCode'])
                 try:
@@ -1062,7 +1061,10 @@ def management_reports(order_data):
                     except:
                         pass
                     cursor['Profit'] = cursor['totalPrice'] - (result[index]['result'] * cursor['totalQty'])
+                    cursor['profitPercentage'] = round((cursor['Profit'] / (
+                            result[index]['result'] * cursor['totalQty'])) * 100, 2)
                     items['profit'] += cursor['Profit']
+                    items['profitPercentage'] += cursor['profitPercentage']
                 except:
                     try:
                         del items['systemCodes']
@@ -1080,5 +1082,4 @@ def management_reports(order_data):
         }
 
 
-# print(management_reports([]))
-
+# print(management_reports())
