@@ -383,3 +383,12 @@ def get_emalls_data():
     if result:
         return {"success": True, "message": result, "status_code": 200}
     return {"success": False, "error": "product not found", "status_code": 404}
+
+
+def change_visibility(system_code, customer_type, value):
+    result = Product.change_visibility(system_code, customer_type, value)
+    if result:
+        return {"success": True, "message": {"message": "product visibility updated successfully",
+                                             "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}, "status_code": 200}
+    return {"success": False, "error": {"message": "product visibility update failed",
+                                        "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}, "status_code": 404}

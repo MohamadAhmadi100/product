@@ -24,6 +24,17 @@ class Product:
             return mongo.product.count_documents({"system_code": {"$in": self.system_codes}}) == 0
 
     @staticmethod
+    def change_visibility(system_code, customer_type, value):
+        with MongoConnection() as mongo:
+            result = mongo.product.update_one(
+                {"system_code": system_code},
+                {"$set": {f"visible_in_site.{customer_type}": value}}
+            )
+            if result.modified_count:
+                return True
+            return False
+
+    @staticmethod
     def torob(page, system_code, page_url, return_all=False):
         with MongoConnection() as mongo:
             skip = (page - 1) * 100
@@ -167,7 +178,7 @@ class Product:
             result = mongo.product.aggregate([
                 {
                     '$match': {
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -457,7 +468,7 @@ class Product:
                         'system_code': {
                             '$regex': '^20'
                         },
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -574,7 +585,7 @@ class Product:
                 kowsar_result = mongo.kowsar_collection.find_one(
                     {"system_code": i.get("products")[0].get("system_code", '')})
                 if kowsar_result.get("sub_category") == "Mobile":
-                    label = kowsar_result.get("sub_category_label") + " " + kowsar_result.get("brand_label")
+                    label = kowsar_result.get("sub_category_label", "") + " " + kowsar_result.get("brand_label", "")
                 else:
                     label = kowsar_result.get("sub_category_label")
                 i['label'] = label
@@ -758,7 +769,7 @@ class Product:
             result = mongo.product.aggregate([
                 {
                     '$match': {
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -946,7 +957,7 @@ class Product:
             result = mongo.product.aggregate([
                 {
                     '$match': {
-                        'visible_in_site': True,
+                        f'visible_in_site.{customer_type}': True,
                         'system_code': {
                             '$regex': f'^{system_code}'
                         }
@@ -1164,7 +1175,7 @@ class Product:
     def search_product_in_bot(name):
         pipe_lines = [{
             '$match': {
-                'visible_in_site': True,
+                'visible_in_site.B2B': True,
                 'name': {
                     '$regex': re.compile(rf"{name}(?i)")
                 },
@@ -1366,7 +1377,7 @@ class Product:
         with MongoConnection() as mongo:
             pipe_lines = [{
                 '$match': {
-                    'visible_in_site': True
+                    f'visible_in_site.{customer_type}': True
                 }
             }, {
                 '$project': {
@@ -1664,7 +1675,7 @@ class Product:
         with MongoConnection() as mongo:
             pipe_line = [{
                 '$match': {
-                    'visible_in_site': True
+                    f'visible_in_site.{customer_type}': True
                 }
             }, {
                 '$project': {
@@ -1852,7 +1863,7 @@ class Product:
             pipe_lines = [
                 {
                     '$match': {
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -2125,7 +2136,7 @@ class Product:
             pipe_lines = [
                 {
                     '$match': {
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -2422,7 +2433,7 @@ class Product:
             pipe_lines = [
                 {
                     '$match': {
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -2858,7 +2869,7 @@ class Product:
                         'name': {
                             '$regex': re.compile(rf"{name}(?i)")
                         },
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -3063,7 +3074,7 @@ class Product:
             result = mongo.product.aggregate([
                 {
                     '$match': {
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -3352,7 +3363,7 @@ class Product:
                         'system_code': {
                             '$regex': f'^{system_code}'
                         },
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -3646,7 +3657,7 @@ class Product:
                         'system_code': {
                             '$regex': f'^{system_code[:6]}'
                         },
-                        'visible_in_site': True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -3769,7 +3780,7 @@ class Product:
                         'system_code': {
                             '$regex': f'^{system_code}'
                         },
-                        "visible_in_site": True
+                        f'visible_in_site.{customer_type}': True
                     }
                 }, {
                     '$project': {
@@ -3988,20 +3999,22 @@ class Product:
 
     @staticmethod
     def edit_product(system_code, data):
-        with MongoConnection() as mongo:
-            visible_in_site = data.get("visible_in_site")
-            result = mongo.product.update_one({"system_code": system_code, "step": 4},
-                                              {"$set": {"visible_in_site": visible_in_site}})
-            if result.modified_count or result.matched_count:
-                return {"message": "product visibility updated successfully",
-                        "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}
-            return {"message": "product visibility update failed",
-                    "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
+        # with MongoConnection() as mongo:
+        #     visible_in_site = data.get("visible_in_site")
+        #     result = mongo.product.update_one({"system_code": system_code, "step": 4},
+        #                                       {"$set": {"visible_in_site": visible_in_site}})
+        #     if result.modified_count or result.matched_count:
+        #         return {"message": "product visibility updated successfully",
+        #                 "label": "وضعیت نمایش محصول با موفقیت بروزرسانی شد"}
+        #     return {"message": "product visibility update failed",
+        #             "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
+        return {"message": "product visibility update failed",
+                "label": "بروزرسانی وضعیت نمایش محصول با خطا مواجه شد"}
 
     @staticmethod
     def get_product_by_system_code(system_code, lang):
         with MongoConnection() as mongo:
-            result = mongo.product.find_one({'system_code': system_code, "visible_in_site": True}, {"_id": 0})
+            result = mongo.product.find_one({'system_code': system_code}, {"_id": 0})
             if result:
                 attributes_data = list(mongo.attributes_collection.find(
                     {}, {
@@ -4320,8 +4333,6 @@ class Product:
                 pipe_lines[0]['$facet']['list'][0]['$match']['guaranty'] = {'$in': guarantees}
             if steps:
                 pipe_lines[0]['$facet']['list'][0]['$match']['step'] = {'$in': steps}
-            if visible_in_site:
-                pipe_lines[0]['$facet']['list'][0]['$match']['visible_in_site'] = visible_in_site
             if date_from or date_to:
                 pipe_lines[0]['$facet']['list'][0]['$match']['date'] = {}
                 if date_to:
