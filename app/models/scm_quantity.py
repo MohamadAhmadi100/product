@@ -567,14 +567,14 @@ def initial_inv_report(quantity_type):
 
 def handle_get_product_to_assign_qty(storage_id, system_code, customer_type):
     try:
-
         product_object = get_product_query(system_code)
         if not product_object:
             return False, "محصولی یافت نشد"
         customer_type_object = get_customer_type_object(product_object, storage_id, customer_type)
-        if not customer_type_object:
-            return False, "محصولی با نوع مشتری ویا کد انبار مورد نظر یافت نشد"
-        return True, customer_type_object
+        if customer_type_object:
+            customer_type_object["customer_type"] = customer_type
+            return True, customer_type_object
+        return False, "محصولی با نوع مشتری ویا کد انبار مورد نظر یافت نشد"
     except Exception:
         return False, "خطای سیستمی رخ داده است"
 
@@ -1082,4 +1082,3 @@ def management_reports(order_data):
         }
 
 
-# print(management_reports())
